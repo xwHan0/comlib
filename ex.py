@@ -1,3 +1,6 @@
+
+doc = help
+
 def xapply (func, *args, **xargs):
   """Execute 'fun' with parameter list args and xargs.
   
