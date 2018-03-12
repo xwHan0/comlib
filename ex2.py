@@ -64,6 +64,28 @@ def xapply (func, *args, **xargs):
 
     return func(*args, **xargs)
 
+
+
+#=================================================================================================================
+#====  xmap
+#=================================================================================================================
+def xmap (proc, *args):
+    
+    if len(args) == 0:
+        if type(proc) == list:
+            def xmapn (*argsn):
+                return map(proc,*argsn)
+            return xmapn
+        else:
+            def xmap1 (*args1):
+                return map(proc, *args1)
+            return xmap1
+    else:
+        return map(proc,*args)
+
+def list_map (proc, lst, *args): map(proc, *args.append(lst))
+list.set_instance_method(list_map)
+
 # def add8 (a,b,c,d,e,f,g,h): return a+b+c+d+e+f+g+h
 # print(xapply(add8, 1,2,3,[4,5,6,7,8]))
 # print(xapply(add8,xapply_json,1,2,[3,4],5,6,[7,8]))
