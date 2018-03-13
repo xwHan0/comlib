@@ -83,8 +83,16 @@ def xmap (proc, *args):
     else:
         return map(proc,*args)
 
-def list_map (proc, lst, *args): map(proc, *args.append(lst))
-list.set_instance_method(list_map)
+#=================================================================================================================
+#====  xseq
+#=================================================================================================================
+class xseq(list):
+    def __init__ ( self, lst = [] ):
+        self.concat( lst )
+    def map (proc,*args): return map(proc,*args.append(self))
+
+#def list_map (proc, lst, *args): map(proc, *args.append(lst))
+#list.set_instance_method(list_map)
 
 # def add8 (a,b,c,d,e,f,g,h): return a+b+c+d+e+f+g+h
 # print(xapply(add8, 1,2,3,[4,5,6,7,8]))
