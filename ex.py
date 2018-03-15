@@ -92,7 +92,7 @@ def xmap (proc, *args):
 class xseq(list):
     def __init__ ( self, lst = [] ):
         self.extend( lst )
-    def map (self, proc,*args): return map(proc,*args.append(self))
+    def map (self, proc, *args): return map(proc,*args, self)
 
 
 #=================================================================================================================
@@ -100,36 +100,39 @@ class xseq(list):
 #=================================================================================================================
 def xreduce_args_map(args, arg):
     if arg == "%1": return args[0]
-    elif arg == "%2" return args[1]
-    elif arg == "%3" return args[2]
-    elif arg == "%4" return args[3]
-    elif arg == "%5" return args[4]
-    elif arg == "%6" return args[5]
-    elif arg == "%7" return args[6]
-    elif arg == "%8" return args[7]
-    elif arg == "%9" return args[8]
+    elif arg == "%2": return args[1]
+    elif arg == "%3": return args[2]
+    elif arg == "%4": return args[3]
+    elif arg == "%5": return args[4]
+    elif arg == "%6": return args[5]
+    elif arg == "%7": return args[6]
+    elif arg == "%8": return args[7]
+    elif arg == "%9": return args[8]
     else: return arg
 
 def xreduce(proc, *lists, init=None, xargs=None, when=None):
 
-    if len(lists) == 0:
-        def xreduce1(lists):
-            return xreduce(proc, *lists, init, xargs, when)
+    argNum = len(lists)
+
+    if argNum == 0:
+        def xreduce1(*lists):
+            return xreduce(proc, *lists, init=init, xargs=xargs, when=when)
         return xreduce1
         
     if type(proc) == list:
-        return map(lambada p: xreduce(p, *lists, init, xargs, when), proc)
+        return map(lambda p: xreduce(p, *lists, init=init, xargs=xargs, when=when), proc)
 
-    argNum = len(lists)
-    lstSize = min(*tuple([len(lst) for lst in lists]))
+    if argNum == 1:
+        lstSize = len(lists[0])
+    else:
+        lstSize = min(*tuple([len(lst) for lst in lists]))
     
     st = 0
     if init == None:
         init = lists[0][0]
-        lstSize = lstSize - 1
         st = 1
         
-    lists = [lists[j][i] for i in range(argNum) for j in range(st, lstSize)]
+    lists = [[lists[j][i] for j in range(argNum)] for i in range(st, lstSize)]
     
     for lst in lists:
         if xargs == None:
