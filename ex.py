@@ -98,8 +98,9 @@ class xseq(list):
 #=================================================================================================================
 #====  xreduce
 #=================================================================================================================
-def xreduce_args_map(args, arg):
-    if arg == "%1": return args[0]
+def xreduce_args_map(args, arg, init):
+    if arg == "%0": return init
+    elif arg == "%1": return args[0]
     elif arg == "%2": return args[1]
     elif arg == "%3": return args[2]
     elif arg == "%4": return args[3]
@@ -136,12 +137,12 @@ def xreduce(proc, *lists, init=None, xargs=None, when=None):
     
     for lst in lists:
         if xargs == None:
-            args = tuple(lst)
+            args = tuple(lst.insert(0,init))
         else:
-            args = tuple([xreduce_args_map(lst,arg) for arg in args])
+            args = tuple([xreduce_args_map(lst,arg,init) for arg in args])
             
         if when==None or when(*args):
-            init = proc(init, *args)
+            init = proc(*args)
             
     return init
 
