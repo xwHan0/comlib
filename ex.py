@@ -1,5 +1,36 @@
 
 #=================================================================================================================
+#====  xmin xmax
+#=================================================================================================================
+def xmin(*args):
+    l = len(args)
+    
+    if l==0: return 0
+    if l==1:
+        arg0 = args[0]
+        if type(arg0)==list:
+           return min(*tuple(arg0))
+        else:
+           return arg0
+    
+    return min(*args)
+    
+def xmax(*args):
+    l = len(args)
+    
+    if l==0: return 0
+    if l==1: 
+        arg0 = args[0]
+        if type(arg0)==list:
+            return max(*tuple(arg0))
+        else:
+            return args[0]
+    
+    return max(*args)
+    
+
+
+#=================================================================================================================
 #====  xapply
 #=================================================================================================================
 class xapply_scalar_c: pass
@@ -113,20 +144,24 @@ def xreduce_args_map(args, arg, init):
 
 def xreduce(proc, *lists, init=None, xargs=None, when=None):
 
+    """
+    Issue1: lists为迭代器
+    """
+    
     argNum = len(lists)
 
-    if argNum == 0:
+    if argNum == 0:  #没有输入数据，返回延时函数
         def xreduce1(*lists):
             return xreduce(proc, *lists, init=init, xargs=xargs, when=when)
         return xreduce1
         
-    if type(proc) == list:
+    if type(proc) == list: #proc为列表，返回每个子proc的迭代器
         return map(lambda p: xreduce(p, *lists, init=init, xargs=xargs, when=when), proc)
 
-    if argNum == 1:
-        lstSize = len(lists[0])
-    else:
-        lstSize = min(*tuple([len(lst) for lst in lists]))
+    #if argNum == 1:
+     #   lstSize = len(lists[0])
+   # else:
+    lstSize = xmin(*tuple([len(lst) for lst in lists]))
     
     st = 0
     if init == None:
