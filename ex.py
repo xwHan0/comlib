@@ -172,7 +172,7 @@ def xreduce(proc, *lists, init=None, xargs=None, when=None):
     
     for lst in lists:
         if xargs == None:
-            args = tuple(lst.insert(0,init))
+            args = (init,) + tuple(lst)
         else:
             args = tuple([xreduce_args_map(lst,arg,init) for arg in args])
             
