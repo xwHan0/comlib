@@ -1,8 +1,21 @@
 
 #=================================================================================================================
+#====  Common
+#=================================================================================================================
+doc = help      #重命名help函数
+
+#=================================================================================================================
 #====  xmin xmax
 #=================================================================================================================
 def xmin(*args):
+    """寻找{args}列表中的最小值。
+
+    特殊情况：当列表为空列表时，返回0；当列表为单元素列表时，返回该元素。
+    
+    Returns:
+        [type] -- [description]
+    """
+
     l = len(args)
     
     if l==0: return 0
@@ -16,6 +29,13 @@ def xmin(*args):
     return min(*args)
     
 def xmax(*args):
+    """寻找{args}列表中的最大值。
+
+    特殊情况：当列表为空列表时，返回0；当列表为单元素列表时，返回该元素。
+    
+    Returns:
+        [type] -- [description]
+    """
     l = len(args)
     
     if l==0: return 0
@@ -96,16 +116,33 @@ def xapply (func, *args, **xargs):
     return func(*args, **xargs)
 
 
-
 #=================================================================================================================
 #====  xmap
 #=================================================================================================================
-def xmap (proc, *args):
-    """
-    返回经过proc处理后的map迭代器。
-    """
+def xmap (proc, *lists, args = None, when = None):
+    """返回经过proc处理后的map迭代器。
     
-    if len(args) == 0:
+    Arguments:
+        proc {func or func_vector} -- 处理函数或者处理函数列表
+            * proc的格式为：proc(p1,p2,...,pN)。其中p1,...,pN由xargs参数决定
+            * 当proc为处理函数列表时，xmap对列表中的每个处理函数进行xmap迭代，然后返回每个迭代结果的迭代器。
+        lists {([object])} -- 被处理的数据列表。
+            * 当该列表为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。
+    
+    Keyword Arguments:
+        xargs {[string]} -- proc和when函数的参数映射表。 (default: {None})
+            * None: 参数映射规则为: (lists[0]的当前值, ..., lists[N-1]的当前值)
+            * 非None: 按照xargs列表内容的顺序作为proc和when的参数。xargs的每个值为一个字符串，"%1"表示lists[0]的当前值，
+                ..., "%N"表示lists[N-1]的当前值。
+        when {function} -- lists数据参与xmap处理的条件判断函数 (default: {None})
+            * None表示无条件处理。
+            * when的格式为: bool when(p1,p2,...,pN)。其中p1,..,pN由xargs参数决定。
+    
+    Returns:
+        Iterator -- 处理结果迭代器
+    """
+
+    if len(lists) == 0:
         if type(proc) == list:
             def xmapn (*argsn):
                 return map(proc,*argsn)
@@ -115,15 +152,24 @@ def xmap (proc, *args):
                 return map(proc, *args1)
             return xmap1
     else:
-        return map(proc,*args)
+        return map(proc,*lists)
 
 #=================================================================================================================
 #====  xseq
 #=================================================================================================================
 class xseq(list):
+    """列表扩展类。
+    
+    Arguments:
+        list {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
+
     def __init__ ( self, lst = [] ):
         self.extend( lst )
-    def map (self, proc, *args): return map(proc,*args, self)
+    def map (self, proc, *args): return xmap(proc,*args, self)
 
 
 #=================================================================================================================
@@ -143,10 +189,34 @@ def xreduce_args_map(args, arg, init):
     else: return arg
 
 def xreduce(proc, *lists, init=None, xargs=None, when=None):
+    """[summary]
+    
+    Arguments:
+        proc {function or function vector} -- 处理函数或者处理函数列表。
+            * proc的格式为：object proc(p1,p2,...,pN)。其中p1,...,pN由xargs参数决定
+            * 当proc为处理函数列表时，xreduce对列表中的每个处理函数进行xreduce迭代，然后返回每个迭代结果的迭代器。
+        lists {([object])} -- 被处理的列表集合tuple。
+            * 若lists中各个列表长度不等，则统一截短对齐到最小列表的长度
+            * 若lists为空，返回一个延时函数，该延时函数接收一个lists为参数。
+    
+    Keyword Arguments:
+        init {object} -- 迭代的初始值。若为None则使用lists中第一个列表的第一个值作为初始值 (default: {None})
+        xargs {[string]} -- proc和when函数的参数映射表。 (default: {None})
+            * None: 参数映射规则为: (上一次计算的结果或者init, lists[0]的当前值, ..., lists[N-1]的当前值)
+            * 非None: 按照xargs列表内容的顺序作为proc和when的参数。xargs的每个值为一个字符串，"%0"表示上一次计算的结果，"%1"表示lists[0]的当前值，
+                ..., "%N"表示lists[N-1]的当前值。
+        when {function} -- lists数据参与xreduce处理的条件判断函数 (default: {None})
+            * None表示无条件处理。
+            * when的格式为: bool when(p1,p2,...,pN)。其中p1,..,pN由xargs参数决定。
+    
+    Returns:
+        [type] -- [description]
+
+    *** Issue ***
+    1. 当lists为迭代器时，如何处理
 
     """
-    Issue1: lists为迭代器
-    """
+
     
     argNum = len(lists)
 
@@ -158,9 +228,6 @@ def xreduce(proc, *lists, init=None, xargs=None, when=None):
     if type(proc) == list: #proc为列表，返回每个子proc的迭代器
         return map(lambda p: xreduce(p, *lists, init=init, xargs=xargs, when=when), proc)
 
-    #if argNum == 1:
-     #   lstSize = len(lists[0])
-   # else:
     lstSize = xmin(*tuple([len(lst) for lst in lists]))
     
     st = 0
