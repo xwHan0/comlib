@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+<defs>
+
+<symbol id="box4">
+    <rect x="90" y="0" width="300" height="120" stroke="#000000" fill="#EEEEEE"/>
+    <line x1="0" y1="60" x2="90" y2="60" stroke="#000000"/>
+</symbol>
+
+<symbol id="box5">
+    <rect x="90" y="0" width="300" height="150" stroke="#000000" fill="#EEEEEE"/>
+    <line x1="0" y1="75" x2="90" y2="75" stroke="#000000"/>
+</symbol>
+
+<symbol id="xapply">
+    <use xlink:href="#box4"/>
+    <text y="15">
+        <tspan x="105">(xapply func &amp; </tspan><tspan fill="green">eles)</tspan>
+        <tspan x="105" dy="20" fill="green">eles</tspan><tspan> ::= [:cfg cfg-map]</tspan>
+        <tspan x="155" dy="20"> | [:scalar value...]</tspan>
+        <tspan x="155" dy="20"> | [:sequence coll...]</tspan>
+    </text>
+</symbol>
+
+<symbol id="xfilter">
+    <use xlink:href="#box4"/>
+    <text y="15">
+        <tspan x="105">(xfilter </tspan><tspan fill="green">cfg-map-pair</tspan> &amp; cs<tspan>)</tspan>
+        <tspan x="105" dy="20" fill="green">cfg-map-pair</tspan><tspan> ::= :st start-pred</tspan>
+        <tspan x="155" dy="20"> | :ed end-pred</tspan>
+        <tspan x="155" dy="20"> | :pred filter-pred</tspan>
+        <tspan x="155" dy="20"> | :n select-number</tspan>
+        <tspan x="155" dy="20"> | :rst result-selection-func</tspan>
+    </text>
+</symbol>
+
+<symbol id="xupdate">
+    <use xlink:href="#box4"/>
+    <text y="15">
+        <tspan x="105">(xupdate coll [ </tspan><tspan fill="green">xpath</tspan> <tspan>...] &amp; proc args...</tspan>
+        <tspan x="105" dy="20" fill="green">xpath</tspan><tspan> ::= number ;positionin vector</tspan>
+        <tspan x="155" dy="20"> | key ;keyword in map</tspan>
+        <tspan x="155" dy="20"> | fn ;filter pred. Syntax: (key val)=>bool</tspan>
+        <tspan x="155" dy="20"> | :n select-number</tspan>
+        <tspan x="155" dy="20"> | :rst result-selection-func</tspan>
+    </text>
+</symbol>
+
+<symbol id="concat-distinct">
+    <use xlink:href="#box4"/>
+    <text y="15">
+        <tspan x="105">(concat-distinct c0 c1 :select-first?=true)</tspan>
+        <tspan x="105" dy="20" fill="green">xpath</tspan><tspan> ::= number ;positionin vector</tspan>
+        <tspan x="155" dy="20"> | key ;keyword in map</tspan>
+        <tspan x="155" dy="20"> | fn ;filter pred. Syntax: (key val)=>bool</tspan>
+        <tspan x="155" dy="20"> | :n select-number</tspan>
+        <tspan x="155" dy="20"> | :rst result-selection-func</tspan>
+    </text>
+</symbol>
+
+<symbol id="x" >
+    <use y="0" xlink:href="#xapply"/>
+    <use y="120" xlink:href="#xfilter"/>
+    <use y="240" xlink:href="#xupdate"/>
+    <use y="360" xlink:href="#concat-distinct"/>
+</symbol>
+
+</defs>
+
+<use xlink:href="#x"/>
+
+</svg>
