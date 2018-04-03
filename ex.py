@@ -49,6 +49,27 @@ def xmax(*args):
     return max(*args)
     
 
+#=================================================================================================================
+#====  Special functions
+#=================================================================================================================
+def transport(x): return x
+
+#=================================================================================================================
+#====  args process
+#=================================================================================================================
+
+def _args_map(args, arg, init = None):
+    if arg == "%0": return init
+    elif arg == "%1": return args[0]
+    elif arg == "%2": return args[1]
+    elif arg == "%3": return args[2]
+    elif arg == "%4": return args[3]
+    elif arg == "%5": return args[4]
+    elif arg == "%6": return args[5]
+    elif arg == "%7": return args[6]
+    elif arg == "%8": return args[7]
+    elif arg == "%9": return args[8]
+    else: return arg
 
 #=================================================================================================================
 #====  xapply
@@ -151,8 +172,34 @@ def xmap (proc, *lists, args = None, when = None):
             def xmap1 (*args1):
                 return map(proc, *args1)
             return xmap1
-    else:
+
+    elif args == None and when == None:
         return map(proc,*lists)
+
+    elif when == None:
+        def proc_inner(*args_inner):
+            args_out = [_args_map(args_inner, arg) for arg in args]
+            return proc(*tuple(args_out))
+        return map(proc_inner, lists)
+
+    else:
+        argNum = len(lists)     #获取proc需要处理的参数个数
+        lstSize = xmin(*tuple([len(lst) for lst in lists]))     #循环列表的最小长度，截取
+
+        lists1 = [[]]
+        for i in range(lstSize):   #循环处理列表长度
+            args1 = [lists[j][i] for j in range(argNum)]     #循环处理列表个数
+
+            if args != None:    #处理参数映射
+                args1 = [_args_map(args1, arg) for arg in args]
+
+            if when != None:    #处理过滤列表
+                if when(*tuple(args1)):
+                    lists1.append(args1)
+            else:
+                lists1.append(args1)
+
+        return map(lambda args : proc(*tuple(args)), lists1)
 
 #=================================================================================================================
 #====  xseq
@@ -175,18 +222,7 @@ class xseq(list):
 #=================================================================================================================
 #====  xreduce
 #=================================================================================================================
-def xreduce_args_map(args, arg, init):
-    if arg == "%0": return init
-    elif arg == "%1": return args[0]
-    elif arg == "%2": return args[1]
-    elif arg == "%3": return args[2]
-    elif arg == "%4": return args[3]
-    elif arg == "%5": return args[4]
-    elif arg == "%6": return args[5]
-    elif arg == "%7": return args[6]
-    elif arg == "%8": return args[7]
-    elif arg == "%9": return args[8]
-    else: return arg
+
 
 def xreduce(proc, *lists, init=None, xargs=None, when=None):
     """[summary]
@@ -241,7 +277,7 @@ def xreduce(proc, *lists, init=None, xargs=None, when=None):
         if xargs == None:
             args = (init,) + tuple(lst)
         else:
-            args = tuple([xreduce_args_map(lst,arg,init) for arg in args])
+            args = tuple([_args_map(lst,arg,init) for arg in args])
             
         if when==None or when(*args):
             init = proc(*args)
