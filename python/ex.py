@@ -77,10 +77,12 @@ def _args_map(args, arg, init = None):
 class xapply_scalar_c: pass
 class xapply_sequence_c: pass
 class xapply_json_c: pass
+class xapply_extend_c: pass
 
 xapply_scalar = xapply_scalar_c()
 xapply_sequence = xapply_sequence_c()
 xapply_json = xapply_json_c()
+xapply_extend = xapply_extend_c()
 
 def xapply (func, *args, **xargs):
     """Execute function <func> with parameters *args and **xargs.
@@ -109,6 +111,10 @@ def xapply (func, *args, **xargs):
     elif args[0] == xapply_json:
         status = 3
         args = args[1:]
+    elif args[0] == xapply_extend and isinstance(args[1],list):
+        status = 1
+        args = args[1] + args[2:] 
+
 
     if status == 0:
         if type(args[-1]) == list:
@@ -123,11 +129,20 @@ def xapply (func, *args, **xargs):
         args = new_args
     else:
         new_args = []
+        isExtend = False
         for arg in args:
             if arg == xapply_scalar:
                 status = 1
             elif arg == xapply_sequence:
                 status = 2
+            elif arg == xapply_extend:
+                isExtend = True
+            elif isExtend == True:
+                if isinstance(arg, list):
+                    new_args += arg
+                else:
+                    new_args.extend(arg)
+                isExtend = False
             elif status == 1:
                 new_args.append(arg)
             elif status == 2:
