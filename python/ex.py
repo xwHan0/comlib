@@ -98,9 +98,33 @@ def xapply (func, *args, **xargs):
 
     Arguments:
         func {function} -- Executed function
+            * 当func为函数列表时，返回由列表中各个子处理函数的处理结果组成的迭代器(Process Function List特性)。
+            * 当func=None时，返回由*args参数形成的list。即不执行func，把func的参数当作列表返回。
         args {tuple} -- Position parameters list
+            * 若args为空，则返回一个延时函数(Delay Executr特性)
+            * xapply_scalar: 表示随后的参数都作为一个scalar元素添加到最终的参数列表中。直到遇到其它xapply_*标识符
+            * xapply_sequence: 表示随后的参数都作为一个sequence链接到最终的参数列表中。直到遇到其它xapply_*标识符
+            * xapply_json: 表示随后的参数按照数据类型加入最终参数列表
+                - 若参数类型为list实例，则作为sequence链接到最终参数列表
+                - 若参数类型非list实例，则作为scalar追加到最终参数列表
+            * xapply_extend: 表示随后的一个参数为一个列表。列表中的元素将和xapply中的args一样进行解析。xapply函数会递归解析该列表，然后把
+                生产的新列表展开到当前args中，作为最后传递给func的参数使用。
+                - 若随后的一个参数不是列表实例，则把该参数当作普通scalar参数添加到最终的参数列表中。
+                - 若args中第一个参数就是xapply_extend，则xapply进入Custom mode
+
+    Return:
+        若func==None, 则返回由args作为参数，按xapply规则生产的列表
+        若func!=None，则把生成的参数列表作为func函数的参数，然后返回func的结果
     """
-    status = 0      #0: IDLE; 1: scalar; 2: sequence; 3: json;
+    status = 0      #工作状态。0: IDLE(Common Mode); 1: scalar(Custom Mode); 2: sequence(Custom Mode); 3: json(Auto Mode);
+
+    if isinstance(func, list):  #Process Function List特性支持
+        map(lambda p : xapply(p, *args, **xargs), func)
+
+    if len(args) == 0:  #Delay Execute特性支持
+        def xapply_delay_execute(*args, **xargs):   #定义延时函数
+            return xapply(func, *args, **xargs)
+        return xapply_delay_execute     #返回延时函数
 
     if args[0] == xapply_scalar:
         status = 1
@@ -135,21 +159,24 @@ def xapply (func, *args, **xargs):
                 status = 1
             elif arg == xapply_sequence:
                 status = 2
-            elif arg == xapply_extend:
-                isExtend = True
-            elif isExtend == True:
-                if isinstance(arg, list):
-                    new_args += arg
-                else:
+            elif arg == xapply_extend:  #xapply_extend参数模式进入条件
+                isExtend = True         #进入extend参数模式
+            elif isExtend == True:      #xapply_extend参数的下一个参数
+                if isinstance(arg, list):   #若xapply_extend随后参数为列表实例
+                    new_args += xapply(None, *tuple(arg))
+                else:  #原则上，xapply_extend后的参数应该为列表实例。当前情况是个“非法”的corner
                     new_args.extend(arg)
-                isExtend = False
+                isExtend = False    #退出extend参数模式
             elif status == 1:
                 new_args.append(arg)
             elif status == 2:
                 new_args.extend(arg)
         args = new_args
 
-    return func(*args, **xargs)
+    if func == None:
+        return args
+    else:
+        return func(*args, **xargs)
 
 
 #=================================================================================================================
@@ -160,10 +187,11 @@ def xmap (proc, *lists, args = None, when = None):
     
     Arguments:
         proc {func or func_vector} -- 处理函数或者处理函数列表
+            * 当proc==None时，proc=transport
             * proc的格式为：proc(p1,p2,...,pN)。其中p1,...,pN由xargs参数决定
             * 当proc为处理函数列表时，xmap对列表中的每个处理函数进行xmap迭代，然后返回每个迭代结果的迭代器。
         lists {([object])} -- 被处理的数据列表。
-            * 当该列表为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。
+            * 当该列表为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。(Delay Execute特性)
     
     Keyword Arguments:
         xargs {[string]} -- proc和when函数的参数映射表。 (default: {None})
@@ -178,17 +206,15 @@ def xmap (proc, *lists, args = None, when = None):
         Iterator -- 处理结果迭代器
     """
 
-    if len(lists) == 0:
-        if type(proc) == list:
-            def xmapn (*argsn):
-                return map(proc,*argsn)
-            return xmapn
-        else:
-            def xmap1 (*args1):
-                return map(proc, *args1)
-            return xmap1
+    if proc == None:
+        proc = transport
 
-    elif args == None and when == None:
+    if len(lists) == 0:     #Delay Execute特性
+        def xmap1 (*args1): #Delay Execute函数定义
+            return map(proc, *args1)
+        return xmap1    #返回Delay Execute函数
+
+    if args == None and when == None:
         return map(proc,*lists)
 
     elif when == None:

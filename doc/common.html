@@ -9,7 +9,7 @@
 <p>For a function who need a proc argument like:</p> 
 <p><center>func(proc, ...)</center></p> 
 <p>when the proc argument supports PFL, that means we can use a list [proc1, proc2, ..., procN] to replace 
-    proc argument. In this case, the final process result is:</p>
+    proc argument. In this case, the final process result is an iterator of:</p>
 <p><center>[func(proc1,...), func(proc2,...), ..., func(procN, ...)]</center></p>
 
 <hr/>
@@ -19,6 +19,9 @@
 <hr/>
 
 <h1><a name="DE">Delay Execute (DE)</a></h1>
+<p>对于一个高阶函数：</p>
+<p><center>func(proc, ...)</center></p> 
+<p>若没有提供足够的有效数据，则该高阶函数返回一个延时函数(假设其名为delay_func)。该延时函数接收原func剩余的有效数据，然后返回最终的执行结果。</p>
 
 <hr/>
 
