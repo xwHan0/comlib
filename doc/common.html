@@ -1,6 +1,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<title>序列高阶函数定义规范</title>
 </head>
 <body>
 
@@ -15,6 +16,12 @@
 <hr/>
 
 <h1><a name="MDS">Mininum Data Set (MDS)</a></h1>
+<p>当输入参数的个数和高阶函数所需的参数个数矛盾时，以尽可能执行的原则，截取他们的共有项(最小化)来执行。
+具体包含2个规则：</p>
+<ul>
+<li>列表长度规则：当输入的多个列表长度不同时，统一截取到最小的列表长度。</li>
+<li>参数个数规则：当输入的列表个数大于高阶函数所需的参数个数时，截取到高阶函数所需的参数个数。</li>
+</ul>
 
 <hr/>
 
@@ -26,12 +33,20 @@
 <hr/>
 
 <h1><a name="CPF">Condition Process Filter (CPF)</a></h1>
+<p>支持输入序列参数过滤。过滤条件用when高阶函数提供。when的输入参数和函数的执行高阶函数proc保持一致。</p>
+<ul>
+<li>当when过滤函数为空时，不进行过滤。</li>
+<li>when过滤函数一般统一使用关键字参数提供。</li>
+</ul>
 
 <hr/>
 
 <h1><a name="PAM">Process Arguments Map (PAM)</a></h1>
 <p>提供对proc和when处理参数的映射功能。一般使用args参数来提供该功能。</p>
-
+<ul>
+<li>当args参数映射表为空时，不进行参数映射。</li>
+<li>arga参数映射表一般统一使用关键字参数提供。</li>
+</ul>
 
 
 </body>
