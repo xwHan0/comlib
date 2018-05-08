@@ -13,7 +13,7 @@ class Middleware:
         self.handler=handler
     
     def set_handler(self, handler):
-        if isinstance(handler, middleware):
+        if isinstance(handler, Middleware):
             self.handler=handler
         else:
             raise ValueError('Middleware handler is not a middleware instance!')
@@ -36,17 +36,17 @@ class Middleware:
         elif L==1:       #当处理到最后一个Middleware时
             def wrapper_inner(*ins):
                 m=middlewares[0]    #获取唯一一个middleware的instance。
-                if isinstance(m,Middleware) and type(m)!=Middleware
+                if isinstance(m,Middleware) and type(m)!=Middleware:
                     return m.proc(*ins) #注意：middlewares成了闭包变量
                 else:
                     raise ValueError('Parameter middlewares[0] is not a instance of Middleware!')
             return wrapper_inner    #返回函数
         else:
-            for i in range(L-1)；#设置Middleware串联
+            for i in range(L-1): #设置Middleware串联
                 middlewares[i].set_handler(middlewares[i+1])
             def wrapper_inner(*ins):
                 m=middlewares[0]    #获取唯一一个middleware的instance。
-                if isinstance(m,Middleware) and type(m)!=Middleware
+                if isinstance(m,Middleware) and type(m)!=Middleware:
                     return m.proc(*ins) #注意：middlewares成了闭包变量
                 else:
                     raise ValueError('Parameter middlewares[0] is not a instance of Middleware!')

@@ -183,14 +183,23 @@ def xapply (func, *args, **xargs):
 #====  xmap
 #=================================================================================================================
 def xmap (proc, *lists, args = None, when = None):
-    """返回经过proc处理后的map迭代器。
+    """
+    Make an iterator that computes the function using arguments from each of the iterables.
+    
+    Stops when the shortest iterable is exhausted.
+    
+    **Notes**
+    1. 返回值为一个Generator。在下文不使用时不会进行求值。若需要立马求值可以使用list(map(...))来替代
+    
+    Syntax:
+        map(proc, *iterables, args=None, when=None) --> map object
     
     Arguments:
         proc {func or func_vector} -- 处理函数或者处理函数列表
             * 当proc==None时，proc=transport
             * proc的格式为：proc(p1,p2,...,pN)。其中p1,...,pN由xargs参数决定
             * 当proc为处理函数列表时，xmap对列表中的每个处理函数进行xmap迭代，然后返回每个迭代结果的迭代器。
-        lists {([object])} -- 被处理的数据列表。若为tuple，则转化为列表
+        lists {([object])} -- 被处理的数据列表<list>。若为tuple，则转化为列表
             * 当该列表为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。(Delay Execute特性)
     
     Keyword Arguments:
@@ -275,8 +284,9 @@ def xreduce(proc, *lists, init=None, xargs=None, when=None):
         proc {function or function vector} -- 处理函数或者处理函数列表。
             * proc的格式为：object proc(p1,p2,...,pN)。其中p1,...,pN由xargs参数决定
             * 当proc为处理函数列表时，xreduce对列表中的每个处理函数进行xreduce迭代，然后返回每个迭代结果的迭代器。
-        lists {([object])} -- 被处理的列表集合tuple。
-            * 若lists中各个列表长度不等，则统一截短对齐到最小列表的长度
+        lists {([object])} -- 被处理的列表<list>集合tuple。若每个元素为tuple，则转化为列表
+            * 若lists中各个列表长度不等，则统一截短对齐到最小列表的长度。
+              - 若最小的列表长度为0，则返回一个延时函数(同下)
             * 若lists为空，返回一个延时函数，该延时函数接收一个lists为参数。
     
     Keyword Arguments:
@@ -300,15 +310,21 @@ def xreduce(proc, *lists, init=None, xargs=None, when=None):
     
     argNum = len(lists)
 
-    if argNum == 0:  #没有输入数据，返回延时函数
-        def xreduce1(*lists):
-            return xreduce(proc, *lists, init=init, xargs=xargs, when=when)
-        return xreduce1
+    
         
     if type(proc) == list: #proc为列表，返回每个子proc的迭代器
         return map(lambda p: xreduce(p, *lists, init=init, xargs=xargs, when=when), proc)
 
-    lstSize = xmin(*tuple([len(lst) for lst in lists]))
+    
+    #转化tuple为list，方便使用
+    lists = [list(lst) if isinstance(lst,tuple) else lst for lst in list]
+    
+    lstSize = xmin(*[len(lst) for lst in lists])
+    
+    if lstSize == 0:  #没有输入数据，返回延时函数
+        def xreduce1(*lists):
+            return xreduce(proc, *lists, init=init, xargs=xargs, when=when)
+        return xreduce1
     
     st = 0
     if init == None:
