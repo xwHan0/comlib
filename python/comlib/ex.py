@@ -1,4 +1,6 @@
 
+import itertools
+
 #=================================================================================================================
 #====  Common
 #=================================================================================================================
@@ -182,25 +184,23 @@ def xapply (func, *args, **xargs):
 #=================================================================================================================
 #====  xmap
 #=================================================================================================================
-def xmap (proc, *lists, args = None, when = None):
+def xmap (proc, *iters, args=None, when=None, fillval=None):
     """
     Make an iterator that computes the function using arguments from each of the iterables.
-    
-    Stops when the shortest iterable is exhausted.
     
     **Notes**
     1. 返回值为一个Generator。在下文不使用时不会进行求值。若需要立马求值可以使用list(map(...))来替代
     
     Syntax:
-        map(proc, *iterables, args=None, when=None) --> map object
+        map(proc, *iterables, args=None, when=None, fillval=None) --> map object
     
     Arguments:
         proc {func or func_vector} -- 处理函数或者处理函数列表
             * 当proc==None时，proc=transport
             * proc的格式为：proc(p1,p2,...,pN)。其中p1,...,pN由xargs参数决定
             * 当proc为处理函数列表时，xmap对列表中的每个处理函数进行xmap迭代，然后返回每个迭代结果的迭代器。
-        lists {([object])} -- 被处理的数据列表<list>。若为tuple，则转化为列表
-            * 当该列表为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。(Delay Execute特性)
+        iters {(iterable)} -- 被处理的数据迭代器。
+            * 当该迭代器为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。(Delay Execute特性)
     
     Keyword Arguments:
         xargs {[string]} -- proc和when函数的参数映射表。 (default: {None})
@@ -210,49 +210,77 @@ def xmap (proc, *lists, args = None, when = None):
         when {function} -- lists数据参与xmap处理的条件判断函数 (default: {None})
             * None表示无条件处理。
             * when的格式为: bool when(p1,p2,...,pN)。其中p1,..,pN由xargs参数决定。
+        fillval {object} -- iters不等长时的填充内容。
+            * None: 采用最短参数原则。Stops when the shortest iterable is exhausted.
+            * Non-None: 采用最长参数原则。Iteration continues until the longest iterable is exhausted. If the 
+                iterables are of uneven length, missing values are filled-in with fillval.
     
     Returns:
         Iterator -- 处理结果迭代器。
         注意：返回的是迭代器，需要使用list(return-value)来转化为链表。
     """
 
-    if proc == None:
-        proc = transport
+    proc = proc if proc else transport
 
-    if len(lists) == 0:     #Delay Execute特性
+    if len(iters) == 0:     #Delay Execute特性
         def xmap1 (*args1): #Delay Execute函数定义
             return map(proc, *args1)
         return xmap1    #返回Delay Execute函数
-    else:
-        lists = [list(lst) if isinstance(lst,tuple) else lst for lst in lists ]
+    # else:
+    #     lists = [list(lst) if isinstance(lst,tuple) else lst for lst in lists ]
         
-    if args == None and when == None:
-        return map(proc,*lists)
+    if args == None and when == None and fillval == None: #正常map，无特殊条件时的处理
+        return map(proc,*iters)
 
-    elif when == None:
-        def proc_inner(*args_inner):
-            args_out = [_args_map(args_inner, arg) for arg in args]
-            return proc(*tuple(args_out))
-        return map(proc_inner, lists)
+    # 生产每次迭代所需的参数tuple的列表：即每个iters的第i-th号组成的tuple的列表
+    # 当fillval存在时，使用fillval填充参数到最长参数。否则截断到最短参数。
+    iters_s = itertools.zip_longest(*iters) if fillval else zip(*iters)
 
-    else:
-        argNum = len(lists)     #获取proc需要处理的参数个数
-        lstSize = xmin(*tuple([len(lst) for lst in lists]))     #循环列表的最小长度，截取
+    if args == None and when == None:   #最长补齐后的处理
+        return map(proc, *(zip(*iters_s)))
+        
+    if when == None:
+        return map(lambda tup: proc(*[_args_map(tup, arg) for arg in args]), iters_s)
 
-        lists1 = [[]]
-        for i in range(lstSize):   #循环处理列表长度
-            args1 = [lists[j][i] for j in range(argNum)]     #循环处理列表个数
+    if args == None:
+        when_rst_lst = list( filter( lambda tup : when(*tup), iters_s ) )
+        return map(proc, *(zip(*when_rst_lst)))
 
-            if args != None:    #处理参数映射
-                args1 = [_args_map(args1, arg) for arg in args]
+    # 处理所有条件都存在的场景
+    when_rst_lst = [[]] # 设置过滤变量
+    for it in iters_s:  # 循环每个迭代变量
 
-            if when != None:    #处理过滤列表
-                if when(*tuple(args1)):
-                    lists1.append(args1)
-            else:
-                lists1.append(args1)
+        # 处理参数映射
+        arg1 = [_args_map(it, arg) for arg in args] if args else it
 
-        return map(lambda args : proc(*tuple(args)), lists1)
+        if when(*arg1): 
+            when_rst_lst.append(arg1)
+
+    return map(proc, *(zip(*when_rst_lst)))
+    # elif when == None:
+    #     def proc_inner(*args_inner):
+    #         args_out = [_args_map(args_inner, arg) for arg in args]
+    #         return proc(*args_out)
+    #     return map(proc_inner, iters)
+
+    # else:
+        # argNum = len(lists)     #获取proc需要处理的参数个数
+        # lstSize = xmin(*tuple([len(lst) for lst in lists]))     #循环列表的最小长度，截取
+
+        # lists1 = [[]]
+        # for i in range(lstSize):   #循环处理列表长度
+        #     args1 = [lists[j][i] for j in range(argNum)]     #循环处理列表个数
+
+        #     if args != None:    #处理参数映射
+        #         args1 = [_args_map(args1, arg) for arg in args]
+
+        #     if when != None:    #处理过滤列表
+        #         if when(*tuple(args1)):
+        #             lists1.append(args1)
+        #     else:
+        #         lists1.append(args1)
+
+        # return map(lambda args : proc(*tuple(args)), lists1)
 
 #=================================================================================================================
 #====  xseq
