@@ -52,6 +52,195 @@ def xmax(*args):
     
 
 #=================================================================================================================
+#====  Iterators
+#=================================================================================================================
+class xrange_number():
+    def __init__(self,st,ed,step):
+
+        if not( self.st == None or isinstance(self.st, int) ):
+            raise Exception('[TypeError] Parameter st cannot conver to None or Integer.')
+
+        if not( self.ed == None or isinstance(self.ed, int) ):
+            raise Exception('[TypeError] Parameter ed cannot conver to None or Integer.')
+
+        if not( self.step == None or isinstance(self.step, int) ):
+            raise Exception('[TypeError] Parameter st cannot conver to None or Integer.')
+
+        self.ed = ed
+
+        if st == None:
+            self.n = 0
+        else:
+            self.n = st
+
+        if step == None:
+            self.step = 1
+        else:
+            self.step = step
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        rst = self.n
+
+        if (self.ed != None and rst >= self.ed)
+            raise StopIteration
+
+        self.n += self.step
+
+        return rst
+    
+
+class xrange_list():
+    def __init__(self,it,st,ed,step):
+        self.st = st
+        self.it = it
+        self.ed = ed
+        self.step = step
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        rst = self.it.next()
+
+        #判断是否遍历到结束
+        if isinstance(self.ed, int):
+            if self.st >= self.ed:
+                raise StopIteration
+        elif hasattr(self.ed, '__call__'):
+            if self.ed(self.st, rst):
+                raise StopIteration
+        #None不需要处理，异常场景在xrange中处理了
+
+        #step处理
+        if isinstance(self.step, int):
+            for i in range(self.step - 1):  #开头已经减过一次
+                rst = self.it.next()
+            self.st -= self.step
+            return rst
+        elif hasattr(self.step, '__call__'):    #作为filter函数
+            while not(self.step(rst,self.st)):
+                rst = self.it.next()
+                self.st += 1
+            return rst
+        #None就是step=1
+
+        return rst
+
+
+class xrange_general():
+    def __init__(self,it,st,ed,step):
+        self.it = it
+        self.ed = ed
+        self.step = step
+
+        if st == None:
+            self.st = 0
+        elif isinstance(st, int):
+            for tmp in range(st):
+                self.it = it.next()
+            self.st = st
+            #<TBD> 负整数如何处理
+        elif hasattr(st, '__call__'):
+            self.st = 0
+            while not(st(it.next(), self.st)):
+                it.next()
+                self.st += 1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        rst = self.it.next()
+
+        #判断是否遍历到结束
+        if isinstance(self.ed, int):
+            if self.st >= self.ed:
+                raise StopIteration
+        elif hasattr(self.ed, '__call__'):
+            if self.ed(self.st, rst):
+                raise StopIteration
+        #None不需要处理，异常场景在xrange中处理了
+
+        #step处理
+        if isinstance(self.step, int):
+            for i in range(self.step - 1):  #开头已经减过一次
+                rst = self.it.next()
+            self.st -= self.step
+            return rst
+        elif hasattr(self.step, '__call__'):    #作为filter函数
+            while not(self.step(rst,self.st)):
+                rst = self.it.next()
+                self.st += 1
+            return rst
+        #None就是step=1
+
+        return rst
+
+
+class xrange():
+    """返回范围迭代器。
+        
+    Arguments:
+        it {None|Iterator|Data} -- 操作的迭代器
+            * None: Create a number sequence like range function. Note: st, ed and step parameters must be integer or None
+            * Iterator: Strandart iterator
+            * Data: A sequence data who support iter()
+
+    Keyword Arguments:
+        st {None|Integer|Function} -- Start Position. (default: {None})
+            * None: Start from the begin position of it.
+            * Integer: Start from index of <st>.
+            * Function: Start when the pred-func <st> returns true.
+        ed {None|Integer|Function} -- End position. (default: {None})
+            * None: End to the begin position of it.
+            * Integer: End to index of <st>.
+            * Function: End when the pred-func <st> returns true.
+        step {None|Integer|Function} -- Step condition (default: {None})
+            * None: Not has step and iterate each element
+            * Integer: Step with <step> seperator
+            * Function: Filter process
+
+    Returns:
+        Return a new iterator.
+    """
+
+    def __init__(self, it, st = None, ed = None, step = None):
+
+        if ( st == None or isinstance(st, int) or hasattr(st, '__call__') ):
+            self.st = st
+        else:
+            raise Exception('[TypeError] Parameter "st" cannot conver to None, integer or function ')
+
+        if ( ed == None or isinstance(ed, int) or hasattr(ed, '__call__') ):
+            self.ed = ed
+        else:
+            raise Exception('[TypeError] Parameter "ed" cannot conver to None, integer or function ')
+
+        if ( step == None or isinstance(step, int) or hasattr(step, '__call__') ):
+            self.step = step
+        else:
+            raise Exception('[TypeError] Parameter "step" cannot conver to None, integer or function ')
+
+        
+        self.it = iter(it)
+
+
+    def __iter__(self): 
+        if self.it == None:
+            return xrange_number(self.st, self.ed, self.step)
+        elif isinstance( self.it, list ):
+            return xrange_list(self.it, self.st, self.ed, self.step)
+        else:   #非Vector类型，无法随机访问
+            return xrange_general(self.it, self.st, self.ed, self.step)
+            
+
+
+#=================================================================================================================
 #====  Special functions
 #=================================================================================================================
 def transport(x): return x
