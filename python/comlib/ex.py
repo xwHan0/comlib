@@ -184,6 +184,19 @@ class xrange_general():
 
 class xrange():
     """返回范围迭代器。
+    
+    Syntax:
+        xrange()
+        xrange(endNumber)
+        xrange(endNumber, startNumber)
+        xrange(endNumber, startNumber, stepNumber)
+        
+        xrange(iterator)
+        xrange(iterator, end)
+        xrange(iterator, end, start)
+        xrange(iterator, end, start, step)
+        
+        xrange(..., it=iterator, st=start, ed=end, step=step)
         
     Arguments:
         it {None|Iterator|Data} -- 操作的迭代器
@@ -209,7 +222,28 @@ class xrange():
         Return a new iterator.
     """
 
-    def __init__(self, it, st = None, ed = None, step = None):
+    def __init__(self, *args, **argm):
+    
+        argl = args.len()
+        
+        if argl == 0:
+            it,st,ed,step = None,0,None,1
+        elif argl == 1:
+            if isinstance(args[0], int):
+                it,st,ed,step = None,0,args[0],1
+            else:
+                it,st,ed,step = args[0],0,None,1
+        elif args == 2:
+            if isinstance(args[0], int):
+                it,st,ed,step = None,args[1],args[0],1
+            else:
+                it,st,ed,step = args[0],0,args[1],1
+        elif args == 3:
+            if isinstance(args[0], int):
+                it,st,ed,step = None,args[1],args[0],args[2]
+            else:
+                it,st,ed,step = args[0],args[2],args[1],1
+        
 
         if ( st == None or isinstance(st, int) or hasattr(st, '__call__') ):
             self.st = st
