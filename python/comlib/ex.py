@@ -93,9 +93,9 @@ class xrange_number():
     
 
 class xrange_list():
-    def __init__(self,it,st,ed,step):
+    def __init__(self,lst,st,ed,step):
         self.st = st
-        self.it = it
+        self.lst = lst
         self.ed = ed
         self.step = step
 
@@ -104,7 +104,7 @@ class xrange_list():
 
     def __next__(self):
 
-        rst = self.it.next()
+        rst = self.lst[self.st]
 
         #判断是否遍历到结束
         if isinstance(self.ed, int):
@@ -116,16 +116,13 @@ class xrange_list():
         #None不需要处理，异常场景在xrange中处理了
 
         #step处理
-        if isinstance(self.step, int):
-            for i in range(self.step - 1):  #开头已经减过一次
-                rst = self.it.next()
-            self.st -= self.step
+        if isinstance(self.step, int)
+            self.st += self.step
             return rst
         elif hasattr(self.step, '__call__'):    #作为filter函数
             while not(self.step(rst,self.st)):
-                rst = self.it.next()
                 self.st += 1
-            return rst
+            return self.lst[self.st-1]
         #None就是step=1
 
         return rst
@@ -188,13 +185,13 @@ class xrange():
     Syntax:
         xrange()
         xrange(endNumber)
-        xrange(endNumber, startNumber)
-        xrange(endNumber, startNumber, stepNumber)
+        xrange(startNumber, endNumber)
+        xrange(startNumber, endNumber, stepNumber)
         
         xrange(iterator)
         xrange(iterator, end)
-        xrange(iterator, end, start)
-        xrange(iterator, end, start, step)
+        xrange(iterator, start, end)
+        xrange(iterator, start, end, step)
         
         xrange(..., it=iterator, st=start, ed=end, step=step)
         
@@ -227,22 +224,37 @@ class xrange():
         argl = args.len()
         
         if argl == 0:
-            it,st,ed,step = None,0,None,1
+            i_it,i_st,i_ed,i_step = None,0,None,1
         elif argl == 1:
             if isinstance(args[0], int):
-                it,st,ed,step = None,0,args[0],1
+                i_it,i_st,i_ed,i_step = None,0,args[0],1
             else:
-                it,st,ed,step = args[0],0,None,1
+                i_it,i_st,i_ed,i_step = args[0],0,None,1
         elif args == 2:
             if isinstance(args[0], int):
-                it,st,ed,step = None,args[1],args[0],1
+                i_it,i_st,i_ed,i_step = None,args[0],args[1],1
             else:
-                it,st,ed,step = args[0],0,args[1],1
+                i_it,i_st,i_ed,i_step = args[0],0,args[1],1
         elif args == 3:
             if isinstance(args[0], int):
-                it,st,ed,step = None,args[1],args[0],args[2]
+                i_it,i_st,i_ed,i_step = None,args[0],args[1],args[2]
             else:
-                it,st,ed,step = args[0],args[2],args[1],1
+                i_it,i_st,i_ed,i_step = args[0],args[1],args[2],1
+        elif args == 4:
+            i_it,i_st,i_ed,i_step = args[0],args[1],args[2],args[3]
+            
+        if it == None:
+            it = i_it
+        
+        if st == None:
+            st = i_st
+            
+        if ed == None:
+            ed = i_ed
+            
+        if step == None:
+            step = i_step
+            
         
 
         if ( st == None or isinstance(st, int) or hasattr(st, '__call__') ):
@@ -261,7 +273,7 @@ class xrange():
             raise Exception('[TypeError] Parameter "step" cannot conver to None, integer or function ')
 
         
-        self.it = iter(it)
+        self.it = it
 
 
     def __iter__(self): 
