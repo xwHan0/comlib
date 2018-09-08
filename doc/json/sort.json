@@ -1,0 +1,26 @@
+
+{
+    "name" : "sort",
+    "syntax" : ["sorted(iterable, *, key=None, reverse=False)"],
+    "summary" : "Return a new sorted list from the items in iterable.",
+    "arguments" : [
+        {
+            "name" : "iterable",
+            "type" : "iterator class instance",
+            "description" : ""
+        }
+    ],
+    "optional": {
+        "key" : {
+            "type" : "object => key_value | None",
+            "description" : "extract a comparison key from each list element: key=str.lower. None specifies that compare the elements directly."
+        },
+        "reverse" : {
+            "type" : "boolean",
+            "description" : "Descending enable flag."
+        } 
+    },
+    "description" : "A sort is stable if it guarantees not to change the relative order of elements that compare equal — this is helpful for sorting in multiple passes (for example, sort by department, then by salary grade).\n\n The sort routines are guaranteed to use __lt__() when making comparisons between two objects. So, it is easy to add a standard sort order to a class by defining an __lt__() method."
+}
+
+

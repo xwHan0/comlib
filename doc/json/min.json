@@ -1,0 +1,33 @@
+
+{
+    "name" : "min",
+    "syntax" : [
+        "min(iterable, *[, key, default])",
+        "min(arg1, arg2, *args[, key])"
+    ],
+    "summary" : "Return the first smallest item in an iterable or the smallest of two or more arguments.",
+    "arguments" : [
+        {
+            "name" : "iterable",
+            "type" : "iterator class instance",
+            "description" : ""
+        },
+        {
+            "name" : "arg*",
+            "type" : "object",
+            "description" : ""
+        }
+    ],
+    "optional": {
+        "key" : {
+            "type" : "object => key_value | None",
+            "description" : "Please reference key arguments of sort function."
+        },
+        "default" : {
+            "type" : "object",
+            "description" : "The default argument specifies an object to return if the provided iterable is empty. If the iterable is empty and default is not provided, a ValueError is raised."
+        } 
+    },
+    "description" : "A sort is stable if it guarantees not to change the relative order of elements that compare equal — this is helpful for sorting in multiple passes (for example, sort by department, then by salary grade).\n\n The sort routines are guaranteed to use __lt__() when making comparisons between two objects. So, it is easy to add a standard sort order to a class by defining an __lt__() method."
+}
+

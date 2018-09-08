@@ -1,0 +1,24 @@
+
+{
+    "name" : "filter",
+    "syntax" : [
+        "filter(pred, iterable)"
+    ],
+    "summary" : "Construct an iterator from those elements of iterable for which function returns true.",
+    "arguments" : [
+        {
+            "pred" : "",
+            "type" : "object => boolean",
+            "description" : "If function is None, the identity function is assumed, that is, all elements of iterable that are false are removed."
+        },
+        {
+            "name" : "iterable",
+            "type" : "iterator class instance",
+            "description" : "iterable may be either a sequence, a container which supports iteration, or an iterator."
+        }
+    ],
+
+    "description" : ""
+}
+
+
