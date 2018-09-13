@@ -50,6 +50,70 @@ def xmax(*args):
     
     return max(*args)
     
+def xgcd(*args):
+    """计算args的最大公约数。args元素需为integer类型
+    
+    Returns:
+        int -- 最大公约数
+    """
+
+    def gcd(a,b):
+        remainder = a % b
+        if remainder == 0:
+            return b
+        else:
+            return gcd(remainder,b)
+
+    l = len(args)
+
+    if l == 0: return 0
+    if l == 1: return xgcd( *args[0] ) if isinstance(args[0],list) else args[0]
+
+    args = sorted( args, reverse = True )
+
+    gcdv = args[0]
+    for b in args[1:]:
+        gcdv = gcd( gcdv, b )
+
+    return gcdv
+    
+
+def xlcm(*args):
+    """计算args最小公倍数。args元素需为integer类型
+    
+    Returns:
+        int -- 最小公倍数
+    """
+
+    def gcd(a,b):
+        remainder = a % b
+        if remainder == 0:
+            return b
+        else:
+            return gcd(remainder,b)
+
+    def lcm(m, n):
+        if m*n == 0:
+            return 0
+        return int(m*n/gcd(m, n))
+
+    l = len(args)
+
+    if l == 0: return 0
+    if l == 1: return xlcm( *args[0] ) if isinstance(args[0],list) else args[0]
+
+    args = sorted( args, reverse = True )
+
+    lcmv = args[0]
+    for b in args[1:]:
+        if lcmv * b == 0: return 0
+        lcmv = int( lcmv * gcdv / gcd( lcmv, b ) )
+
+    return lcmv
+
+
+
+
 
 #=================================================================================================================
 #====  Iterators
