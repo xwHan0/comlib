@@ -100,12 +100,18 @@ def xlcm(*args):
     l = len(args)
 
     if l == 0: return 0
-    if l == 1: return xlcm( *args[0] ) if isinstance(args[0],list) else args[0]
+    if l == 1: 
+        if isinstance( args[0], Iterable ):
+            lcms = sorted( args[0], reverse = True )
+            lcmv = next( lcms )
+        else:
+            return args[0]
+    else:
+        lcms = sorted( args, reverse = True )
+        lcmv = lcms[0]
+        lcms = lcms[1:]
 
-    args = sorted( args, reverse = True )
-
-    lcmv = args[0]
-    for b in args[1:]:
+    for b in lcms:
         if lcmv * b == 0: return 0
         lcmv = int( lcmv * gcdv / gcd( lcmv, b ) )
 
