@@ -10,7 +10,7 @@ def gcd(a,b):
 def flatten(ite):
     r = []
     for e in ite:
-        if isinstance(e,Iterable):
+        if hasattr(e, "__iter__"):
             r += flatten(e)
         else:
             r.append(e)
