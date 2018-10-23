@@ -33,6 +33,7 @@ def reduce_deep(node, init = None, sub_get = None, pre_proc = None, post_proc = 
     # 初始值处理
     if init == None:
         if pre_post: init = pre_post(node, idx)
+        elif:
         else: throw Exception('')
     elif hashattr(init, '__call__'):
         init = init(node)
@@ -40,8 +41,10 @@ def reduce_deep(node, init = None, sub_get = None, pre_proc = None, post_proc = 
     # 迭代处理
     if pre_proc:
         rst = reduce_iter_post(node, sub_get, init, post_proc, idx)
-    else:
+    elif post_proc:
         rst = reduce_iter_pre(node, sub_get, init, post_proc, idx)
+    else:
+        rst = init
     
     # 后处理
     if post: rst = post(rst)
