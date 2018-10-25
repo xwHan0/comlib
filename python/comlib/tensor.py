@@ -53,16 +53,50 @@
         
 from collections import Iterable
 
-def iterator( node ):
+def iterator( node, sSelect='', gnxt=None ):
 
-    def iter_array( node, idx ):
-        if isinstance( node, Iterable ):
-            for i,s in enumerate( node ):
-                yield from iter_array(s, idx + [i])
+    class config:
+        def __init__(self):
+            self.gtyp = 0
+            self.presub = True
+            self.postsub = False
+    	
+
+    def __iter( node, idx, gnxt, cfg ):
+        
+        # 获取吓一跳位置
+        if cfg.gtyp == 0: # 数组
+        	sub = node
+        elif cfg.gtyp == 1: # 指针
+        	sub = node.__class__.__dict__[gnxt]
+        	if presub: yield node
+        else: # 函数
+        	sub = gnxt( node, idx )
+        	if sub!=node and cfg.presub: yield node
+      
+        # 迭代
+        if sub and isinstance( sub, Iterable ):
+            for i,s in enumerate( sub ):
+                yield from __iter(s, idx + [i], gnxt, cfg)
+            if cfg.postsub and sub!=node: yield node
         else:
             yield (idx, node)
+            
 
-    return iter_array( node, [] )
+    # 创建配置对象
+    cfg = config()
+    
+    if gnxt == None:
+        cfg.gtyp = 0  # 数组
+    elif isinstance( gnxt, str ):
+        cfg.gtyp = 1  # 链表
+    elif hasattr( gnxt, '__call__' ):
+        cfg.gtyp = 2  # 函数
+    else:
+        return
+    
+    
+    return __iter( node, [], cfg )
 
 
 
