@@ -4,9 +4,20 @@ class range():
     """
 
     OUT_SMALL = 0
-    ON_SMALL = 1
-    CROSS_SMALL = 2
     IN_SMALL = 3
+    SMALL = 4
+    EQU_SMALL = 5
+    EQU_LARGE = 6
+    LARGE = 7
+    ON_SMALL = 8
+    CROSS_SMALL = 9
+    COVER_SMALL = 10
+    COVER = 11
+    EQU = 12
+    COVER_LARGE = 13
+    IN = 14
+    IN_LARGE = 15
+    CROSS_LARGE = 16
 
     def __init__(self, ed, st, step):
         self.ed = ed
@@ -18,8 +29,8 @@ class range():
         def cmp_ele(self, e):
             if e < self.st: return range.SMALL
             elif e == self.st: return range.EQU_SMALL
-            else e == self.ed: return range.EQU_LARGE
-            else: e > self.ed: return range.LARGE
+            elif e == self.ed: return range.EQU_LARGE
+            elif e > self.ed: return range.LARGE
         
         def cmp_rng(self, r):
             if self.st < r.st:
