@@ -5,7 +5,7 @@ q = p.parents[1]
 
 sys.path.append(str(q))
 
-print(sys.path)
+# print(sys.path)
 
 
 from ex.math import *

@@ -1,3 +1,4 @@
+import re
 
 # def reduce_deep(node, init = None, sub_get = None, pre_proc = None, post_proc = None, post = None, idx = [] ):
 #     """深度优先迭代。
@@ -51,7 +52,6 @@
         
 #     return rst
         
-from collections import Iterable
 
 def iterator( node, sSelect='', gnxt=None ):
 
@@ -64,8 +64,8 @@ def iterator( node, sSelect='', gnxt=None ):
         
     
     class Pred:
-        def __init__(self):
-            self.cls_name = ''
+        def __init__(self, cls_name = ''):
+            self.cls_name = cls_name
     
         def match( self, node, idx ):
             if self.cls_name != '':
@@ -77,13 +77,8 @@ def iterator( node, sSelect='', gnxt=None ):
         
         # 过滤判断
         l = len(preds)
-        if l == 0: 
-            succ = True
-        elif l == 1:
-            if preds[0].match( node, idx ):
-                succ = True
-            else:
-                succ = False
+        if l == 0: succ = True
+        elif l == 1: succ = preds[0].match( node, idx )
         elif preds[0].match( node, idx ):
             preds = preds[1:]
             succ = False
@@ -94,13 +89,10 @@ def iterator( node, sSelect='', gnxt=None ):
             sub = node
         elif cfg.gtyp == 1: # 指针
             sub = getattr( node, cfg.gnxt )
-            
             # 子项前处理
-            if cfg.presub and succ: 
-                yield (idx, node)
+            if cfg.presub and succ: yield (idx, node)
         else: # 函数
             sub = gnxt( node, idx )
-     
             # 子项前处理
             if sub!=node and cfg.presub and succ: yield (idx, node)
       
@@ -116,21 +108,23 @@ def iterator( node, sSelect='', gnxt=None ):
     # 创建配置对象
     cfg = Config(gnxt=gnxt)
     
-    if gnxt == None:
-        cfg.gtyp = 0  # 数组
-    elif isinstance( gnxt, str ):
-        cfg.gtyp = 1  # 链表
-    elif hasattr( gnxt, '__call__' ):
-        cfg.gtyp = 2  # 函数
-    else:
-        return
+    # 对吓一跳方式分类
+    if gnxt == None: cfg.gtyp = 0  # 数组
+    elif isinstance( gnxt, str ): cfg.gtyp = 1  # 链表
+    elif hasattr( gnxt, '__call__' ): cfg.gtyp = 2  # 函数
+    else: return
     
+    # 匹配搜索条件
+    preds = []
+    if sSelect != '':
+        patt = re.compile(r'(.+)\s*')
+        conds = patt.findall(sSelect)
+        patt = re.compile(r'(\w*)(\[(.*)\])?')
+        for cond in conds:
+            (obj, _, condition) = patt.match(cond).groups(None)
+            preds.append( Pred(cls_name=obj) )
     
-    return __iter( node, [], [], cfg )
+    return __iter( node, [], preds, cfg )
 
 
 
-a = [[1,2], [3,4]]
-
-for x in iterator(a):
-    print(x)
