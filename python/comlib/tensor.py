@@ -55,36 +55,66 @@ from collections import Iterable
 
 def iterator( node, sSelect='', gnxt=None ):
 
-    class config:
-        def __init__(self):
+    class Config:
+        def __init__(self, gnxt=0):
             self.gtyp = 0
             self.presub = True
             self.postsub = False
-    	
-
-    def __iter( node, idx, gnxt, cfg ):
+            self.gnxt = gnxt
         
+    
+    class Pred:
+        def __init__(self):
+            self.cls_name = ''
+    
+        def match( self, node, idx ):
+            if self.cls_name != '':
+                if node.__class__.__name__ != self.cls_name:
+                    return False
+            return True
+
+    def __iter( node, idx, preds, cfg ):
+        
+        # 过滤判断
+        l = len(preds)
+        if l == 0: 
+            succ = True
+        elif l == 1:
+            if preds[0].match( node, idx ):
+                succ = True
+            else:
+                succ = False
+        elif preds[0].match( node, idx ):
+            preds = preds[1:]
+            succ = False
+            
+   
         # 获取吓一跳位置
         if cfg.gtyp == 0: # 数组
-        	sub = node
+            sub = node
         elif cfg.gtyp == 1: # 指针
-        	sub = node.__class__.__dict__[gnxt]
-        	if presub: yield node
+            sub = getattr( node, cfg.gnxt )
+            
+            # 子项前处理
+            if cfg.presub and succ: 
+                yield (idx, node)
         else: # 函数
-        	sub = gnxt( node, idx )
-        	if sub!=node and cfg.presub: yield node
+            sub = gnxt( node, idx )
+     
+            # 子项前处理
+            if sub!=node and cfg.presub and succ: yield (idx, node)
       
         # 迭代
-        if sub and isinstance( sub, Iterable ):
+        if hasattr( sub, '__iter__' ):
             for i,s in enumerate( sub ):
-                yield from __iter(s, idx + [i], gnxt, cfg)
-            if cfg.postsub and sub!=node: yield node
-        else:
+                yield from __iter(s, idx + [i], preds, cfg)
+            if cfg.postsub and sub!=node and succ: yield (idx, node)
+        elif succ:
             yield (idx, node)
             
 
     # 创建配置对象
-    cfg = config()
+    cfg = Config(gnxt=gnxt)
     
     if gnxt == None:
         cfg.gtyp = 0  # 数组
@@ -96,7 +126,7 @@ def iterator( node, sSelect='', gnxt=None ):
         return
     
     
-    return __iter( node, [], cfg )
+    return __iter( node, [], [], cfg )
 
 
 
