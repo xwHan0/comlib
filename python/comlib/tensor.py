@@ -55,7 +55,7 @@ import re
 
 
 def iterator( node, sSelect='', gnxt=None ):
-    “““ Get an iterator from data node.
+    """ Get an iterator from data node.
     
     Parameter "gnxt" indicates the link method to sub data. There are below style:
     - None(Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
@@ -70,7 +70,7 @@ def iterator( node, sSelect='', gnxt=None ):
         - p: How to process list node. Default is pre-sub-node process. If there is only ONE ‘p‘ flag, 
              it is post-sub-node process. When there are TWO 'p' flags, both pre- and post- will be processed.  
   
-    ”””
+    """
     class Config:
     
         patt = re.compile(r'(p)(p)')
@@ -138,7 +138,10 @@ def iterator( node, sSelect='', gnxt=None ):
         if cfg.gtyp == 0: # 数组
             sub = node
         elif cfg.gtyp == 1: # 指针
-            sub = getattr( node, cfg.gnxt )
+            try:
+                sub = getattr( node, cfg.gnxt )
+            except AttributeError:
+                raise AttributeError('node<{0}> has no attribute: {1}. iterator function cannot know how to get the sub-data pointer.'.format(str(node), cfg.gnxt))
             # 子项前处理
             if cfg.presub and succ: yield (idx, node)
         else: # 函数

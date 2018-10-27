@@ -1,4 +1,24 @@
 
+"""
+
+一个图标由以下结构：
+
+<----------  WIGHT  ------------>
+---------------------------------
+|                               |
+|                               |
+|                               |
+|                ————————————————
+|                |              |
+|                |       |      |
+|----------------| ——————|————— |
+|                |       |      |
+|                |              |
+------------------———————————————
+
+"""
+
+
 flag = ['expand', 'contract']
 pre = [True, False]
 
@@ -14,18 +34,17 @@ SVG_HEADER = [
     
 SVG_FOOT = ['</svg>\n']
 
-SVG_ROOT = "jquery/treegrid/"
+SVG_ROOT = ""
 
+box_size = SVG_WIDTH // 2
+x_vertical = box_size + box_size // 2
+y_vectical_st = SVG_HEIGHT - box_size
+y_vectical_ed = SVG_HEIGHT
 
 for fg in flag:
     for p in pre:
         name = "{0}flag_{1}_{2}.svg".format(SVG_ROOT, fg, ('sub' if p else 'root'))
         f = open(name, 'w')
-        
-        box_size = SVG_WIDTH // 2
-        x_vertical = box_size + box_size // 2
-        y_vectical_st = SVG_HEIGHT - box_size
-        y_vectical_ed = SVG_HEIGHT
         
         f.writelines(SVG_HEADER)
 
@@ -41,7 +60,7 @@ for fg in flag:
         f.close()
 
 
-other = ['vectial', 'leaf']
+other = ['vectical', 'leaf', 'empty']
 
 for file in other:
     name = "{0}flag_{1}.svg".format(SVG_ROOT, file)
@@ -49,14 +68,16 @@ for file in other:
     
     f.writelines(SVG_HEADER)
 
-    if file == "vectial":
+    if file == "vectical":
         content = [
             '<line x1="{0}" y1="0" x2="{0}" y2="{1}" stroke="black" stroke-dasharray="4,1" />\n'.format( box_size+box_size//2, SVG_HEIGHT ),
         ]
-    else:
+    elif file == "leaf":
         content = [
             '<line x1="0" y1="{0}" x2="{1}" y2="{0}" stroke="black" stroke-dasharray="4,1" />\n'.format( SVG_HEIGHT-box_size//2, SVG_WIDTH ),
         ]
+    else:
+        content = []
             
     f.writelines(content)
     f.writelines(SVG_FOOT)
