@@ -53,19 +53,46 @@ import re
 #     return rst
         
 
+
 def iterator( node, sSelect='', gnxt=None ):
 
     class Config:
+    
+        patt = re.compile(r'(p)(p)')
+    
         def __init__(self, gnxt=0):
             self.gtyp = 0
             self.presub = True
             self.postsub = False
             self.gnxt = gnxt
+            
+        def parse(self, flags):
+            (post, pre) = Config.patt.match(flags).groups(None)
+            if post and pre:
+                self.presub = True
+                self.postsub = True
+            elif post:
+                self.presub = False
+                self.postsub = True
         
     
     class Pred:
+    
+        patt0 = re.compile(r'(.*)(/.*)?')
+        patt1 = re.compile(r'(.+)\s*')
+        patt2 = re.compile(r'(\w*)(\[(.*)\])?')
+         
         def __init__(self, cls_name = ''):
             self.cls_name = cls_name
+    
+        def parse(sSelect=''):
+            preds = []
+            if sSelect != None:
+                conds = Pred.patt1.findall(sSelect)
+                for cond in conds:
+                    (obj, _, condition) = Pred.patt2.match(cond).groups(None)
+                    preds.append( Pred(cls_name=obj) )
+			return preds
     
         def match( self, node, idx ):
             if self.cls_name != '':
@@ -115,14 +142,9 @@ def iterator( node, sSelect='', gnxt=None ):
     else: return
     
     # 匹配搜索条件
-    preds = []
-    if sSelect != '':
-        patt = re.compile(r'(.+)\s*')
-        conds = patt.findall(sSelect)
-        patt = re.compile(r'(\w*)(\[(.*)\])?')
-        for cond in conds:
-            (obj, _, condition) = patt.match(cond).groups(None)
-            preds.append( Pred(cls_name=obj) )
+    (filtes, flags) = Pred.patt0.match(sSelect).groups(None)
+    cfg.parse( flags )
+    preds = Pred.parse(filtes)
     
     return __iter( node, [], preds, cfg )
 
