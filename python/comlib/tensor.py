@@ -55,7 +55,22 @@ import re
 
 
 def iterator( node, sSelect='', gnxt=None ):
-
+    “““ Get an iterator from data node.
+    
+    Parameter "gnxt" indicates the link method to sub data. There are below style:
+    - None(Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
+    - {String}: An attribute name of node indicates the sub data
+    - {Function}: A function return sub data. The format of function is "(node, idx) => sub" 
+    
+    Parameter "sSelect" is a string who illustrates one filter condition when iterate.
+    The sSelect is define:
+    sSelect ::= (<filtes>.*)(/)?(<flags>.*)
+    filtes ::= Filter content
+    flags ::= Filter options ::= (p)(p)
+        - p: How to process list node. Default is pre-sub-node process. If there is only ONE ‘p‘ flag, 
+             it is post-sub-node process. When there are TWO 'p' flags, both pre- and post- will be processed.  
+  
+    ”””
     class Config:
     
         patt = re.compile(r'(p)(p)')
@@ -66,14 +81,22 @@ def iterator( node, sSelect='', gnxt=None ):
             self.postsub = False
             self.gnxt = gnxt
             
+            # 对吓一跳方式分类
+            if gnxt == None: self.gtyp = 0  # 数组
+            elif isinstance( gnxt, str ): self.gtyp = 1  # 链表
+            elif hasattr( gnxt, '__call__' ): self.gtyp = 2  # 函数
+            
+            
         def parse(self, flags):
-            (post, pre) = Config.patt.match(flags).groups(None)
-            if post and pre:
-                self.presub = True
-                self.postsub = True
-            elif post:
-                self.presub = False
-                self.postsub = True
+            p = Config.patt.match(flags)
+            if p:
+                (post, pre) = p.groups(None)
+                if post and pre:
+                    self.presub = True
+                    self.postsub = True
+                elif post:
+                    self.presub = False
+                    self.postsub = True
         
     
     class Pred:
@@ -92,7 +115,7 @@ def iterator( node, sSelect='', gnxt=None ):
                 for cond in conds:
                     (obj, _, condition) = Pred.patt2.match(cond).groups(None)
                     preds.append( Pred(cls_name=obj) )
-			return preds
+            return preds
     
         def match( self, node, idx ):
             if self.cls_name != '':
@@ -135,16 +158,12 @@ def iterator( node, sSelect='', gnxt=None ):
     # 创建配置对象
     cfg = Config(gnxt=gnxt)
     
-    # 对吓一跳方式分类
-    if gnxt == None: cfg.gtyp = 0  # 数组
-    elif isinstance( gnxt, str ): cfg.gtyp = 1  # 链表
-    elif hasattr( gnxt, '__call__' ): cfg.gtyp = 2  # 函数
-    else: return
-    
     # 匹配搜索条件
-    (filtes, flags) = Pred.patt0.match(sSelect).groups(None)
-    cfg.parse( flags )
-    preds = Pred.parse(filtes)
+    p = Pred.patt0.match(sSelect)
+    if p:
+        (filtes, flags) = p.groups(None)
+        cfg.parse( flags )
+        preds = Pred.parse(filtes)
     
     return __iter( node, [], preds, cfg )
 
