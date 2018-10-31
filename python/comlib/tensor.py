@@ -1,4 +1,5 @@
 import re
+from ast import literal_eval
 
 # def reduce_deep(node, init = None, sub_get = None, pre_proc = None, post_proc = None, post = None, idx = [] ):
 #     """深度优先迭代。
@@ -104,9 +105,12 @@ def iterator( node, sSelect='', gnxt=None ):
         patt0 = re.compile(r'(.*)(/.*)?')
         patt1 = re.compile(r'(.+)\s*')
         patt2 = re.compile(r'(\w*)(\[(.*)\])?')
-         
-        def __init__(self, cls_name = ''):
+        patt_cdtion = re.compile(r'(\w+)(.*)')
+        patt_cdtions = re.compile(r',')
+                 
+        def __init__(self, cls_name = '', cdtions = []):
             self.cls_name = cls_name
+            self.cdtions = cdtions
     
         def parse(sSelect=''):
             preds = []
@@ -114,12 +118,21 @@ def iterator( node, sSelect='', gnxt=None ):
                 conds = Pred.patt1.findall(sSelect)
                 for cond in conds:
                     (obj, _, condition) = Pred.patt2.match(cond).groups(None)
-                    preds.append( Pred(cls_name=obj) )
+                    cdtions = []
+                    if condition != '':
+                        for c in Pred.patt_cdtions.split(condition):
+                            cdtions.append( Pred.patt_cdtion.match(c).groups('') )
+                    preds.append( Pred(cls_name=obj, cdtions=cdtions) )
             return preds
     
         def match( self, node, idx ):
             if self.cls_name != '':
                 if node.__class__.__name__ != self.cls_name:
+                    return False
+            # 匹配属性条件
+            for c in self.cdtions:
+                cmd = 'getattr(node,{0}){1}'.format(c[0], c[1])
+                if not literal_eval(cmd):
                     return False
             return True
 
@@ -164,7 +177,7 @@ def iterator( node, sSelect='', gnxt=None ):
     # 匹配搜索条件
     p = Pred.patt0.match(sSelect)
     if p:
-        (filtes, flags) = p.groups(None)
+        (filtes, flags) = p.groups('')
         cfg.parse( flags )
         preds = Pred.parse(filtes)
     
