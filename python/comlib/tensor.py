@@ -78,8 +78,11 @@ def iterator( node, sSelect='', gnxt=None ):
     
         def __init__(self, gnxt=0):
             self.gtyp = 0
+            
             self.presub = True
             self.postsub = False
+            self.brach = False
+            
             self.gnxt = gnxt
             
             # 对吓一跳方式分类
@@ -89,52 +92,71 @@ def iterator( node, sSelect='', gnxt=None ):
             
             
         def parse(self, flags):
-            p = Config.patt.match(flags)
-            if p:
-                (post, pre) = p.groups(None)
-                if post and pre:
-                    self.presub = True
-                    self.postsub = True
-                elif post:
-                    self.presub = False
-                    self.postsub = True
+            first_p = False  # 第一个P标识，postsub标识
         
+            for f in flags:
+                if f == 'p':
+                    if first_p:
+                        self.postsub = True
+                        first_p = False
+                    else:
+                        self.presub = True
+                elif f == 'P':
+                    if first_p:
+                        self.postsub = False
+                        first_p = False
+                    else:
+                        self.presub = False
+                elif f == 'b': self.brach = True
+                elif f == 'B': self.brach = False
+
     
     class Pred:
     
         patt0 = re.compile(r'(.*)(/.*)?')
         patt1 = re.compile(r'(.+)\s*')
         patt2 = re.compile(r'(\w*)(\[(.*)\])?')
-        patt_cdtion = re.compile(r'(\w+)(.*)')
-        patt_cdtions = re.compile(r',')
+        
+        # 条件内pattern
+        patt_idx = re.compile(r'{idx}')
+        patt_attr = re.compile(r'{(\w+)}')
                  
-        def __init__(self, cls_name = '', cdtions = []):
+        def __init__(self, cls_name = '', condition = ''):
             self.cls_name = cls_name
-            self.cdtions = cdtions
-    
+            self.condition = patt_idx.sub('idx', condition, count=0)
+            self.condition = patt_attr.sub( 'getattr(node,\g<1>)', self.condtion, count=0 )
+            
         def parse(sSelect=''):
             preds = []
             if sSelect != None:
                 conds = Pred.patt1.findall(sSelect)
                 for cond in conds:
-                    (obj, _, condition) = Pred.patt2.match(cond).groups(None)
-                    cdtions = []
-                    if condition != '':
-                        for c in Pred.patt_cdtions.split(condition):
-                            cdtions.append( Pred.patt_cdtion.match(c).groups('') )
-                    preds.append( Pred(cls_name=obj, cdtions=cdtions) )
+                    (obj, _, condition) = Pred.patt2.match(cond).groups('')
+                    preds.append( Pred(cls_name=obj, condition=condition) )
             return preds
     
         def match( self, node, idx ):
-            if self.cls_name != '':
+            if self.cls_name != '' and self.cls_name!='*':
                 if node.__class__.__name__ != self.cls_name:
                     return False
+            
+            # 匹配条件
+            if self.condition != '':
+                try:
+                    rst = eval(self.condition)
+                    if rst == False: return False
+                    elif rst == True: return True
+                    else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.condition))
+                except Exception:
+                    raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.condition))
+                    
             # 匹配属性条件
             for c in self.cdtions:
                 cmd = 'getattr(node,{0}){1}'.format(c[0], c[1])
                 if not literal_eval(cmd):
                     return False
             return True
+    
 
     def __iter( node, idx, preds, cfg ):
         
@@ -144,7 +166,7 @@ def iterator( node, sSelect='', gnxt=None ):
         elif l == 1: succ = preds[0].match( node, idx )
         elif preds[0].match( node, idx ):
             preds = preds[1:]
-            succ = False
+            if !cfg.brach: succ = False
             
    
         # 获取吓一跳位置
