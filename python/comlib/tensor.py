@@ -53,6 +53,9 @@ from ast import literal_eval
         
 #     return rst
         
+PATT_SELECT = re.compile(r'(.*)(/[pP]+)?')
+PATT_ATTR = re.compile(r'{(\w+)}')
+PATT_PRED = re.compile(r'(\w*)(/[bcBC]+)?(\[(.*)\])?(/[bcBC]+)?')  # 单条件匹配模板
 
 
 def iterator( node, sSelect='', gnxt=None ):
@@ -74,153 +77,144 @@ def iterator( node, sSelect='', gnxt=None ):
     """
     class Config:
     
-        patt = re.compile(r'(p)(p)')
-    
-        def __init__(self, gnxt=0):
-            self.gtyp = 0
-            
-            self.presub = True
-            self.postsub = False
-            self.brach = False
+        def __init__(self, gnxt=0, flags=''):
             
             self.gnxt = gnxt
-            
+
             # 对吓一跳方式分类
+            self.gtyp = 0
+
             if gnxt == None: self.gtyp = 0  # 数组
             elif isinstance( gnxt, str ): self.gtyp = 1  # 链表
             elif hasattr( gnxt, '__call__' ): self.gtyp = 2  # 函数
             
-            
-        def parse(self, flags):
-            first_p = False  # 第一个P标识，postsub标识
-        
+            self.proc_typ = 0   # 默认子项前返回
+
             for f in flags:
-                if f == 'p':
-                    if first_p:
-                        self.postsub = True
-                        first_p = False
-                    else:
-                        self.presub = True
-                elif f == 'P':
-                    if first_p:
-                        self.postsub = False
-                        first_p = False
-                    else:
-                        self.presub = False
-                elif f == 'b': self.brach = True
-                elif f == 'B': self.brach = False
+                if f == 'p': self.proc_typ = 1  # 子项后返回
+                elif f == 'P': self.proc_typ = 2    # 不返回当前项
 
     
     class Pred:
     
-        patt0 = re.compile(r'(.*)(/.*)?')
-        patt1 = re.compile(r'(.+)\s*')
-        patt2 = re.compile(r'(\w*)(\[(.*)\])?(/[sSfF]+)?')
         
-        # 条件内Object flag匹配
-        patt_obj_flag = re.compile(r'(/[sSfF]+)?')
-        
-        # 条件内pattern
-        patt_idx = re.compile(r'{idx}')
-        patt_attr = re.compile(r'{(\w+)}')
-                 
-        def __init__(self, cls_name = '', condition = '', flags = ''):
+        def __init__(self, cls_name = '', obj_flags = '', pred = '', pred_flags = ''):
             self.cls_name = cls_name
-            self.condition = Pred.patt_idx.sub('idx', condition, count=0)
-            self.condition = Pred.patt_attr.sub( 'getattr(node,"\g<1>")', self.condition, count=0 )
+            self.pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
+            self.pred = PATT_ATTR.sub( 'getattr(node,"\g<1>")', self.pred, count=0 )
             
-            self.fail_result = -1  # 匹配失败后，继续其余匹配
-            self.succ_result = 1 # 匹配成功后，继续其余匹配
-            for f in flags:
-                if f == 'f': self.fail_result = -2 # 匹配失败后，跳过该节点的子节点
-                elif f == 'F': self.fail_result = -3 # 匹配失败后，终止其余匹配
-                elif f == 's': self.succ_result = 2  # 匹配成功后，跳过当前节点的子节点
-                elif f == 'S': self.succ_result = 3  # 匹配成功后，终止其余匹配
+            # 无论匹配成功与否，默认总是继续其余匹配
+            self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
+
+            for f in obj_flags: # obj匹配
+                if f == 'c': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+                elif f == 'b': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
                 
-        def parse(sSelect=''):
-            preds = []
-            if sSelect != None:
-                conds = Pred.patt1.findall(sSelect)
-                for cond in conds:
-                    (obj, obj_flag, _, condition, cdt_flags) = Pred.patt2.match(cond).groups('')
-                    preds.append( Pred(cls_name=obj, obj_flag = obj_flag, condition=condition, cdt_flags=cdt_flags[1:]) )
-            return preds
-    
+            for f in pred_flags: # pred匹配
+                if f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+                elif f == 'b': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
+                elif f == 'C': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
+                elif f == 'B': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
+
         def match( self, node, idx ):
-            """
-            return:
-              0: 条件匹配不成功，继续子循环
-              1：条件匹配不成功，结束子循环
-              2：匹配成功
-            """
+            # 对象匹配
             if self.cls_name != '' and self.cls_name!='*':
                 if node.__class__.__name__ != self.cls_name:
-                    return -1
+                    return self.obj_fail_rst
             
-            # 匹配条件
-            if self.condition != '':
+            # 条件匹配
+            if self.pred != '':
                 try:
-                    rst = eval(self.condition)
-                    if rst == False: return self.fail_result
-                    elif rst == True: return self.succ_result
-                    else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.condition))
+                    rst = eval(self.pred)
+                    if rst == False: return self.pred_fail_rst
+                    elif rst == True: return self.match_succ_rst
+                    else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
                 except Exception:
-                    raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.condition))
+                    raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                     
-            return self.succ_result
+            return self.match_succ_rst
     
+    def parse(sSelect=''):
+        preds = []
+        if sSelect!= '':
+            for cond in sSelect.split(','):
+                (o, of, _, p, pf) = PATT_PRED.match(cond).groups('')
+                preds.append( Pred(o, of, p, pf[1:]) )
+        return preds
 
     def __iter( node, idx, preds, cfg ):
         
         # 过滤判断
         l = len(preds)
-        if l == 0: succ = True
-        elif l == 1: succ = preds[0].match( node, idx )
-        elif preds[0].match( node, idx )>0:
-            preds = preds[1:]
-            if not cfg.brach: succ = False
-            
-   
-        # 获取吓一跳位置
-        if cfg.gtyp == 0: # 数组
-            sub = node
-        elif cfg.gtyp == 1: # 指针
-            try:
-                sub = getattr( node, cfg.gnxt )
-            except AttributeError:
-                raise AttributeError('node<{0}> has no attribute: {1}. iterator function cannot know how to get the sub-data pointer.'.format(str(node), cfg.gnxt))
-            # 子项前处理
-            if cfg.presub and succ>0: yield (idx, node)
-        else: # 函数
-            sub = gnxt( node, idx )
-            # 子项前处理
-            if sub!=node and cfg.presub and succ>0: yield (idx, node)
-      
-        # 迭代
-        if hasattr( sub, '__iter__' ):
-            if succ == -1 or succ == 1:
-                for i,s in enumerate( sub ):
-                    yield from __iter(s, idx + [i], preds, cfg)
-            if cfg.postsub and sub!=node and succ>0: yield (idx, node)
-        elif succ>0: # 叶子处理
-            yield (idx, node)
+        if l == 0: succ = 1
+        else:
+            succ = preds[0].match( node, idx )
+            if l > 1 and succ > 0: preds = preds[1:]
+
+
+        if succ == 1:  # 匹配成功，迭代子对象
+            if isinstance(node, list) or isinstance(node, tuple): # 数组
+                for i,s in enumerate( node ):
+                    yield from __iter( s, idx + [i], preds, cfg )
+            elif cfg.gtyp == 1: # 指针
+                if cfg.proc_typ == 0: yield (idx, node)
+                try:
+                    sub = getattr( node, cfg.gnxt )
+                except AttributeError:
+                    pass
+                else:
+                    for i,s in enumerate( sub ):
+                        yield from __iter( s, idx + [i], preds, cfg )
+                if cfg.proc_typ == 1: yield (idx, node)
+            elif cfg.gtyp == 2: #函数
+                if cfg.proc_typ == 0: yield (idx, node)
+                sub = gnxt( node, idx )
+                if hasattr( sub, '__iter__' ):
+                    for i,s in enumerate( sub ):
+                        yield from __iter( s, idx + [i], preds, cfg )
+                if cfg.proc_typ == 1: yield (idx, node)
+            elif cfg.gtyp == 0: # 数组的最终元素不满足第一条
+                yield (idx, node)
+
+        if succ == -1:  # 匹配不成功，迭代子对象
+            if isinstance(node, list) or isinstance(node, tuple): # 数组
+                for i,s in enumerate( node ):
+                    yield from __iter( s, idx + [i], preds, cfg )
+            elif cfg.gtyp == 1: # 指针
+                try:
+                    sub = getattr( node, cfg.gnxt )
+                except AttributeError:
+                    pass
+                else:
+                    for i,s in enumerate( sub ):
+                        yield from __iter( s, idx + [i], preds, cfg )
+            else: #函数
+                sub = gnxt( node, idx )
+                if hasattr( sub, '__iter__' ):
+                    for i,s in enumerate( sub ):
+                        yield from __iter( s, idx + [i], preds, cfg )
                 
-        if succ == -3 or succ == 3: # break迭代
+
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if cfg.proc_typ == 0: yield (idx,node)
+            elif cfg.proc_typ == 1: yield (idx, node)
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if cfg.proc_typ == 0: yield (idx,node)
+            elif cfg.proc_typ == 1: yield (idx, node)
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()
         
             
 
-    # 创建配置对象
-    cfg = Config(gnxt=gnxt)
-    
     # 匹配搜索条件
-    p = Pred.patt0.match(sSelect)
-    if p:
-        (filtes, flags) = p.groups('')
-        cfg.parse( flags )
-        preds = Pred.parse(filtes)
+    p = PATT_SELECT.match(sSelect)
+    filtes, flags = ('', '')
+    if p: (filtes, flags) = p.groups('')
     
-    return __iter( node, [], preds, cfg )
+    return __iter( node, [], parse(filtes), Config(gnxt, flags) )
 
 
 
