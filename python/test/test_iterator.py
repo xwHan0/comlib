@@ -67,3 +67,14 @@ class TestIterator:
         a = [n0, n1]
         r = [x[1].val for x in iterator(a, gnxt=gnxt, sSelect='node' )]
         assert r == [100,200]
+        
+    def test_select_condition(self):
+        class node:
+            def __init__(self,v, sub = []):
+                self.sub = sub
+                self.val = v
+                
+        n1, n2 = (node(200), node(300))
+        n0 = node(100, [n1, n2])
+        r = [x[1].val for x in iterator(n0, gnxt='sub', sSelect='[not (len({idx})==1 and {val}==300)]')]
+        assert r == [100,200]

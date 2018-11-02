@@ -115,47 +115,56 @@ def iterator( node, sSelect='', gnxt=None ):
     
         patt0 = re.compile(r'(.*)(/.*)?')
         patt1 = re.compile(r'(.+)\s*')
-        patt2 = re.compile(r'(\w*)(\[(.*)\])?')
+        patt2 = re.compile(r'(\w*)(\[(.*)\])?(/[s]+)?')
         
         # 条件内pattern
         patt_idx = re.compile(r'{idx}')
         patt_attr = re.compile(r'{(\w+)}')
                  
-        def __init__(self, cls_name = '', condition = ''):
+        def __init__(self, cls_name = '', condition = '', flags):
             self.cls_name = cls_name
-            self.condition = patt_idx.sub('idx', condition, count=0)
-            self.condition = patt_attr.sub( 'getattr(node,\g<1>)', self.condtion, count=0 )
+            self.condition = Pred.patt_idx.sub('idx', condition, count=0)
+            self.condition = Pred.patt_attr.sub( 'getattr(node,"\g<1>")', self.condition, count=0 )
             
+            self.fail_result = -1  # 匹配失败后，继续其余匹配
+            self.succ_result = 1 # 匹配成功后，继续其余匹配
+            for f in flags:
+                if f == 'f': self.fail_result = -2 # 匹配失败后，跳过该节点的子节点
+                elif f == 'F': self.fail_result = -3 # 匹配失败后，终止其余匹配
+                elif f == 's': self.succ_result = 2  # 匹配成功后，跳过当前节点的子节点
+                elif f == 'S': self.succ_result = 3  # 匹配成功后，终止其余匹配
+                
         def parse(sSelect=''):
             preds = []
             if sSelect != None:
                 conds = Pred.patt1.findall(sSelect)
                 for cond in conds:
-                    (obj, _, condition) = Pred.patt2.match(cond).groups('')
-                    preds.append( Pred(cls_name=obj, condition=condition) )
+                    (obj, _, condition, flags) = Pred.patt2.match(cond).groups('')
+                    preds.append( Pred(cls_name=obj, condition=condition, flags=flags[1:]) )
             return preds
     
         def match( self, node, idx ):
+            """
+            return:
+              0: 条件匹配不成功，继续子循环
+              1：条件匹配不成功，结束子循环
+              2：匹配成功
+            """
             if self.cls_name != '' and self.cls_name!='*':
                 if node.__class__.__name__ != self.cls_name:
-                    return False
+                    return self.fail_result
             
             # 匹配条件
             if self.condition != '':
                 try:
                     rst = eval(self.condition)
-                    if rst == False: return False
-                    elif rst == True: return True
+                    if rst == False: return self.fail_result
+                    elif rst == True: return self.succ_result
                     else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.condition))
                 except Exception:
                     raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.condition))
                     
-            # 匹配属性条件
-            for c in self.cdtions:
-                cmd = 'getattr(node,{0}){1}'.format(c[0], c[1])
-                if not literal_eval(cmd):
-                    return False
-            return True
+            return self.succ_result
     
 
     def __iter( node, idx, preds, cfg ):
@@ -164,9 +173,9 @@ def iterator( node, sSelect='', gnxt=None ):
         l = len(preds)
         if l == 0: succ = True
         elif l == 1: succ = preds[0].match( node, idx )
-        elif preds[0].match( node, idx ):
+        elif preds[0].match( node, idx )>0:
             preds = preds[1:]
-            if !cfg.brach: succ = False
+            if not cfg.brach: succ = False
             
    
         # 获取吓一跳位置
@@ -178,19 +187,24 @@ def iterator( node, sSelect='', gnxt=None ):
             except AttributeError:
                 raise AttributeError('node<{0}> has no attribute: {1}. iterator function cannot know how to get the sub-data pointer.'.format(str(node), cfg.gnxt))
             # 子项前处理
-            if cfg.presub and succ: yield (idx, node)
+            if cfg.presub and succ>0: yield (idx, node)
         else: # 函数
             sub = gnxt( node, idx )
             # 子项前处理
-            if sub!=node and cfg.presub and succ: yield (idx, node)
+            if sub!=node and cfg.presub and succ>0: yield (idx, node)
       
         # 迭代
         if hasattr( sub, '__iter__' ):
-            for i,s in enumerate( sub ):
-                yield from __iter(s, idx + [i], preds, cfg)
-            if cfg.postsub and sub!=node and succ: yield (idx, node)
-        elif succ:
+            if succ == -1 or succ == 1:
+                for i,s in enumerate( sub ):
+                    yield from __iter(s, idx + [i], preds, cfg)
+            if cfg.postsub and sub!=node and succ>0: yield (idx, node)
+        elif succ>0: # 叶子处理
             yield (idx, node)
+                
+        if succ == -3 or succ == 3: # break迭代
+            raise StopException
+        
             
 
     # 创建配置对象
