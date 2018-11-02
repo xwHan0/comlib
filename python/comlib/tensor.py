@@ -115,13 +115,16 @@ def iterator( node, sSelect='', gnxt=None ):
     
         patt0 = re.compile(r'(.*)(/.*)?')
         patt1 = re.compile(r'(.+)\s*')
-        patt2 = re.compile(r'(\w*)(\[(.*)\])?(/[s]+)?')
+        patt2 = re.compile(r'(\w*)(\[(.*)\])?(/[sSfF]+)?')
+        
+        # 条件内Object flag匹配
+        patt_obj_flag = re.compile(r'(/[sSfF]+)?')
         
         # 条件内pattern
         patt_idx = re.compile(r'{idx}')
         patt_attr = re.compile(r'{(\w+)}')
                  
-        def __init__(self, cls_name = '', condition = '', flags):
+        def __init__(self, cls_name = '', condition = '', flags = ''):
             self.cls_name = cls_name
             self.condition = Pred.patt_idx.sub('idx', condition, count=0)
             self.condition = Pred.patt_attr.sub( 'getattr(node,"\g<1>")', self.condition, count=0 )
@@ -139,8 +142,8 @@ def iterator( node, sSelect='', gnxt=None ):
             if sSelect != None:
                 conds = Pred.patt1.findall(sSelect)
                 for cond in conds:
-                    (obj, _, condition, flags) = Pred.patt2.match(cond).groups('')
-                    preds.append( Pred(cls_name=obj, condition=condition, flags=flags[1:]) )
+                    (obj, obj_flag, _, condition, cdt_flags) = Pred.patt2.match(cond).groups('')
+                    preds.append( Pred(cls_name=obj, obj_flag = obj_flag, condition=condition, cdt_flags=cdt_flags[1:]) )
             return preds
     
         def match( self, node, idx ):
@@ -152,7 +155,7 @@ def iterator( node, sSelect='', gnxt=None ):
             """
             if self.cls_name != '' and self.cls_name!='*':
                 if node.__class__.__name__ != self.cls_name:
-                    return self.fail_result
+                    return -1
             
             # 匹配条件
             if self.condition != '':
@@ -203,7 +206,7 @@ def iterator( node, sSelect='', gnxt=None ):
             yield (idx, node)
                 
         if succ == -3 or succ == 3: # break迭代
-            raise StopException
+            raise StopIteration()
         
             
 
