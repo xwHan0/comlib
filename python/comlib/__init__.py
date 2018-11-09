@@ -1,1 +1,1 @@
-from iterator import iterator
+from comlib.iterator import iterator

@@ -100,7 +100,7 @@ def iterator( node, sSelect='', gnxt=None, pred=None, count=-1 ):
                 elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
                 elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
 
-        def match( self, node, idx, count ):
+        def match( self, node, idx, count, cfg ):
             # 对象匹配
             if self.cls_name != '' and self.cls_name!='*':
                 if node.__class__.__name__ != self.cls_name:
@@ -136,7 +136,7 @@ def iterator( node, sSelect='', gnxt=None, pred=None, count=-1 ):
         l = len(preds)
         if l == 0: succ = 1
         else:
-            succ = preds[0].match( node, idx, count )
+            succ = preds[0].match( node, idx, count, cfg )
             if l > 1 and succ > 0: preds = preds[1:]
 
 
