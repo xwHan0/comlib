@@ -1,5 +1,5 @@
 import re
-from iterator_operator import deq
+from comlib.iterator_operator import deq
         
 PATT_SELECT = re.compile(r'\s*(\w+|\*)(?:\[([^]]+)\])?(/[a-zA-Z]+)?\s*')
 PATT_ATTR = re.compile(r'{(\w+)}')
@@ -9,15 +9,17 @@ PATT_PRED = re.compile(r'(\w*)(\[(.*)\])?(/[oOcCsS]+)?')  # 单条件匹配模�
 class Pred:
         
     def __init__(self, cfg, nflag='', cls_name = '', pred = '', flags = ''):
+        
+        flags = flags if flags else ''
+        
         self.cls_name = cls_name
-        self.pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
-        self.pred = PATT_ATTR.sub( cfg.attr + '(node,"\g<1>")', self.pred, count=0 )
+        self.pred = pred
             
-        match_func(cfg)
+        self.match_func(cfg)
         
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
-        self.pre_yield, self.post_yield = (False, False)
+        self.pre_yield, self.post_yield = (True, False)
 
         for f in flags: # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
@@ -26,8 +28,8 @@ class Pred:
             elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
             elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
             elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-            elif f == 'p': self.pre_yield  # 匹配成功后在调用子节点前返回当前节点
-            elif f == 'P': self.post_yield # 匹配成功后调用子节点后返回当前节点
+            elif f == 'p': self.pre_yield = False  # 匹配成功后在调用子节点前返回当前节点
+            elif f == 'P': self.post_yield = True # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
@@ -53,6 +55,7 @@ class Pred:
                     
         return self.match_succ_rst
 
+    def match_none(self, node, idx): return self.match_succ_rst
             
     def match_obj( self, node, idx ):
         # 对象匹配
@@ -80,40 +83,50 @@ class Pred:
     
     def match_func( self, cfg ):
         if cfg.ntyp == 5:
-            self.match = match_condition
-        elif self.cls_name == '*':
-            self.match = match_condition
-        elif self.pred == '':
-            self.match = match_obj
+            self.match = self.match_condition
+        elif self.cls_name == '*' and self.pred == None:
+            self.match = self.match_none
+        elif self.cls_name == '*':  # pred!=None
+            self.pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
+            self.pred = PATT_ATTR.sub( cfg.attr + '(node,"\g<1>")', self.pred, count=0 )
+            self.match = self.match_condition
+        elif self.pred == '':  # cls_name='*'
+            self.match = self.match_obj
     
 
 
-def get_subnode_from_array(node, attr, nfun): return node
+def get_subnode_from_array(node, attr, nfun, idx): 
+    if hasattr(node,'__iter__'):
+        return node
+    else:
+        return []
 
-def get_subnode_from_filter(node, attr, nfun): 
+def get_subnode_from_filter(node, attr, nfun, idx): 
     if isinstance(node, list) or isinstance(node, tuple):
         return node
     else:
         return nfun(node, attr)
        
-def get_subnode_from_list(node, attr, nfun): 
-    if isinstance(node, list) or isinstance(node, tuple):
-        return node
-    else:
-        try:
-            sub = getattr(node, attr)
-            if hasattr( sub, '__iter__' ):
-                return sub
-            else:
+def get_subnode_from_list(nfun): 
+    def tmp( node, attr, n, idx ):
+        if isinstance(node, list) or isinstance(node, tuple):
+            return node
+        else:
+            try:
+                sub = getattr(node, nfun)
+                if hasattr( sub, '__iter__' ):
+                    return sub
+                else:
+                    return []
+            except AttributeError:
                 return []
-        except AttributeError:
-            return []
+    return tmp
 
-def get_subnode_from_func(node, attr, nfun):
+def get_subnode_from_func(node, attr, nfun, idx):
     if isinstance(node, list) or isinstance(node, tuple):
         return node
     else:
-        sub = nfun(node)
+        sub = nfun(node, idx)
         if hasattr( sub, '__iter__' ):
             return sub
         else:
@@ -138,18 +151,19 @@ class iterator:
         self.attr = cfg.get('attr', 'getattr')  # 获取属性的函数
             
         # 下一跳方式分类
-        ntyp = cfg.get('ntyp', None)
-        gnxt = cfg.get('gnxt', 0)
+        ntyp = cfg.get('ntyp', 0)
+        gnxt = cfg.get('gnxt', None)
         if ntyp == 5:  # 非用户自定义搜索函数
             self.sub = get_subnode_from_filter
         else:
             if gnxt == None: # 数组
                 self.sub = get_subnode_from_array
             elif isinstance( gnxt, str ): # 链表
-                self.sub = get_subnode_from_list
+                self.sub = get_subnode_from_list( gnxt )
             elif hasattr( gnxt, '__call__' ): # 普通函数
                 self.sub = get_subnode_from_func
-
+        self.nfun = gnxt
+      
         for f in flags: pass
 
     def compile(self, sSelect = '*'):
@@ -160,39 +174,36 @@ class iterator:
         self.step = 1
         return self
         
-    def __iter( node, idx, preds ):
+    def __iter( self, node, idx, preds ):
         
         # 过滤判断
-        l = len(preds)
-        if l == 0: succ = 1
-        else:
-            succ = preds[0].match( node, idx )
-            if l > 1 and succ > 0: preds = preds[1:]
+        succ = preds[0].match( node, idx )
+        if succ > 0 and len(preds)>1: preds = preds[1:]
         
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred[0].pre_yield == 0: 
+            if pred[0].pre_yield: 
                 yield (idx, node)
                 
-            for i,s in enumerate( self.sub(node, attr, self.nfun) ):
+            for i,s in enumerate( self.sub(node, preds[0].cls_name, self.nfun) ):
                 yield from self.__iter( s, idx + [i], preds )
             
-            if pred[0].post_yield == 1: 
+            if pred[0].post_yield: 
                 yield (idx, node)
          
-        if succ == -1:  # 匹配不成功，迭代子对象
-            for i,s in enumerate( self.sub(node, attr, self.nfun) ):
+        elif succ == -1:  # 匹配不成功，迭代子对象
+            for i,s in enumerate( self.sub(node, preds[0].cls_name, self.nfun) ):
                 yield from self.__iter( s, idx + [i], preds )
             
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred[0].pre_yield == 0: 
+            if pred[0].pre_yield: 
                 yield (idx,node)
-            if pred[0].post_yield == 1: 
+            if pred[0].post_yield: 
                 yield (idx, node)
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred[0].pre_yield == 0: 
+            if pred[0].pre_yield: 
                 yield (idx,node)
-            if pred[0].post_yield == 1:
+            if pred[0].post_yield:
                 yield (idx, node)
             raise StopIteration()
 
