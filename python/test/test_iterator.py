@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))) )
 
-from comlib.tensor import iterator
+from comlib import iterator
 
 class node:
     def __init__(self, v, sub=[]):

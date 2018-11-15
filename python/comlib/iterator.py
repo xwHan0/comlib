@@ -87,10 +87,10 @@ class Pred:
         elif self.cls_name == '*' and self.pred == None:
             self.match = self.match_none
         elif self.cls_name == '*':  # pred!=None
-            self.pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
+            self.pred = self.pred.replace('{idx}', 'idx').replace('{self}', 'node')
             self.pred = PATT_ATTR.sub( cfg.attr + '(node,"\g<1>")', self.pred, count=0 )
             self.match = self.match_condition
-        elif self.pred == '':  # cls_name='*'
+        elif self.pred == None:  # cls_name='*'
             self.match = self.match_obj
     
 
@@ -181,29 +181,29 @@ class iterator:
         if succ > 0 and len(preds)>1: preds = preds[1:]
         
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred[0].pre_yield: 
+            if preds[0].pre_yield: 
                 yield (idx, node)
                 
-            for i,s in enumerate( self.sub(node, preds[0].cls_name, self.nfun) ):
+            for i,s in enumerate( self.sub(node, preds[0].cls_name, self.nfun, idx) ):
                 yield from self.__iter( s, idx + [i], preds )
             
-            if pred[0].post_yield: 
+            if preds[0].post_yield: 
                 yield (idx, node)
          
         elif succ == -1:  # 匹配不成功，迭代子对象
-            for i,s in enumerate( self.sub(node, preds[0].cls_name, self.nfun) ):
+            for i,s in enumerate( self.sub(node, preds[0].cls_name, self.nfun, idx) ):
                 yield from self.__iter( s, idx + [i], preds )
             
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred[0].pre_yield: 
+            if preds[0].pre_yield: 
                 yield (idx,node)
-            if pred[0].post_yield: 
+            if preds[0].post_yield: 
                 yield (idx, node)
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred[0].pre_yield: 
+            if preds[0].pre_yield: 
                 yield (idx,node)
-            if pred[0].post_yield:
+            if preds[0].post_yield:
                 yield (idx, node)
             raise StopIteration()
 
@@ -285,6 +285,6 @@ def iterator_old( node, sSelect='', count=-1, **kwargs ):
     """
     
     
-   pass
+    pass
 
 
