@@ -1,0 +1,1 @@
+def deq(it, n=1): return [next(it) for i in range(n)]
