@@ -17,12 +17,12 @@ def gnxt(node, idx):
 class TestIterator:
     def test_1d_array(self):
         a = [10,20,30,40]
-        r = [x for x in iterator(a)]
+        r = [x for x in iterator(a, 'int')]
         assert r == [([0], 10),([1], 20), ([2], 30), ([3], 40)]
 
     def test_3d_array(self):
         a = [10, [20, 30], [40, [[50,60], 70, 80], 90]]
-        r = [x for x in iterator(a)]
+        r = [x for x in iterator(a, 'int')]
         assert r == [([0], 10), ([1,0], 20), ([1,1], 30), ([2,0], 40), ([2,1,0,0], 50), 
             ([2,1,0,1], 60), ([2,1,1], 70), ([2,1,2], 80), ([2,2], 90)]
 
