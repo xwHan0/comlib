@@ -1,5 +1,6 @@
 import re
 from comlib.iterator_operator import deq
+from comlib.iterators import *
         
 PATT_SELECT = re.compile(r'\s*(\w+|\*)(?:\[([^]]+)\])?(/[a-zA-Z]+)?\s*')
 PATT_ATTR = re.compile(r'{(\w+)}')
@@ -10,18 +11,26 @@ class Pred:
         
     def __init__(self, cfg, nflag='', cls_name = '', pred = '', flags = ''):
         
-        flags = flags if flags else ''
-        
-        self.cls_name = cls_name
-        self.pred = pred
-            
-        self.match_func(cfg)
-        
+        if cls_name == '*' and pred == None:
+            self.match = self.match_none
+        elif cls_name == '*':  # pred!=None
+            pred = pred if pred else ''
+            pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
+            self.pred = PATT_ATTR.sub( cfg.attr + r'(node,"\g<1>")', pred, count=0 )
+            self.match = self.match_condition
+        elif pred == None:  # cls_name='*'
+            self.cls_name = cls_name
+            self.match = self.match_obj
+        else:
+            self.cls_name = cls_name
+            self.pred = pred
+            self.match = self.match_full
+
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
         self.pre_yield, self.post_yield = (True, False)
 
-        for f in flags: # 
+        for f in (flags if flags else ''): # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
             elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
             elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
@@ -38,10 +47,12 @@ class Pred:
             elif f.rstrip() == '>':
                 self.obj_fail_rst = -2
                 self.pred_fail_rst = -2
+
+    def match_none(self, node): return self.match_succ_rst            
             
-    def match_obj_condition( self, node, idx ):
+    def match_obj_condition( self, node ):
         # 对象匹配
-        if node.__class__.__name__ != self.cls_name:
+        if node[0].__class__.__name__ != self.cls_name:
                 return self.obj_fail_rst
             
         # 条件匹配
@@ -55,18 +66,12 @@ class Pred:
                     
         return self.match_succ_rst
 
-    def match_none(self, node, idx): return self.match_succ_rst
-            
-    def match_obj( self, node, idx ):
-        # 对象匹配
-        if node.__class__.__name__ != self.cls_name:
+    def match_obj( self, node ):
+        if node[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
-                                 
         return self.match_succ_rst
 
-    def match_condition( self, node, idx ):
-            
-        # 条件匹配
+    def match_condition( self, node ):
         try:
             rst = eval(self.pred)
             if rst == False: return self.pred_fail_rst
@@ -74,210 +79,83 @@ class Pred:
             else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
-                      
         return self.match_succ_rst
 
-    def match_full( self, node, idx ):
+    def match_full( self, node ):
         # 对象匹配
-        if node.__class__.__name__ != self.cls_name:
+        if self.cls_name!='*' and node[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
             
         # 条件匹配
-        try:
-            rst = eval(self.pred)
-            if rst == False: return self.pred_fail_rst
-            elif rst == True: return self.match_succ_rst
-            else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
-        except Exception:
-            raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
+        if self.pred and self.pred!='':
+            try:
+                rst = eval(self.pred)
+                if rst == False: return self.pred_fail_rst
+                elif rst == True: return self.match_succ_rst
+                else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
+            except Exception:
+                raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                       
         return self.match_succ_rst
     
-    def match_func( self, cfg ):
-        if cfg.ntyp == 5:
-            self.match = self.match_condition
-        elif self.cls_name == '*' and self.pred == None:
-            self.match = self.match_none
-        elif self.cls_name == '*':  # pred!=None
-            self.pred = self.pred.replace('{idx}', 'idx').replace('{self}', 'node')
-            self.pred = PATT_ATTR.sub( cfg.attr + '(node,"\g<1>")', self.pred, count=0 )
-            self.match = self.match_condition
-        elif self.pred == None:  # cls_name='*'
-            self.match = self.match_obj
-        else:
-            self.match = self.match_full
-    
 
-
-def get_subnode_from_array(node, attr, nfun, idx): 
-    if hasattr(node,'__iter__'):
-        return node
-    else:
-        return []
-
-def get_subnode_from_filter(func): 
-    def tmp( node, attr, nfun, idx ):
-        if isinstance(node, list) or isinstance(node, tuple):
-            return node
-        else:
-            return func(node, attr)
-
-    return tmp
-       
-def get_subnode_from_list(nfun): 
-    def tmp( node, attr, n, idx ):
-        if isinstance(node, list) or isinstance(node, tuple):
+def get_subnode_from_index(node, nodes, *args): return node.sub()
+def get_subnode_from_array(node, nodes, *args): return node if hasattr(node,'__iter__') else []
+def get_subnode_from_list(self, subn): 
+    def tmp( node, nodes, *args ):
+        if isinstance(node, (list, tuple)):
             return node
         else:
             try:
-                sub = getattr(node, nfun)
-                if hasattr( sub, '__iter__' ):
-                    return sub
-                else:
-                    return []
+                sub = getattr(node, subn)
+                return sub if hasattr( sub, '__iter__' ) else []
             except AttributeError:
                 return []
     return tmp
 
-def get_subnode_from_func(func):
-    def tmp( node, attr, nfunc, idx ):
-        if isinstance(node, list) or isinstance(node, tuple):
+def get_subnode_from_filter(self, nfunc):
+    def tmp(node, nodes, *args): 
+        if isinstance(node, (list, tuple)):
             return node
         else:
-            sub = func(node, idx)
-            if hasattr( sub, '__iter__' ):
-                return sub
-            else:
-                return []
-    
+            return nfunc(node, args[0])
     return tmp
-        
-class iterator:
-    def __init__(self, node=None, sSelect='*', **cfg):
-        """
-        Generate a iterator for data structure 'node' with configure parameters of '**cfg'.
 
-        'node' can be applied via .select function.
-
-        'sSelect' is a string represent one or more filter conditions called filter-string.
-        The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
-        - ' ': Ancestor-Descendant relationship.
-        - '>': Parent-Son relationship.
-
-        filter-pattern ::= objName[filter-condition]/flags
-
-        'objName' is the node class name or '*' represented all class.
-
-        'filter-condition' can be ignore with pair '[' and ']'.
-        There are some special attributes in filter-condition:
-        - {idx}: The position of current node in whole node tree
-        - {self}: Current node
-
-        'flags' decide the selection action and direction. They can be ignore with '/'
-        - P: Disable yield current node before sub-nodes enumerate. Default is enable
-        - p: Enable yield current node after sub-nodes enumerate. Default is disable
-
-        Parameter 'cfg' supplement extend optonals:
-        - gnxt: A function formatted (node,attr,idx)=>iter represent the sub-nodes selection action for each node
-        - pred: A function formatted (node,idx)=>bool represent filter condition for each node
-        - ntyp: Special gnxt flag
-          -- 5: 'gnxt' is a filter function
-        - attr: A string represent how to get the attribute of node. Default is 'getattr'
-        """
-        self.node = node
-        self.sSelect = sSelect
-        
-        # 构造全局配置变量
-        self.configure(flags='', **cfg)
-        
-        self.step = 0
-
-    def configure(self, flags='', **cfg):  
-        self.pred = cfg.get('pred', None)  # 条件函数，和sSelect共存同时有效
-        if not hasattr(self.pred, '__call__'):
-            self.pred = None
-        
-        self.attr = cfg.get('attr', 'getattr')  # 获取属性的函数
-            
-        # 下一跳方式分类
-        ntyp = cfg.get('ntyp', 0)
-        gnxt = cfg.get('gnxt', None)
-        if ntyp == 5:  # 非用户自定义搜索函数
-            self.sub = get_subnode_from_filter( gnxt )
+def get_subnode_from_func(self, nfunc):
+    def tmp(node, nodes, *args):
+        if isinstance(node, (list, tuple)):
+            return node
         else:
-            if gnxt == None: # 数组
-                self.sub = get_subnode_from_array
-            elif isinstance( gnxt, str ): # 链表
-                self.sub = get_subnode_from_list( gnxt )
-            elif hasattr( gnxt, '__call__' ): # 普通函数
-                self.sub = get_subnode_from_func( gnxt )
-        self.nfun = gnxt
-        self.ntyp = ntyp
-      
-        for f in flags: pass
+            sub = nfunc(nodes)
+            return sub if hasattr( sub, '__iter__' ) else []
+    return tmp
 
-    def compile(self, sSelect = '*'):
-        r = PATT_SELECT.split(sSelect)
-        it = iter(r)
-        r = [deq(it, 4) for i in range(int(len(r)/4))]
-        self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]        
-        self.step = 1
-        return self
-        
-    def __iter( self, node, idx, preds ):
-        
-        pred = preds[0]
-
-        # 过滤判断
-        succ = pred.match( node, idx )
-        if succ > 0 and len(preds)>1: preds = preds[1:]
-        
-        if succ == 1:  # 匹配成功，迭代子对象
-            if pred.pre_yield:  yield (idx, node)
-                
-            for i,s in enumerate( self.sub(node, pred.cls_name, self.nfun, idx) ):
-                yield from self.__iter( s, idx + [i], preds )
-            
-            if pred.post_yield: yield (idx, node)
-         
-        elif succ == -1:  # 匹配不成功，迭代子对象
-            for i,s in enumerate( self.sub(node, pred.cls_name, self.nfun, idx) ):
-                yield from self.__iter( s, idx + [i], preds )
-            
-        elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.pre_yield: yield (idx,node)
-            if pred.post_yield: yield (idx, node)
-
-        elif succ == 3: # 匹配成功，终止迭代
-            if pred.pre_yield: yield (idx,node)
-            if pred.post_yield: yield (idx, node)
-            raise StopIteration()
-
-        elif succ == -3: # 匹配不成功，终止迭代
-            raise StopIteration()
-
-    def select(self, node): 
-        self.node = node
-        return self
-        
-    def __iter__(self):
-        if self.step == 0:
-            self.compile(self.sSelect)
-        return self.__iter( self.node, [], self.preds )
-        
-    def count(self, count):
-        for v in self:
-            if count <= 0:
-                raise StopIteration()
+class SubRelation:
+    def __init__(self, ntyp=None, nfunc=None, sub = None):
+        if sub != None:
+            self.sub = sub
+        elif nfunc == None: # 数组
+            self.sub = get_subnode_from_array
+        elif isinstance( nfunc, str ): # 链表
+            self.sub = get_subnode_from_list( nfunc )
+        elif isinstance( nfunc, Index ):
+            self.sub = get_subnode_from_index
+        elif hasattr( nfunc, '__call__' ): # 普通函数
+            if ntyp == 5:  # 非用户自定义搜索函数
+                self.sub = get_subnode_from_filter(nfunc)
             else:
-                count -= 1
-                yield v
-                
-                
-def iterator_old( node, sSelect='', count=-1, **kwargs ):
-    """ Get an iterator from data node.
+                self.sub = get_subnode_from_func(nfunc)
 
-# Introduce
+    def redirect(self, sub): self.sub = sub
+
+    
+
+    
+
+
+class iterator:
+    """
+    # Introduce
   按序筛选并打平。
   Filter by designed order and flatten into dimension 1-D.
 
@@ -329,8 +207,138 @@ def iterator_old( node, sSelect='', count=-1, **kwargs ):
   
   
     """
-    
-    
-    pass
+    def __init__(self, node=None, sSelect='*', **cfg):
+        """
+        Generate a iterator for data structure 'node' with configure parameters of '**cfg'.
 
+        'node' can be applied via .select function.
+
+        'sSelect' is a string represent one or more filter conditions called filter-string.
+        The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
+        - ' ': Ancestor-Descendant relationship.
+        - '>': Parent-Son relationship.
+
+        filter-pattern ::= objName[filter-condition]/flags
+
+        'objName' is the node class name or '*' represented all class.
+
+        'filter-condition' can be ignore with pair '[' and ']'.
+        There are some special attributes in filter-condition:
+        - {idx}: The position of current node in whole node tree
+        - {self}: Current node
+
+        'flags' decide the selection action and direction. They can be ignore with '/'
+        - P: Disable yield current node before sub-nodes enumerate. Default is enable
+        - p: Enable yield current node after sub-nodes enumerate. Default is disable
+
+        Parameter 'cfg' supplement extend optonals:
+        - gnxt: A function formatted (node,attr,idx)=>iter represent the sub-nodes selection action for each node
+        - pred: A function formatted (node,idx)=>bool represent filter condition for each node
+        - ntyp: Special gnxt flag
+          -- 5: 'gnxt' is a filter function
+        - attr: A string represent how to get the attribute of node. Default is 'getattr'
+        """
+        
+        self.nodes = node
+        self._iter = self._iter_single
+
+        self.subrs = [SubRelation(cfg.get('ntyp', 0), cfg.get('gnxt', None))]    
+
+        # self.pred = cfg.get('pred', None)  # 条件函数，和sSelect共存同时有效
+        # if not hasattr(self.pred, '__call__'):
+        #     self.pred = None
+        
+        self.attr = cfg.get('attr', 'getattr')  # 获取属性的函数
+            
+        # for f in flags: pass
+
+        r = PATT_SELECT.split(sSelect)
+        r = [deq(iter(r), 4) for i in range(int(len(r)/4))]
+        self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]        
+    
+    def assist(self, node, gnxt=None, ntyp=None):
+        if self._iter == self._iter_single:
+            self.nodes = [self.nodes, node]
+        else:
+            self.nodes.append(node)
+
+        if isinstance( node, Index ):
+            self.subrs.append( SubRelation( sub = get_subnode_from_index ) )
+        else:
+            self.subrs.append( SubRelation( ntyp, gnxt ) )
+
+        self._iter = self._iter_multi
+        return self
+        
+    def _iter_single( self, preds, node ):
+        pred = preds[0]
+           
+        # 过滤判断
+        succ = pred.match( (node,) )
+        if succ > 0 and len(preds)>1: preds = preds[1:]
+        
+        if succ == 1:  # 匹配成功，迭代子对象
+            if pred.pre_yield: yield node
+                
+            for ss in self.subrs[0].sub(node, node, pred.cls_name):
+                yield from self._iter_single( preds, ss )
+            
+            if pred.post_yield: yield node
+         
+        elif succ == -1:  # 匹配不成功，迭代子对象
+            for ss in self.subrs[0].sub(node, node, pred.cls_name):
+                yield from self._iter_single( preds, ss )
+            
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if pred.pre_yield: yield node
+            if pred.post_yield: yield node
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if pred.pre_yield: yield node
+            if pred.post_yield: yield node
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
+            raise StopIteration()
+        
+    def _iter_multi( self, preds, nodes ):
+        pred = preds[0]
+           
+        # 过滤判断
+        succ = pred.match( nodes )
+        if succ > 0 and len(preds)>1: preds = preds[1:]
+        
+        if succ == 1:  # 匹配成功，迭代子对象
+            if pred.pre_yield: yield nodes
+                
+            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)):
+                yield from self._iter_multi( preds, ss )
+            
+            if pred.post_yield: yield nodes
+         
+        elif succ == -1:  # 匹配不成功，迭代子对象
+
+            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs) ):
+                yield from self._iter_multi( preds, ss )
+            
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if pred.pre_yield: yield nodes
+            if pred.post_yield: yield nodes
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if pred.pre_yield: yield nodes
+            if pred.post_yield: yield nodes
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
+            raise StopIteration()    
+        
+    def select(self, node): 
+        self.node = node
+        return self
+        
+    def __iter__(self):
+        return self._iter( self.preds, self.nodes )
+        
+            
 
