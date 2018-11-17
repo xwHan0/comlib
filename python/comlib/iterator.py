@@ -275,11 +275,12 @@ class iterator:
            
         # 过滤判断
         succ = pred.match( (node,) )
-        if succ > 0 and len(preds)>1: preds = preds[1:]
-        
+       
         if succ == 1:  # 匹配成功，迭代子对象
             if pred.pre_yield: yield node
                 
+             if len(preds)>1: preds = preds[1:]
+ 
             for ss in self.subrs[0].sub(node, node, pred.cls_name):
                 yield from self._iter_single( preds, ss )
             
@@ -306,11 +307,12 @@ class iterator:
            
         # 过滤判断
         succ = pred.match( nodes )
-        if succ > 0 and len(preds)>1: preds = preds[1:]
         
         if succ == 1:  # 匹配成功，迭代子对象
             if pred.pre_yield: yield nodes
                 
+            if len(preds)>1: preds = preds[1:]
+        
             for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)):
                 yield from self._iter_multi( preds, ss )
             
