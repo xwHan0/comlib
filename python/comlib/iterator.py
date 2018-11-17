@@ -43,7 +43,7 @@ class Pred:
             
     def match_obj_condition( self, nodes ):
         # 对象匹配
-        if node[0].__class__.__name__ != self.cls_name:
+        if nodes[0].__class__.__name__ != self.cls_name:
                 return self.obj_fail_rst
             
         # 条件匹配
@@ -59,7 +59,7 @@ class Pred:
 
     def match_obj( self, nodes ):
         # 对象匹配
-        if node[0].__class__.__name__ != self.cls_name:
+        if nodes[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
                                  
         return self.match_succ_rst
@@ -79,7 +79,7 @@ class Pred:
 
     def match_full( self, nodes ):
         # 对象匹配
-        if self.cls_name!='*' and node[0].__class__.__name__ != self.cls_name:
+        if self.cls_name!='*' and nodes[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
             
         # 条件匹配
@@ -97,12 +97,12 @@ class Pred:
 
     
     def match_func( self, cfg ):
-        if cfg.ntyp == 5:
-            self.match = self.match_condition
-        elif self.cls_name == '*' and self.pred == None:
+        #if cfg.ntyp == 5:
+        #    self.match = self.match_condition
+        if self.cls_name == '*' and self.pred == None:
             self.match = self.match_none
         elif self.cls_name == '*':  # pred!=None
-            self.pred = if self.pred else ''
+            self.pred = self.pred if self.pred else ''
             self.pred = self.pred.replace('{idx}', 'idx').replace('{self}', 'node')
             self.pred = PATT_ATTR.sub( cfg.attr + '(node,"\g<1>")', self.pred, count=0 )
             self.match = self.match_condition
@@ -114,7 +114,7 @@ class Pred:
 class SubRelation:
     def __init__(self, ntyp, nfunc):
         if ntyp == 5:  # 非用户自定义搜索函数
-            self.sub = self.get_subnode_from_filter(gnxt)
+            self.sub = self.get_subnode_from_filter(nfunc)
         else:
             if nfunc == None: # 数组
                 self.sub = self.get_subnode_from_array()
@@ -133,13 +133,13 @@ class SubRelation:
                 return []
         return tmp
 
-    def get_subnode_from_list(self, sub): 
+    def get_subnode_from_list(self, subn): 
         def tmp( node, nodes, *args ):
             if isinstance(node, list) or isinstance(node, tuple):
                 return node
             else:
                 try:
-                    sub = getattr(node, sub)
+                    sub = getattr(node, subn)
                     if hasattr( sub, '__iter__' ):
                         return sub
                     else:
@@ -153,7 +153,7 @@ class SubRelation:
             if isinstance(node, list) or isinstance(node, tuple):
                 return node
             else:
-                return nfun(node, args[0])
+                return nfunc(node, args[0])
         return tmp
 
     def get_subnode_from_func(self, nfunc):
@@ -170,7 +170,7 @@ class SubRelation:
         
 class iterator:
     def __init__(self, node=None, sSelect='*', **cfg):
-        self.node = node
+        self.nodes = [node]
         self.sSelect = sSelect
         
         # 构造全局配置变量
@@ -180,6 +180,8 @@ class iterator:
         gnxt = cfg.get('gnxt', None)
         self.subrs = [SubRelation(ntyp, gnxt)]    
             
+        self.yield_node = self.yield_single
+        self.get_sub = self.sub_single
         self.step = 0
 
     def configure(self, flags='', **cfg):  
@@ -198,38 +200,51 @@ class iterator:
         self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]        
         self.step = 1
         return self
+    
+    def assist(self, node, gnxt=None, ntyp=None):
+        self.nodes.append(node)
+        self.subrs.append(SubRelation(ntyp,gnxt))
+        self.yield_node = yield_multi
+        self.get_sub = sub_multi
+        return self
         
-    def __iter( self, preds, nodes ):
+    def yield_single(self, node): return node[0]
+    def yield_multi(self, node): return node
+    
+    def sub_single(self, node, *args): return self.subrs[0].sub(node[0],node,args[0])
+    def sub_multi(self, node, *args): return zip( *map(lambda n,rs:rs.sub(n,node,args[0]), node, self.subrs)):
+                
+        
+    def _iter( self, preds, node ):
         pred = preds[0]
            
         # 过滤判断
-        succ = pred.match( nodes )
+        succ = pred.match( node )
         if succ > 0 and len(preds)>1: preds = preds[1:]
         
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred.pre_yield: yield nodes
+            if pred.pre_yield: self.yield_node(node)
                 
-            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)):
-                yield from self.__iter( preds, ss )
+            for ss in self.get_sub(nodes[0],nodes,pred.cls_name):
+                yield from self._iter( preds, ss )
             
-            if pred.post_yield: yield nodes
+            if pred.post_yield: self.yield_node( node )
          
         elif succ == -1:  # 匹配不成功，迭代子对象
-            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)):
-                yield from self.__iter( preds, ss )
+            for ss in self.get_sub(nodes[0],nodes,pred.cls_name):
+                yield from self.iter_single( preds, ss )
             
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.pre_yield: yield nodes
-            if pred.post_yield: yield nodes
+            if pred.pre_yield: yield nodes[0]
+            if pred.post_yield: yield nodes[0]
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred.pre_yield: yield nodes
-            if pred.post_yield: yield nodes
+            if pred.pre_yield: self.yield_node( node )
+            if pred.post_yield: self.yield_node( node )
             raise StopIteration()
 
         elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()
-
         
         
     def select(self, node): 
@@ -239,17 +254,9 @@ class iterator:
     def __iter__(self):
         if self.step == 0:
             self.compile(self.sSelect)
-        return self.__iter( self.node, [], self.preds )
+        return self.__iter( self.nodes, self.preds )
         
-    def count(self, count):
-        for v in self:
-            if count <= 0:
-                raise StopIteration()
-            else:
-                count -= 1
-                yield v
-                
-                
+            
 def iterator_old( node, sSelect='', count=-1, **kwargs ):
     """ Get an iterator from data node.
 
