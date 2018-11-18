@@ -28,7 +28,7 @@ class Pred:
 
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
-        self.pre_yield, self.post_yield = (True, False)
+        self.yield_typ = 1  # 默认子项前
 
         for f in (flags if flags else ''): # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
@@ -37,8 +37,8 @@ class Pred:
             elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
             elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
             elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-            elif f == 'P': self.pre_yield = False  # 匹配成功后在调用子节点前返回当前节点
-            elif f == 'p': self.post_yield = True # 匹配成功后调用子节点后返回当前节点
+            elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
+            elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
@@ -101,7 +101,7 @@ class Pred:
 
 def get_subnode_from_index(node, nodes, *args): return node.sub()
 def get_subnode_from_array(node, nodes, *args): return node if hasattr(node,'__iter__') else []
-def get_subnode_from_list(self, subn): 
+def get_subnode_from_list(subn): 
     def tmp( node, nodes, *args ):
         if isinstance(node, (list, tuple)):
             return node
@@ -113,7 +113,7 @@ def get_subnode_from_list(self, subn):
                 return []
     return tmp
 
-def get_subnode_from_filter(self, nfunc):
+def get_subnode_from_filter(nfunc):
     def tmp(node, nodes, *args): 
         if isinstance(node, (list, tuple)):
             return node
@@ -121,7 +121,7 @@ def get_subnode_from_filter(self, nfunc):
             return nfunc(node, args[0])
     return tmp
 
-def get_subnode_from_func(self, nfunc):
+def get_subnode_from_func(nfunc):
     def tmp(node, nodes, *args):
         if isinstance(node, (list, tuple)):
             return node
@@ -138,8 +138,8 @@ class SubRelation:
             self.sub = get_subnode_from_array
         elif isinstance( nfunc, str ): # 链表
             self.sub = get_subnode_from_list( nfunc )
-        elif isinstance( nfunc, Index ):
-            self.sub = get_subnode_from_index
+        # elif isinstance( nfunc, Index ):
+        #     self.sub = get_subnode_from_index
         elif hasattr( nfunc, '__call__' ): # 普通函数
             if ntyp == 5:  # 非用户自定义搜索函数
                 self.sub = get_subnode_from_filter(nfunc)
@@ -238,9 +238,11 @@ class iterator:
           -- 5: 'gnxt' is a filter function
         - attr: A string represent how to get the attribute of node. Default is 'getattr'
         """
-        
+        # self._iter = self._iter_single
+
+        self._iter = self._iter_single_root if cfg.get('ignore_root', False) else self._iter_single
+
         self.nodes = node
-        self._iter = self._iter_single
 
         self.subrs = [SubRelation(cfg.get('ntyp', 0), cfg.get('gnxt', None))]    
 
@@ -250,8 +252,6 @@ class iterator:
         
         self.attr = cfg.get('attr', 'getattr')  # 获取属性的函数
             
-        # for f in flags: pass
-
         r = PATT_SELECT.split(sSelect)
         r = [deq(iter(r), 4) for i in range(int(len(r)/4))]
         self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]        
@@ -267,8 +267,12 @@ class iterator:
         else:
             self.subrs.append( SubRelation( ntyp, gnxt ) )
 
-        self._iter = self._iter_multi
+        self._iter = self._iter_multi if self._iter==self._iter_single else self._iter_multi_root
         return self
+
+    def _iter_single_root( self, preds, node ):
+        for ss in self.subrs[0].sub(node, node, preds[0].cls_name):
+                yield from self._iter_single( preds, ss )
         
     def _iter_single( self, preds, node ):
         pred = preds[0]
@@ -277,31 +281,33 @@ class iterator:
         succ = pred.match( (node,) )
        
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred.pre_yield: yield node
+            if pred.yield_typ==1: yield node
                 
-             if len(preds)>1: preds = preds[1:]
+            if len(preds)>1: preds = preds[1:]
  
             for ss in self.subrs[0].sub(node, node, pred.cls_name):
                 yield from self._iter_single( preds, ss )
             
-            if pred.post_yield: yield node
+            if pred.yield_typ==2: yield node
          
         elif succ == -1:  # 匹配不成功，迭代子对象
             for ss in self.subrs[0].sub(node, node, pred.cls_name):
                 yield from self._iter_single( preds, ss )
             
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.pre_yield: yield node
-            if pred.post_yield: yield node
+            if pred.yield_typ != 0: yield node
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred.pre_yield: yield node
-            if pred.post_yield: yield node
+            if pred.yield_typ != 0: yield node
             raise StopIteration()
 
         elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()
         
+    def _iter_multi_root( self, preds, node ):
+        for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,preds[0].cls_name), nodes, self.subrs)):
+                yield from self._iter_single( preds, ss )
+
     def _iter_multi( self, preds, nodes ):
         pred = preds[0]
            
@@ -309,14 +315,14 @@ class iterator:
         succ = pred.match( nodes )
         
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred.pre_yield: yield nodes
+            if pred.yield_typ==1: yield nodes
                 
             if len(preds)>1: preds = preds[1:]
         
             for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)):
                 yield from self._iter_multi( preds, ss )
             
-            if pred.post_yield: yield nodes
+            if pred.yield_typ==2: yield nodes
          
         elif succ == -1:  # 匹配不成功，迭代子对象
 
@@ -324,12 +330,10 @@ class iterator:
                 yield from self._iter_multi( preds, ss )
             
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.pre_yield: yield nodes
-            if pred.post_yield: yield nodes
+            if pred.yield_typ!=0: yield nodes
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred.pre_yield: yield nodes
-            if pred.post_yield: yield nodes
+            if pred.yield_typ!=0: yield nodes
             raise StopIteration()
 
         elif succ == -3: # 匹配不成功，终止迭代
