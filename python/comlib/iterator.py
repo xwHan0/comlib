@@ -2,27 +2,29 @@ import re
 from comlib.iterator_operator import deq
 from comlib.iterators import *
         
+"""
+
+"""
+
 PATT_SELECT = re.compile(r'\s*(\w+|\*)(?:\[([^]]+)\])?(/[a-zA-Z]+)?\s*')
 PATT_ATTR = re.compile(r'{(\w+)}')
-PATT_PRED = re.compile(r'(\w*)(\[(.*)\])?(/[oOcCsS]+)?')  # 单条件匹配模板
-
         
 class Pred:
         
-    def __init__(self, cfg, nflag='', cls_name = '', pred = '', flags = ''):
+    def __init__(self, cfg=None, nflag='', cls_name = '*', pred = None, flags = ''):
         
+        self.cls_name = cls_name
+
         if cls_name == '*' and pred == None:
             self.match = self.match_none
         elif cls_name == '*':  # pred!=None
             pred = pred if pred else ''
-            pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
+            # pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
             self.pred = PATT_ATTR.sub( cfg.attr + r'(node,"\g<1>")', pred, count=0 )
             self.match = self.match_condition
         elif pred == None:  # cls_name='*'
-            self.cls_name = cls_name
             self.match = self.match_obj
         else:
-            self.cls_name = cls_name
             self.pred = pred
             self.match = self.match_full
 
@@ -98,67 +100,58 @@ class Pred:
                       
         return self.match_succ_rst
     
+def get_subnode_args0(node, nodes, *args):
+    """调用node(自身)获取子节点集合"""
+    return node if hasattr(node,'__iter__') else []
 
-def get_subnode_from_index(node, nodes, *args): return node.sub()
-def get_subnode_from_array(node, nodes, *args): return node if hasattr(node,'__iter__') else []
-def get_subnode_from_list(subn): 
-    def tmp( node, nodes, *args ):
-        if isinstance(node, (list, tuple)):
-            return node
-        else:
-            try:
-                sub = getattr(node, subn)
-                return sub if hasattr( sub, '__iter__' ) else []
-            except AttributeError:
-                return []
-    return tmp
-
-def get_subnode_from_filter(nfunc):
-    def tmp(node, nodes, *args): 
-        if isinstance(node, (list, tuple)):
-            return node
-        else:
-            return nfunc(node, args[0])
-    return tmp
-
-def get_subnode_from_func(nfunc):
-    def tmp(node, nodes, *args):
-        if isinstance(node, (list, tuple)):
-            return node
-        else:
-            sub = nfunc(nodes)
+def get_subnode_args1(gnxt):
+    """调用gnxt[0](node)获取子节点集合"""
+    def func(node, nodes, *args):
+        if isinstance(node, (list, tuple)): return node
+        try:
+            sub = gnxt[0](node)
             return sub if hasattr( sub, '__iter__' ) else []
-    return tmp
+        except Exception:
+            return []
+    return func
+
+def get_subnode_args2_attr(gnxt):
+    """调用gnxt[0](node, gnxt[1])获取子节点集合"""
+    def func(node, nodes, *args):
+        if isinstance(node, (list, tuple)): return node
+        try:
+            sub = gnxt[0](node, gnxt[1])
+            return sub if hasattr( sub, '__iter__' ) else []
+        except Exception:
+            return []
+    return func
+
+def get_subnode_args2_search(gnxt):
+    """调用gnxt[0](node, args[0])搜索子节点集合"""
+    def func(node, nodes, *args):
+        if isinstance(node, (list, tuple)): return node
+        try:
+            sub = gnxt[0](node, args[0])
+            return sub if hasattr( sub, '__iter__' ) else []
+        except Exception:
+            return []
+    return func
+
 
 class SubRelation:
-    def __init__(self, ntyp=None, nfunc=None, sub = None):
+    def __init__(self, gnxt=[]):
     
-        l = len(sub)
-        if l==0:
-            self.sub = get_subnode_from_array
-        elif l==1:
-            self.sub = 
-            
-    
-        if sub != None:
-            self.sub = sub
-        elif nfunc == None: # 数组
-            self.sub = get_subnode_from_array
-        elif isinstance( nfunc, str ): # 链表
-            self.sub = get_subnode_from_list( nfunc )
-        # elif isinstance( nfunc, Index ):
-        #     self.sub = get_subnode_from_index
-        elif hasattr( nfunc, '__call__' ): # 普通函数
-            if ntyp == 5:  # 非用户自定义搜索函数
-                self.sub = get_subnode_from_filter(nfunc)
-            else:
-                self.sub = get_subnode_from_func(nfunc)
+        l = len(gnxt)
+        if l==0: self.sub = get_subnode_args0
+        elif l==1: self.sub = get_subnode_args1(gnxt)
+        elif l==2: self.sub = get_subnode_args2_search(gnxt) if gnxt[1][0] == '$' else get_subnode_args2_attr(gnxt)
 
-    def redirect(self, sub): self.sub = sub
 
     
 
-    
+DEFAULT_PREDS = [Pred()]
+DEFAULT_SUB_RELATION = [SubRelation()]
+INDEX_RELATION = SubRelation([Index.sub])
 
 
 class iterator:
@@ -167,10 +160,13 @@ class iterator:
   按序筛选并打平。
   Filter by designed order and flatten into dimension 1-D.
 
-    Parameter "gnxt" indicates the link method to sub data. There are below style:
-    - None(Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
-    - {String}: An attribute name of node indicates the sub data
-    - {Function}: A function return sub data. The format of function is "(node, idx) => sub" 
+# Sub-node Acquire Method Define
+    Parameter "gnxt" formatted with list indicates the link method to sub data. There are below style:
+    - [](Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
+    - [func]: Acquire the sub-nodes set via node.func() method
+    - [func args]: Acquire the sub-nodes set via node.func(args) method. Now support below args parameter
+      -- '$xxx': A string started with '$'. Iterator will use objName to replace this args
+      -- Other string: Iterator use this string to fill the args of func
     
     Parameter "sSelect" is a string who illustrates one filter condition when iterate.
     The sSelect is define:
@@ -180,12 +176,42 @@ class iterator:
         - p: How to process list node. Default is pre-sub-node process. If there is only ONE ‘p‘ flag, 
              it is post-sub-node process. When there are TWO 'p' flags, both pre- and post- will be processed.  
 
+
+        Generate a iterator for data structure 'node' with configure parameters of '**cfg'.
+
+        'node' can be applied via .select function.
+
+# Selection String
+    'sSelect' is a string represent one or more filter conditions called filter-string.
+    The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
+    - ' ': Ancestor-Descendant relationship.
+    - '>': Parent-Son relationship.
+
+    filter-pattern ::= objName[filter-condition]/flags
+
+    'objName' is the node class name or '*' represented all class.
+
+    'filter-condition' can be ignore with pair '[' and ']'.
+    There are some special attributes in filter-condition:
+    - {idx}: The position of current node in whole node tree
+    - {self}: Current node
+
+    'flags' decide the selection action and direction. They can be ignore with '/'
+    - P: Disable yield current node before sub-nodes enumerate. Default is enable
+    - p: Enable yield current node after sub-nodes enumerate. Default is disable
+
+# Other Options
+    Parameter 'cfg' supplement extend optonals:
+    - pred: A function formatted (node,idx)=>bool represent filter condition for each node
+    - attr: A string represent how to get the attribute of node. Default is 'getattr'
+
+Issue:
+1. 条件中node和nodes的写法
+2. 子函数如何判断继承关系
+
 # Feature
 * Support custom sub-pointer via parameter gnxt
-  -- Support 3 types for gnxt
-    *** None: Array-like data structure
-    *** {String}: Link-list data structure
-    *** {(node,idx)=>sub}: Custom function
+  -- Support 3 types for gnxt. See 'Sub-node Acquire Method Define' for more detail
   -- Support Array-like automatic get sub
     *** ***Note:*** Function gnxt NOT support
 
@@ -209,75 +235,50 @@ class iterator:
 * Support matching pred function via parameter 'pred'
   -- The format of pred is: (node,idx,count) => Boolean
 
-* Support match number
-  -- Support max match number via parameter 'count'. "0" represent unlimited(default)
-  -- Support current match counter in Condition Matching String via identity '{cnt}'
-  
   
     """
-    def __init__(self, node=None, sSelect='*', **cfg):
+    def __init__(self, node=None, sSelect='*', gnxt=[], **cfg):
         """
-        Generate a iterator for data structure 'node' with configure parameters of '**cfg'.
-
-        'node' can be applied via .select function.
-
-        'sSelect' is a string represent one or more filter conditions called filter-string.
-        The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
-        - ' ': Ancestor-Descendant relationship.
-        - '>': Parent-Son relationship.
-
-        filter-pattern ::= objName[filter-condition]/flags
-
-        'objName' is the node class name or '*' represented all class.
-
-        'filter-condition' can be ignore with pair '[' and ']'.
-        There are some special attributes in filter-condition:
-        - {idx}: The position of current node in whole node tree
-        - {self}: Current node
-
-        'flags' decide the selection action and direction. They can be ignore with '/'
-        - P: Disable yield current node before sub-nodes enumerate. Default is enable
-        - p: Enable yield current node after sub-nodes enumerate. Default is disable
-
-        Parameter 'cfg' supplement extend optonals:
-        - gnxt: A function formatted (node,attr,idx)=>iter represent the sub-nodes selection action for each node
-        - pred: A function formatted (node,idx)=>bool represent filter condition for each node
-        - ntyp: Special gnxt flag
-          -- 5: 'gnxt' is a filter function
-        - attr: A string represent how to get the attribute of node. Default is 'getattr'
         """
+        
+        self.nodes = node   # 保存数据结构
+        self.attr = cfg.get('attr', 'getattr')  # 获取属性读取函数
+        # 迭代调用函数选择
+        self._iter = self._iter_single_root if isinstance(node, (list,tuple)) else self._iter_single
 
-        if isinstance(node, (list,tuple)):
-            self._iter = self._iter_single_root
+        # 条件判断
+        if sSelect == '*':
+            self.preds = DEFAULT_PREDS
         else:
-            self._iter_single
-
-        self.nodes = node
-
-        self.subrs = [SubRelation(cfg.get('ntyp', 0), cfg.get('gnxt', None))]    
+            r = PATT_SELECT.split(sSelect)
+            r = [deq(iter(r), 4) for i in range(int(len(r)/4))]
+            self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]     
+            
+        # 子节点索引
+        self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
         # self.pred = cfg.get('pred', None)  # 条件函数，和sSelect共存同时有效
         # if not hasattr(self.pred, '__call__'):
         #     self.pred = None
         
-        self.attr = cfg.get('attr', 'getattr')  # 获取属性的函数
             
-        r = PATT_SELECT.split(sSelect)
-        r = [deq(iter(r), 4) for i in range(int(len(r)/4))]
-        self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]        
+   
     
-    def assist(self, node, gnxt=None, ntyp=None):
+    def assist(self, node, gnxt=[]):
         if self._iter == self._iter_single:
             self.nodes = [self.nodes, node]
+            self._iter = self._iter_multi
+        elif self._iter == self._iter_single_root:
+            self.nodes = [self.nodes, node]
+            self._iter = self._iter_multi_root
         else:
             self.nodes.append(node)
 
         if isinstance( node, Index ):
-            self.subrs.append( SubRelation( sub = get_subnode_from_index ) )
+            self.subrs.append( INDEX_RELATION )
         else:
-            self.subrs.append( SubRelation( ntyp, gnxt ) )
+            self.subrs.append( SubRelation( gnxt ) )
 
-        self._iter = self._iter_multi if self._iter==self._iter_single else self._iter_multi_root
         return self
 
     def _iter_single_root( self, preds, node ):
@@ -315,8 +316,8 @@ class iterator:
             raise StopIteration()
         
     def _iter_multi_root( self, preds, node ):
-        for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,preds[0].cls_name), nodes, self.subrs)):
-                yield from self._iter_single( preds, ss )
+        for ss in zip( *map(lambda n,rs:rs.sub(n,node,preds[0].cls_name), node, self.subrs)):
+                yield from self._iter_multi( preds, ss )
 
     def _iter_multi( self, preds, nodes ):
         pred = preds[0]
@@ -329,7 +330,7 @@ class iterator:
                 
             if len(preds)>1: preds = preds[1:]
         
-            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)):
+            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)): # 当nodes[0]不需要迭代时，退出nodes[1]的处理
                 yield from self._iter_multi( preds, ss )
             
             if pred.yield_typ==2: yield nodes
@@ -348,11 +349,7 @@ class iterator:
 
         elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()    
-        
-    def select(self, node): 
-        self.node = node
-        return self
-        
+               
     def __iter__(self):
         return self._iter( self.preds, self.nodes )
         

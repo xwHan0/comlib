@@ -17,12 +17,12 @@ def gnxt(node, idx):
 class TestIterator:
     def test_1d_array(self):
         a = [10,20,30,40]
-        r = [x for x in iterator(a, 'int')]
+        r = [x for x in iterator(a)]
         assert r == [10,20,30,40]
 
     def test_1d_array_index(self):
         a = [10,20,30,40]
-        r = [(idx.idx(), x) for x,idx in iterator(a, 'int').assist(Index())]
+        r = [(idx.idx(), x) for x,idx in iterator(a).assist(Index())]
         assert r == [([0],10),([1],20),([2],30),([3],40)]
 
     def test_3d_array_index(self):
@@ -35,7 +35,7 @@ class TestIterator:
         n1 = node(1000)
         n2 = node(2000)
         n0 = node(100, [n1, n2])
-        r = [x.val for x in iterator(n0, gnxt='sub')]
+        r = [x.val for x in iterator(n0, gnxt=[getattr, 'sub'])]
         assert r == [100, 1000, 2000]
 
     def test_hybrid(self):
@@ -53,11 +53,11 @@ class TestIterator:
         n1 = node(200)
         n1.sub = [1000,2000,3000]
         a = [n0, n1]
-        r = [x[1].val for x in iterator(a, gnxt=gnxt, sSelect='node' )]
+        r = [x.val for x in iterator(a, gnxt=[gnxt], sSelect='node' )]
         assert r == [100,200]
         
     def test_select_condition(self):
         n1, n2 = (node(200), node(300))
         n0 = node(100, [n1, n2])
-        r = [x.val for x,i in iterator(n0, gnxt='sub', sSelect='*[not (len(node[1].idx())==1 and {val}==300)]').assist(Index(), index_sub)]
+        r = [x.val for x,i in iterator(n0, gnxt=[gnxt], sSelect='*[not (len(node[1].idx())==1 and {val}==300)]').assist(Index())]
         assert r == [100,200]
