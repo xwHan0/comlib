@@ -132,6 +132,14 @@ def get_subnode_from_func(nfunc):
 
 class SubRelation:
     def __init__(self, ntyp=None, nfunc=None, sub = None):
+    
+        l = len(sub)
+        if l==0:
+            self.sub = get_subnode_from_array
+        elif l==1:
+            self.sub = 
+            
+    
         if sub != None:
             self.sub = sub
         elif nfunc == None: # 数组
@@ -238,9 +246,11 @@ class iterator:
           -- 5: 'gnxt' is a filter function
         - attr: A string represent how to get the attribute of node. Default is 'getattr'
         """
-        # self._iter = self._iter_single
 
-        self._iter = self._iter_single_root if cfg.get('ignore_root', False) else self._iter_single
+        if isinstance(node, (list,tuple)):
+            self._iter = self._iter_single_root
+        else:
+            self._iter_single
 
         self.nodes = node
 
