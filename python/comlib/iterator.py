@@ -5,12 +5,20 @@ from comlib.iterators import *
 """
 
 """
-
-PATT_SELECT = re.compile(r'\s*(\w+|\*)(?:\[([^]]+)\])?(/[a-zA-Z]+)?\s*')
-PATT_ATTR = re.compile(r'{(\w+)}')
+PATT_CONDITION_BRACKET = r'[^[\]]'
+PATT_CONDITION_1 = r'{0}*'.format(PATT_CONDITION_BRACKET)
+PATT_CONDITION_2 = r'(?:{0}*\[{0}+\]{0}*)+'.format(PATT_CONDITION_BRACKET)
+PATT_CONDITION_3 = r'(?:{0}*\[(?:{0}|{1})\]{0}*)+'.format(PATT_CONDITION_1, PATT_CONDITION_2)
+PATT_CONDITION = r'\s*(\w+|\*)(?:\[(?:{0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
+    PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
+)
+PATT_SELECT = re.compile(PATT_CONDITION)
+PATT_ATTR1 = re.compile(r'{(\w+)}')
+PATT_ATTR2 = re.compile(r'{\$(\d+)\.(\w+)}')
+PATT_ATTR3 = re.compile(r'{\$(\d+)}')
+PATT_ATTR4 = re.compile(r'{\$\$}')
         
-class Pred:
-        
+class Pred:        
     def __init__(self, cfg=None, nflag='', cls_name = '*', pred = None, flags = ''):
         
         self.cls_name = cls_name
@@ -20,7 +28,10 @@ class Pred:
         elif cls_name == '*':  # pred!=None
             pred = pred if pred else ''
             # pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
-            self.pred = PATT_ATTR.sub( cfg.attr + r'(node,"\g<1>")', pred, count=0 )
+            pred = PATT_ATTR1.sub( cfg.attr + r'(node[0],"\g<1>")', pred, count=0 )
+            pred = PATT_ATTR2.sub( cfg.attr + r'(node[\g<1>],"\g<2>")', pred, count=0 )
+            pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
+            self.pred = PATT_ATTR4.sub( 'node', pred, count=0 )
             self.match = self.match_condition
         elif pred == None:  # cls_name='*'
             self.match = self.match_obj
@@ -106,35 +117,65 @@ def get_subnode_args0(node, nodes, *args):
 
 def get_subnode_args1(gnxt):
     """调用gnxt[0](node)获取子节点集合"""
-    def func(node, nodes, *args):
-        if isinstance(node, (list, tuple)): return node
-        try:
-            sub = gnxt[0](node)
-            return sub if hasattr( sub, '__iter__' ) else []
-        except Exception:
-            return []
+    nxt = gnxt[0]
+    if isinstance(nxt, str):
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = getattr(node,nxt)(node)
+                return sub if hasattr( sub, '__iter__' ) else []
+            except Exception:
+                return []
+    else:
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = nxt(node)
+                return sub if hasattr( sub, '__iter__' ) else []
+            except Exception:
+                return []
     return func
 
 def get_subnode_args2_attr(gnxt):
     """调用gnxt[0](node, gnxt[1])获取子节点集合"""
-    def func(node, nodes, *args):
-        if isinstance(node, (list, tuple)): return node
-        try:
-            sub = gnxt[0](node, gnxt[1])
-            return sub if hasattr( sub, '__iter__' ) else []
-        except Exception:
-            return []
+    nxt = gnxt[0]
+    if isinstance(nxt, str):
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = getattr(node,nxt)(node, gnxt[1])
+                return sub if hasattr( sub, '__iter__' ) else []
+            except Exception:
+                return []
+    else:
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = nxt(node, gnxt[1])
+                return sub if hasattr( sub, '__iter__' ) else []
+            except Exception:
+                return []
     return func
 
 def get_subnode_args2_search(gnxt):
     """调用gnxt[0](node, args[0])搜索子节点集合"""
-    def func(node, nodes, *args):
-        if isinstance(node, (list, tuple)): return node
-        try:
-            sub = gnxt[0](node, args[0])
-            return sub if hasattr( sub, '__iter__' ) else []
-        except Exception:
-            return []
+    nxt = gnxt[0]
+    if isinstance(nxt, str):
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = getattr(node,nxt)(node, args[0])
+                return sub if hasattr( sub, '__iter__' ) else []
+            except Exception:
+                return []
+    else:
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = nxt(node, args[0])
+                return sub if hasattr( sub, '__iter__' ) else []
+            except Exception:
+                return []
     return func
 
 
@@ -168,6 +209,11 @@ class iterator:
       -- '$xxx': A string started with '$'. Iterator will use objName to replace this args
       -- Other string: Iterator use this string to fill the args of func
     
+    'func' support below two type:
+    - Function format: func has __call__ attribute. Iterator use this func
+    - String format:
+    
+# Selection
     Parameter "sSelect" is a string who illustrates one filter condition when iterate.
     The sSelect is define:
     sSelect ::= (<filtes>.*)(/)?(<flags>.*)
