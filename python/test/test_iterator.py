@@ -44,7 +44,7 @@ class TestIterator:
         n1 = node(200)
         n1.sub = [1000,2000,3000]
         a = [n0, n1]
-        r = [x for x in iterator(a, gnxt=gnxt ) if isinstance(x[1], int)]
+        r = [x for x in iterator(a, gnxt=gnxt ) if isinstance(x, int)]
         assert r == [([0,0], 100), ([0,1], 200), ([0,2], 300), ([1,0], 1000), ([1,1], 2000), ([1,2], 3000)]
 
     def test_select_object(self):
@@ -53,11 +53,11 @@ class TestIterator:
         n1 = node(200)
         n1.sub = [1000,2000,3000]
         a = [n0, n1]
-        r = [x.val for x in iterator(a, gnxt=[gnxt], sSelect='node' )]
+        r = [x.val for x in iterator(a, gnxt=[getattr, 'sub'], sSelect='node' )]
         assert r == [100,200]
         
     def test_select_condition(self):
         n1, n2 = (node(200), node(300))
         n0 = node(100, [n1, n2])
-        r = [x.val for x,i in iterator(n0, gnxt=[gnxt], sSelect='*[not (len(node[1].idx())==1 and {val}==300)]').assist(Index())]
+        r = [x.val for x,i in iterator(n0, gnxt=[getattr, 'sub'], sSelect='*[not (len(node[1].idx())==1 and {val}==300)]').assist(Index())]
         assert r == [100,200]

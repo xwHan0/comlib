@@ -11,7 +11,7 @@ PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
 PATT_CONDITION_2 = r'(?:{0})+'.format(PATT_CONDITION_BASE2)
 PATT_CONDITION_BASE3 = r'(?:{0}|{1})*\[(?:{1})+\](?:{0}|{1})*'.format(PATT_CONDITION_BASE1, PATT_CONDITION_BASE2)
 PATT_CONDITION_3 = r'(?:{0})+'.format(PATT_CONDITION_BASE3)
-PATT_CONDITION = r'\s*(\w+|\*)(?:\[(?:{0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
+PATT_CONDITION = r'\s*(\w+|\*)(?:\[({0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
     PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
 )
 PATT_SELECT = re.compile(PATT_CONDITION)
@@ -29,7 +29,6 @@ class Pred:
             self.match = self.match_none
         elif cls_name == '*':  # pred!=None
             pred = pred if pred else ''
-            # pred = pred.replace('{idx}', 'idx').replace('{self}', 'node')
             pred = PATT_ATTR1.sub( cfg.attr + r'(node[0],"\g<1>")', pred, count=0 )
             pred = PATT_ATTR2.sub( cfg.attr + r'(node[\g<1>],"\g<2>")', pred, count=0 )
             pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
@@ -38,7 +37,11 @@ class Pred:
         elif pred == None:  # cls_name='*'
             self.match = self.match_obj
         else:
-            self.pred = pred
+            pred = pred if pred else ''
+            pred = PATT_ATTR1.sub( cfg.attr + r'(node[0],"\g<1>")', pred, count=0 )
+            pred = PATT_ATTR2.sub( cfg.attr + r'(node[\g<1>],"\g<2>")', pred, count=0 )
+            pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
+            self.pred = PATT_ATTR4.sub( 'node', pred, count=0 )
             self.match = self.match_full
 
         # 无论匹配成功与否，默认总是继续其余匹配
