@@ -5,10 +5,12 @@ from comlib.iterators import *
 """
 
 """
-PATT_CONDITION_BRACKET = r'[^[\]]'
-PATT_CONDITION_1 = r'{0}*'.format(PATT_CONDITION_BRACKET)
-PATT_CONDITION_2 = r'(?:{0}*\[{0}+\]{0}*)+'.format(PATT_CONDITION_BRACKET)
-PATT_CONDITION_3 = r'(?:{0}*\[(?:{0}|{1})\]{0}*)+'.format(PATT_CONDITION_1, PATT_CONDITION_2)
+PATT_CONDITION_BASE1 = r'[^[\]]'
+PATT_CONDITION_1 = r'(?:{0})+'.format(PATT_CONDITION_BASE1)
+PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
+PATT_CONDITION_2 = r'(?:{0})+'.format(PATT_CONDITION_BASE2)
+PATT_CONDITION_BASE3 = r'(?:{0}|{1})*\[(?:{1})+\](?:{0}|{1})*'.format(PATT_CONDITION_BASE1, PATT_CONDITION_BASE2)
+PATT_CONDITION_3 = r'(?:{0})+'.format(PATT_CONDITION_BASE3)
 PATT_CONDITION = r'\s*(\w+|\*)(?:\[(?:{0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
     PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
 )
