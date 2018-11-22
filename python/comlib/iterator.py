@@ -216,7 +216,7 @@ class iterator:
     
     'func' support below two type:
     - Function format: func has __call__ attribute. Iterator use this func
-    - String format:
+    - String format: 对于类方法函数，存在继承。需要根据当前实例的类来调用对应的继承函数。所以使用字符串来标识这种函数
     
 # Selection
     Parameter "sSelect" is a string who illustrates one filter condition when iterate.
@@ -243,10 +243,8 @@ class iterator:
     'objName' is the node class name or '*' represented all class.
 
     'filter-condition' can be ignore with pair '[' and ']'.
-    There are some special attributes in filter-condition:
-    - {idx}: The position of current node in whole node tree
-    - {self}: Current node
-
+    * Node: Support 3-level '[]' pair in max in condition statement
+     
     'flags' decide the selection action and direction. They can be ignore with '/'
     - P: Disable yield current node before sub-nodes enumerate. Default is enable
     - p: Enable yield current node after sub-nodes enumerate. Default is disable
