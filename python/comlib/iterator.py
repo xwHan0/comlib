@@ -19,6 +19,8 @@ PATT_ATTR1 = re.compile(r'{(\w+)}')
 PATT_ATTR2 = re.compile(r'{\$(\d+)\.(\w+)}')
 PATT_ATTR3 = re.compile(r'{\$(\d+)}')
 PATT_ATTR4 = re.compile(r'{\$\$}')
+
+PATT_NODE = re.compile(r'{\$(\d+)(?:\.(?:\w+))?}')
         
 class Pred:        
     def __init__(self, cfg=None, nflag='', cls_name = '*', pred = None, flags = ''):
@@ -217,23 +219,11 @@ class iterator:
     'func' support below two type:
     - Function format: func has __call__ attribute. Iterator use this func
     - String format: 对于类方法函数，存在继承。需要根据当前实例的类来调用对应的继承函数。所以使用字符串来标识这种函数
+
+    * Notes: iterator supports getting the sub from List, Tuple and Index automatic 
     
-# Selection
-    Parameter "sSelect" is a string who illustrates one filter condition when iterate.
-    The sSelect is define:
-    sSelect ::= (<filtes>.*)(/)?(<flags>.*)
-    filtes ::= Filter content
-    flags ::= Filter options ::= (p)(p)
-        - p: How to process list node. Default is pre-sub-node process. If there is only ONE ‘p‘ flag, 
-             it is post-sub-node process. When there are TWO 'p' flags, both pre- and post- will be processed.  
-
-
-        Generate a iterator for data structure 'node' with configure parameters of '**cfg'.
-
-        'node' can be applied via .select function.
-
-# Selection String
-    'sSelect' is a string represent one or more filter conditions called filter-string.
+# Filter String
+    Filter string is a string represent one or more filter conditions.
     The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
     - ' ': Ancestor-Descendant relationship.
     - '>': Parent-Son relationship.
@@ -242,9 +232,19 @@ class iterator:
 
     'objName' is the node class name or '*' represented all class.
 
-    'filter-condition' can be ignore with pair '[' and ']'.
+  ## Filter-Condition
+    'filter-condition' can be wrapped with pair '[' and ']'.
+    
+    Support below special expression: ('nodes' represents current access nodes from all node)
+    * {attr}: Get the attribute of nodes[0] like: 'nodes[0].attr'
+    * {$n}: Get the n-th node
+    * {$n.attr}: Get the attribute of nodes[n] like: 'nodes[n].attr'
+    * {$$}: List of all nodes
+      
+        
     * Node: Support 3-level '[]' pair in max in condition statement
      
+  ## Flags   
     'flags' decide the selection action and direction. They can be ignore with '/'
     - P: Disable yield current node before sub-nodes enumerate. Default is enable
     - p: Enable yield current node after sub-nodes enumerate. Default is disable
@@ -288,10 +288,16 @@ Issue:
     """
     def __init__(self, node=None, sSelect='*', gnxt=[], **cfg):
         """
+        Arguments:
+        - node {collection}: operated data
+        - sSlection {String}: Filter string
+        - gnxt {list}: Sub-node acquire method
+        - cfg {map}: optional parameters
         """
         
         self.nodes = node   # 保存数据结构
         self.attr = cfg.get('attr', 'getattr')  # 获取属性读取函数
+        self.min_node_num = max(map(int, PATT_NODE.findall(sSelection)), default=1)
         # 迭代调用函数选择
         self._iter = self._iter_single_root if isinstance(node, (list,tuple)) else self._iter_single
 
@@ -306,14 +312,14 @@ Issue:
         # 子节点索引
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
-        # self.pred = cfg.get('pred', None)  # 条件函数，和sSelect共存同时有效
-        # if not hasattr(self.pred, '__call__'):
-        #     self.pred = None
         
             
    
     
     def assist(self, node, gnxt=[]):
+        """
+        Append assist collection for iterator.
+        """
         if self._iter == self._iter_single:
             self.nodes = [self.nodes, node]
             self._iter = self._iter_multi
@@ -364,9 +370,13 @@ Issue:
         elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()
         
+    def _get_subnode(self, n, rs, nodes, args):
+        sub = rs.sub(n,nodes, args)
+        return sub if hasattr(sub, '__iter__') else []
+        
     def _iter_multi_root( self, preds, node ):
-        for ss in zip( *map(lambda n,rs:rs.sub(n,node,preds[0].cls_name), node, self.subrs)):
-                yield from self._iter_multi( preds, ss )
+        for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,node,preds[0].cls_name), node, self.subrs)):
+            yield from self._iter_multi( preds, ss )
 
     def _iter_multi( self, preds, nodes ):
         pred = preds[0]
@@ -379,7 +389,7 @@ Issue:
                 
             if len(preds)>1: preds = preds[1:]
         
-            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs)): # 当nodes[0]不需要迭代时，退出nodes[1]的处理
+            for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,nodes,pred.cls_name), nodes, self.subrs)): # 当nodes[0]不需要迭代时，退出nodes[1]的处理
                 yield from self._iter_multi( preds, ss )
             
             if pred.yield_typ==2: yield nodes
@@ -400,6 +410,12 @@ Issue:
             raise StopIteration()    
                
     def __iter__(self):
+        if self._iter == self._iter_single or self._iter == self._iter_single_root:
+            if self.max_node_num > 1:
+                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.max_node_num, 1))
+        elif self.max_node_num > len(self.nodes):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.max_node_num, len(self.nodes)))
+        
         return self._iter( self.preds, self.nodes )
         
             
