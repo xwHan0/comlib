@@ -237,10 +237,12 @@ class iterator:
     
     Support below special expression: ('nodes' represents current access nodes from all node)
     * {attr}: Get the attribute of nodes[0] like: 'nodes[0].attr'
+      -- The default attribution acquire method is 'getattr'. User can change it through 'attr' argument of **cfg in constructor
     * {$n}: Get the n-th node
     * {$n.attr}: Get the attribute of nodes[n] like: 'nodes[n].attr'
     * {$$}: List of all nodes
-      
+    The special expression prefix '$' can be configured via 'prefix' argument of **cfg in constructor. For example,
+    cfg['prefix']='#' means using '{#n}', '{#n.attr}' and '{#$}' to replace '{$n}', '{$n.attr}' and '{$$}'
         
     * Node: Support 3-level '[]' pair in max in condition statement
      
@@ -297,7 +299,6 @@ Issue:
         
         self.nodes = node   # 保存数据结构
         self.attr = cfg.get('attr', 'getattr')  # 获取属性读取函数
-        self.min_node_num = max(map(int, PATT_NODE.findall(sSelection)), default=1)
         # 迭代调用函数选择
         self._iter = self._iter_single_root if isinstance(node, (list,tuple)) else self._iter_single
 
@@ -312,7 +313,16 @@ Issue:
         # 子节点索引
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
-        
+        # Filter string特殊表示前缀符
+        prefix = cfg.get('prefix', None)
+        if prefix:
+            PATT_ATTR2 = re.compile(r'{\’ + prefix + r’(\d+)\.(\w+)}')
+            PATT_ATTR3 = re.compile(r'{\’ + prefix + r’(\d+)}')
+            PATT_ATTR4 = re.compile(r'{\’ + prefix + r’\$}')
+            PATT_NODE = re.compile(r'{\’ + prefix + r’(\d+)(?:\.(?:\w+))?}')
+
+        self.min_node_num = max(map(int, PATT_NODE.findall(sSelect)), default=1)
+            
             
    
     
@@ -411,10 +421,10 @@ Issue:
                
     def __iter__(self):
         if self._iter == self._iter_single or self._iter == self._iter_single_root:
-            if self.max_node_num > 1:
-                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.max_node_num, 1))
-        elif self.max_node_num > len(self.nodes):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.max_node_num, len(self.nodes)))
+            if self.min_node_num > 1:
+                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
+        elif self.min_node_num > len(self.nodes):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.nodes)))
         
         return self._iter( self.preds, self.nodes )
         
