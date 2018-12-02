@@ -15,13 +15,19 @@ PATT_CONDITION = r'\s*(\w+|\*)(?:\[({0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
     PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
 )
 PATT_SELECT = re.compile(PATT_CONDITION)
-PATT_ATTR1 = re.compile(r'{(\w+)}')
-PATT_ATTR2 = re.compile(r'{\$(\d+)\.(\w+)}')
-PATT_ATTR3 = re.compile(r'{\$(\d+)}')
-PATT_ATTR4 = re.compile(r'{\$\$}')
-
-PATT_NODE = re.compile(r'{\$(\d+)(?:\.(?:\w+))?}')
+# PATT_ATTR1 = re.compile(r'{(\w+)}')
+# PATT_ATTR2 = re.compile(r'{\$(\d+)\.(\w+)}')
+# PATT_ATTR3 = re.compile(r'{\$(\d+)}')
+# PATT_ATTR4 = re.compile(r'{\$\$}')
+# PATT_NODE = re.compile(r'{\$(\d+)(?:\.(?:\w+))?}')
         
+CRITERIA_PATT = [
+    (re.compile(r'#(\d+)'), r'nodes[\g<1>]'),
+    (re.compile(r'##'), r'nodes'),
+    (re.compile(r'#\.'), r'nodes[0].'),
+]
+CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
+       
 class Pred:        
     def __init__(self, cfg=None, nflag='', cls_name = '*', pred = None, flags = ''):
         
@@ -30,35 +36,35 @@ class Pred:
         if cls_name == '*' and pred == None:
             self.match = self.match_none
         elif cls_name == '*':  # pred!=None
-            pred = pred if pred else ''
-            pred = PATT_ATTR1.sub( cfg.attr + r'(node[0],"\g<1>")', pred, count=0 )
-            pred = PATT_ATTR2.sub( cfg.attr + r'(node[\g<1>],"\g<2>")', pred, count=0 )
-            pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
-            self.pred = PATT_ATTR4.sub( 'node', pred, count=0 )
+            self.pred = pred if pred else ''
+            for p,s in CRITERIA_PATT:
+                self.pred = p.sub(s,self.pred)
             self.match = self.match_condition
         elif pred == None:  # cls_name='*'
             self.match = self.match_obj
         else:
-            pred = pred if pred else ''
-            pred = PATT_ATTR1.sub( cfg.attr + r'(node[0],"\g<1>")', pred, count=0 )
-            pred = PATT_ATTR2.sub( cfg.attr + r'(node[\g<1>],"\g<2>")', pred, count=0 )
-            pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
-            self.pred = PATT_ATTR4.sub( 'node', pred, count=0 )
+            self.pred = pred if pred else ''
+            for p,s in CRITERIA_PATT:
+                self.pred = p.sub(s, self.pred)
+            #pred = PATT_ATTR1.sub( CRITERIA_ATTR + r'(node[0],"\g<1>")', pred, count=0 )
+            #pred = PATT_ATTR2.sub( CRITERIA_ATTR + r'(node[\g<1>],"\g<2>")', pred, count=0 )
+            #pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
+            #self.pred = PATT_ATTR4.sub( 'node', pred, count=0 )
             self.match = self.match_full
 
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
         self.yield_typ = 1  # 默认子项前
 
-        for f in (flags if flags else ''): # 
-            if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
-            elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
-            elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
-            elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
-            elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
-            elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-            elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
-            elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
+        # for f in (flags if flags else ''): # 
+        #     if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+        #     elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
+        #     elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+        #     elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
+        #     elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
+        #     elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
+        #     elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
+        #     elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
@@ -199,7 +205,7 @@ class SubRelation:
 
 DEFAULT_PREDS = [Pred()]
 DEFAULT_SUB_RELATION = [SubRelation()]
-INDEX_RELATION = SubRelation([Index.sub])
+COMMON_ITERATOR_RELATION = SubRelation(['sub'])
 
 
 class iterator:
@@ -288,6 +294,17 @@ Issue:
 
   
     """
+    def configure(**cfg):
+        for k,v in cfg.iteritems():
+            if k=='prefix':
+                CRITERIA_PATT = [
+                    (re.compile(r'{0}(\d+)'.format(v)), r'nodes[\g<1>]'),
+                    (re.compile(r'{0}{0}'.format(v)), r'nodes'),
+                    (re.compile(r'{0}\.'.format(v)), r'nodes[0].'),
+                ]
+                CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
+                
+    
     def __init__(self, node=None, sSelect='*', gnxt=[], **cfg):
         """
         Arguments:
@@ -298,7 +315,7 @@ Issue:
         """
         
         self.nodes = node   # 保存数据结构
-        self.attr = cfg.get('attr', 'getattr')  # 获取属性读取函数
+        # self.attr = cfg.get('attr', 'getattr')  # 获取属性读取函数
         # 迭代调用函数选择
         self._iter = self._iter_single_root if isinstance(node, (list,tuple)) else self._iter_single
 
@@ -314,14 +331,8 @@ Issue:
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
         # Filter string特殊表示前缀符
-        prefix = cfg.get('prefix', None)
-        if prefix:
-            PATT_ATTR2 = re.compile(r'{\’ + prefix + r’(\d+)\.(\w+)}')
-            PATT_ATTR3 = re.compile(r'{\’ + prefix + r’(\d+)}')
-            PATT_ATTR4 = re.compile(r'{\’ + prefix + r’\$}')
-            PATT_NODE = re.compile(r'{\’ + prefix + r’(\d+)(?:\.(?:\w+))?}')
-
-        self.min_node_num = max(map(int, PATT_NODE.findall(sSelect)), default=1)
+        
+        self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
             
    
@@ -339,8 +350,8 @@ Issue:
         else:
             self.nodes.append(node)
 
-        if isinstance( node, Index ):
-            self.subrs.append( INDEX_RELATION )
+        if isinstance( node, CommonIterator ):
+            self.subrs.append( COMMON_ITERATOR_RELATION )
         else:
             self.subrs.append( SubRelation( gnxt ) )
 
