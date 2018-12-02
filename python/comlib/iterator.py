@@ -2,9 +2,7 @@ import re
 from comlib.iterator_operator import deq
 from comlib.iterators import *
         
-"""
 
-"""
 PATT_CONDITION_BASE1 = r'[^[\]]'
 PATT_CONDITION_1 = r'(?:{0})+'.format(PATT_CONDITION_BASE1)
 PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
@@ -22,9 +20,9 @@ PATT_SELECT = re.compile(PATT_CONDITION)
 # PATT_NODE = re.compile(r'{\$(\d+)(?:\.(?:\w+))?}')
         
 CRITERIA_PATT = [
-    (re.compile(r'#(\d+)'), r'nodes[\g<1>]'),
-    (re.compile(r'##'), r'nodes'),
-    (re.compile(r'#\.'), r'nodes[0].'),
+    (re.compile(r'#(\d+)'), r'node[\g<1>]'),
+    (re.compile(r'##'), r'node'),
+    (re.compile(r'#\.'), r'node[0].'),
 ]
 CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
        
@@ -129,13 +127,13 @@ def get_subnode_args0(node, nodes, *args):
     return node if hasattr(node,'__iter__') else []
 
 def get_subnode_args1(gnxt):
-    """调用gnxt[0](node)获取子节点集合"""
+    """使用node.gnxt[0]获取子节点集合"""
     nxt = gnxt[0]
-    if isinstance(nxt, str):
+    if isinstance(nxt, str):    # [sMethod] 第一个参数为字符串，一定为类成员函数
         def func(node, nodes, *args):
             if isinstance(node, (list, tuple)): return node
             try:
-                sub = getattr(node,nxt)(node)
+                sub = getattr(node,nxt)()
                 return sub if hasattr( sub, '__iter__' ) else []
             except Exception:
                 return []
@@ -152,11 +150,11 @@ def get_subnode_args1(gnxt):
 def get_subnode_args2_attr(gnxt):
     """调用gnxt[0](node, gnxt[1])获取子节点集合"""
     nxt = gnxt[0]
-    if isinstance(nxt, str):
+    if isinstance(nxt, str):  # [sMethod] 第一个参数为字符串，一定为类成员函数
         def func(node, nodes, *args):
             if isinstance(node, (list, tuple)): return node
             try:
-                sub = getattr(node,nxt)(node, gnxt[1])
+                sub = getattr(node,nxt)(gnxt[1])
                 return sub if hasattr( sub, '__iter__' ) else []
             except Exception:
                 return []
@@ -226,7 +224,7 @@ class iterator:
     - Function format: func has __call__ attribute. Iterator use this func
     - String format: 对于类方法函数，存在继承。需要根据当前实例的类来调用对应的继承函数。所以使用字符串来标识这种函数
 
-    * Notes: iterator supports getting the sub from List, Tuple and Index automatic 
+    * Notes: iterator supports getting the sub from List, Tuple and CommonIterator automatic 
     
 # Filter String
     Filter string is a string represent one or more filter conditions.
@@ -242,13 +240,12 @@ class iterator:
     'filter-condition' can be wrapped with pair '[' and ']'.
     
     Support below special expression: ('nodes' represents current access nodes from all node)
-    * {attr}: Get the attribute of nodes[0] like: 'nodes[0].attr'
-      -- The default attribution acquire method is 'getattr'. User can change it through 'attr' argument of **cfg in constructor
-    * {$n}: Get the n-th node
-    * {$n.attr}: Get the attribute of nodes[n] like: 'nodes[n].attr'
-    * {$$}: List of all nodes
-    The special expression prefix '$' can be configured via 'prefix' argument of **cfg in constructor. For example,
-    cfg['prefix']='#' means using '{#n}', '{#n.attr}' and '{#$}' to replace '{$n}', '{$n.attr}' and '{$$}'
+    * #.attr: Get the attribute of nodes[0] like: 'nodes[0].attr'
+    * #n: Get the n-th node
+    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr'
+    * ##: List of all nodes
+    The special expression prefix '#' can be configured via 'prefix' argument of **cfg in constructor. For example,
+    cfg['prefix']='$' means using '$n', '$n.attr' and '$$' to replace '#n', '#n.attr' and '##'
         
     * Node: Support 3-level '[]' pair in max in condition statement
      
@@ -256,11 +253,6 @@ class iterator:
     'flags' decide the selection action and direction. They can be ignore with '/'
     - P: Disable yield current node before sub-nodes enumerate. Default is enable
     - p: Enable yield current node after sub-nodes enumerate. Default is disable
-
-# Other Options
-    Parameter 'cfg' supplement extend optonals:
-    - pred: A function formatted (node,idx)=>bool represent filter condition for each node
-    - attr: A string represent how to get the attribute of node. Default is 'getattr'
 
 Issue:
 1. 条件中node和nodes的写法
@@ -295,12 +287,12 @@ Issue:
   
     """
     def configure(**cfg):
-        for k,v in cfg.iteritems():
+        for k,v in cfg.items():
             if k=='prefix':
                 CRITERIA_PATT = [
-                    (re.compile(r'{0}(\d+)'.format(v)), r'nodes[\g<1>]'),
-                    (re.compile(r'{0}{0}'.format(v)), r'nodes'),
-                    (re.compile(r'{0}\.'.format(v)), r'nodes[0].'),
+                    (re.compile(r'{0}(\d+)'.format(v)), r'node[\g<1>]'),
+                    (re.compile(r'{0}{0}'.format(v)), r'node'),
+                    (re.compile(r'{0}\.'.format(v)), r'node[0].'),
                 ]
                 CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
                 
