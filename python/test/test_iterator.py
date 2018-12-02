@@ -59,5 +59,5 @@ class TestIterator:
     def test_select_condition(self):
         n1, n2 = (node(200), node(300))
         n0 = node(100, [n1, n2])
-        r = [x.val for x,i in iterator(n0, gnxt=[getattr, 'sub'], sSelect='*[not (len(node[1].idx())==1 and {val}==300)]').assist(Index())]
+        r = [x.val for x,i in iterator(n0, gnxt=[getattr, 'sub'], sSelect='*[not (#1.lvl()==1 and #.val==300)]').assist(Index())]
         assert r == [100,200]
