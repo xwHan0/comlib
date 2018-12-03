@@ -12,9 +12,14 @@ PATT_CONDITION_3 = r'(?:{0})+'.format(PATT_CONDITION_BASE3)
 PATT_CONDITION = r'\s*(\w+|\*)(?:\[({0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
     PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
 )
-CRITERIA_SEGMENT_PATT1 = r'\s*(\w+|\*)(/[a-zA-Z]+)?\s*'
-CRITERIA_SEGMENT_PATT2 = r'\s*\[({0}|{1}|{2})\](/[a-zA-Z]+)?\s*'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
-CRITERIA_SEGMENT_PATT3 = PATT_CONDITION
+
+CRITERIA_SEGMENT_PATT1 = r'(\w+|\*)'
+CRITERIA_SEGMENT_PATT2 = r'\[({0}|{1}|{2})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
+CRITERIA_SEGMENT_PATT3 = r'(\w+|\*)\[({0}|{1}|{2})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
+CRITERIA_SEGMENT_PATT = r'\s*(?:{0}|{1}|{2})(/[a-zA-Z]+)?\s*'.format(CRITETIA_SEGMENT_PATT1, CEITETIA_SEGMENT_PATT2, CTITERIA_SEGMENT_PATT3)
+
+PATT_CONDITION = CRITERIA_SEGMENT_PATT
+
 PATT_SELECT = re.compile(PATT_CONDITION)
         
 CRITERIA_PATT = [
@@ -25,38 +30,55 @@ CRITERIA_PATT = [
 CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
        
 class Pred:        
-    def __init__(self, cfg=None, nflag='', cls_name = '*', pred = None, flags = ''):
-        
-        self.cls_name = cls_name
-
-        if cls_name == '*' and pred == None:
-            self.match = self.match_none
-        elif cls_name == '*':  # pred!=None
-            self.pred = pred if pred else ''
+    def __init__(self, nflag='', cls_name1='*', pred1='', cls_name2='*', pred2='', flags=''):
+       
+        if cls_name1:
+            if cls_name1=='*':
+                self.match = self.match_none
+            else:
+                self.cls_name = cls_name1
+                self.match = self.match_obj
+        elif pred1:
+            self.pred = pred1
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s,self.pred)
             self.match = self.match_condition
-        elif pred == None:  # cls_name='*'
-            self.match = self.match_obj
         else:
-            self.pred = pred if pred else ''
+            self.cls_name = cls_name2
+            self.pred = pred2
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s, self.pred)
             self.match = self.match_full
+
+               
+        #if cls_name == '*' and pred == None:
+        #    self.match = self.match_none
+        #elif cls_name == '*':  # pred!=None
+        #    self.pred = pred if pred else ''
+        #    for p,s in CRITERIA_PATT:
+       #         self.pred = p.sub(s,self.pred)
+        #    self.match = self.match_condition
+       # elif pred == None:  # cls_name='*'
+        #    self.match = self.match_obj
+       # else:
+        #    self.pred = pred if pred else ''
+      #      for p,s in CRITERIA_PATT:
+        #        self.pred = p.sub(s, self.pred)
+        #    self.match = self.match_full
 
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
         self.yield_typ = 1  # 默认子项前
 
-         for f in (flags if flags else ''): # 
-             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
-             elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
-             elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
-             elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
-             elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
-             elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-             elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
-             elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
+        for f in (flags if flags else ''): # 
+            if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+            elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
+            elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+            elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
+            elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
+            elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
+            elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
+            elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
@@ -312,8 +334,8 @@ Issue:
             self.preds = DEFAULT_PREDS
         else:
             r = PATT_SELECT.split(sSelect)
-            r = [deq(iter(r), 4) for i in range(int(len(r)/4))]
-            self.preds = [Pred(self, n,o,c,f) for [n,o,c,f] in r]     
+            r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
+            self.preds = [Pred(self, n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
             
         # 子节点索引
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
