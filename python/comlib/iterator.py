@@ -16,7 +16,7 @@ PATT_CONDITION = r'\s*(\w+|\*)(?:\[({0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
 CRITERIA_SEGMENT_PATT1 = r'(\w+|\*)'
 CRITERIA_SEGMENT_PATT2 = r'\[({0}|{1}|{2})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
 CRITERIA_SEGMENT_PATT3 = r'(\w+|\*)\[({0}|{1}|{2})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
-CRITERIA_SEGMENT_PATT = r'\s*(?:{0}|{1}|{2})(/[a-zA-Z]+)?\s*'.format(CRITETIA_SEGMENT_PATT1, CEITETIA_SEGMENT_PATT2, CTITERIA_SEGMENT_PATT3)
+CRITERIA_SEGMENT_PATT = r'\s*(?:{0}|{1}|{2})(/[a-zA-Z]+)?\s*'.format(CRITERIA_SEGMENT_PATT1, CRITERIA_SEGMENT_PATT2, CRITERIA_SEGMENT_PATT3)
 
 PATT_CONDITION = CRITERIA_SEGMENT_PATT
 
@@ -51,21 +51,6 @@ class Pred:
             self.match = self.match_full
 
                
-        #if cls_name == '*' and pred == None:
-        #    self.match = self.match_none
-        #elif cls_name == '*':  # pred!=None
-        #    self.pred = pred if pred else ''
-        #    for p,s in CRITERIA_PATT:
-       #         self.pred = p.sub(s,self.pred)
-        #    self.match = self.match_condition
-       # elif pred == None:  # cls_name='*'
-        #    self.match = self.match_obj
-       # else:
-        #    self.pred = pred if pred else ''
-      #      for p,s in CRITERIA_PATT:
-        #        self.pred = p.sub(s, self.pred)
-        #    self.match = self.match_full
-
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
         self.yield_typ = 1  # 默认子项前
@@ -335,7 +320,7 @@ Issue:
         else:
             r = PATT_SELECT.split(sSelect)
             r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
-            self.preds = [Pred(self, n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
+            self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
             
         # 子节点索引
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
@@ -368,7 +353,7 @@ Issue:
         return self
 
     def _iter_single_root( self, preds, node ):
-        for ss in self.subrs[0].sub(node, node, preds[0].cls_name):
+        for ss in self.subrs[0].sub(node, node, preds[0]):
                 yield from self._iter_single( preds, ss )
         
     def _iter_single( self, preds, node ):
@@ -382,13 +367,13 @@ Issue:
                 
             if len(preds)>1: preds = preds[1:]
  
-            for ss in self.subrs[0].sub(node, node, pred.cls_name):
+            for ss in self.subrs[0].sub(node, node, pred):
                 yield from self._iter_single( preds, ss )
             
             if pred.yield_typ==2: yield node
          
         elif succ == -1:  # 匹配不成功，迭代子对象
-            for ss in self.subrs[0].sub(node, node, pred.cls_name):
+            for ss in self.subrs[0].sub(node, node, pred):
                 yield from self._iter_single( preds, ss )
             
         elif succ == 2: # 匹配成功，不迭代子对象
@@ -406,7 +391,7 @@ Issue:
         return sub if hasattr(sub, '__iter__') else []
         
     def _iter_multi_root( self, preds, node ):
-        for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,node,preds[0].cls_name), node, self.subrs)):
+        for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,node,preds[0]), node, self.subrs)):
             yield from self._iter_multi( preds, ss )
 
     def _iter_multi( self, preds, nodes ):
@@ -420,14 +405,14 @@ Issue:
                 
             if len(preds)>1: preds = preds[1:]
         
-            for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,nodes,pred.cls_name), nodes, self.subrs)): # 当nodes[0]不需要迭代时，退出nodes[1]的处理
+            for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,nodes,pred), nodes, self.subrs)): # 当nodes[0]不需要迭代时，退出nodes[1]的处理
                 yield from self._iter_multi( preds, ss )
             
             if pred.yield_typ==2: yield nodes
          
         elif succ == -1:  # 匹配不成功，迭代子对象
 
-            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred.cls_name), nodes, self.subrs) ):
+            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred), nodes, self.subrs) ):
                 yield from self._iter_multi( preds, ss )
             
         elif succ == 2: # 匹配成功，不迭代子对象
