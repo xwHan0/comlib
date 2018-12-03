@@ -12,12 +12,10 @@ PATT_CONDITION_3 = r'(?:{0})+'.format(PATT_CONDITION_BASE3)
 PATT_CONDITION = r'\s*(\w+|\*)(?:\[({0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
     PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
 )
+CRITERIA_SEGMENT_PATT1 = r'\s*(\w+|\*)(/[a-zA-Z]+)?\s*'
+CRITERIA_SEGMENT_PATT2 = r'\s*\[({0}|{1}|{2})\](/[a-zA-Z]+)?\s*'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
+CRITERIA_SEGMENT_PATT3 = PATT_CONDITION
 PATT_SELECT = re.compile(PATT_CONDITION)
-# PATT_ATTR1 = re.compile(r'{(\w+)}')
-# PATT_ATTR2 = re.compile(r'{\$(\d+)\.(\w+)}')
-# PATT_ATTR3 = re.compile(r'{\$(\d+)}')
-# PATT_ATTR4 = re.compile(r'{\$\$}')
-# PATT_NODE = re.compile(r'{\$(\d+)(?:\.(?:\w+))?}')
         
 CRITERIA_PATT = [
     (re.compile(r'#(\d+)'), r'node[\g<1>]'),
@@ -44,25 +42,21 @@ class Pred:
             self.pred = pred if pred else ''
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s, self.pred)
-            #pred = PATT_ATTR1.sub( CRITERIA_ATTR + r'(node[0],"\g<1>")', pred, count=0 )
-            #pred = PATT_ATTR2.sub( CRITERIA_ATTR + r'(node[\g<1>],"\g<2>")', pred, count=0 )
-            #pred = PATT_ATTR3.sub( r'node[\g<1>]', pred, count=0 )
-            #self.pred = PATT_ATTR4.sub( 'node', pred, count=0 )
             self.match = self.match_full
 
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
         self.yield_typ = 1  # 默认子项前
 
-        # for f in (flags if flags else ''): # 
-        #     if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
-        #     elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
-        #     elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
-        #     elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
-        #     elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
-        #     elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-        #     elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
-        #     elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
+         for f in (flags if flags else ''): # 
+             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+             elif f == 'O': self.obj_fail_rst = -3 # 匹配失败后，终止其余匹配
+             elif f == 'c': self.pred_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
+             elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
+             elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
+             elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
+             elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
+             elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
@@ -234,6 +228,7 @@ class iterator:
 
     filter-pattern ::= objName[filter-condition]/flags
 
+  ## objName
     'objName' is the node class name or '*' represented all class.
 
   ## Filter-Condition
@@ -253,6 +248,19 @@ class iterator:
     'flags' decide the selection action and direction. They can be ignore with '/'
     - P: Disable yield current node before sub-nodes enumerate. Default is enable
     - p: Enable yield current node after sub-nodes enumerate. Default is disable
+    - The iterate process when object match fail
+      -- Default is continue next iterate
+      -- 'o': Continue next iterate except the sub node of current node
+      -- 'O': Break the iterate
+    - The iterate process when pred match fail
+      -- Default is continue next iterate
+      -- 'c': Continue next iterate except the sub node of current node
+      -- 'C': Break the iterate
+    - The iterate process when match success
+      -- Default is continue next iterate
+      -- 's': Continue next iterate except the sub node of current node
+      -- 'S': Break the iterate
+    
 
 Issue:
 1. 条件中node和nodes的写法
@@ -268,18 +276,6 @@ Issue:
   -- SearchString ::= SearchPattern, .../glb_flags
     *** SearchPattern ::= [obj][pred][flags]
   -- Support many flags in searchPattern
-    *** The iterate process when object match fail
-      ---- Default is continue next iterate
-      ---- 'o': Continue next iterate except the sub node of current node
-      ---- 'O': Break the iterate
-    *** The iterate process when pred match fail
-      ---- Default is continue next iterate
-      ---- 'c': Continue next iterate except the sub node of current node
-      ---- 'C': Break the iterate
-    *** The iterate process when match success
-      ---- Default is continue next iterate
-      ---- 's': Continue next iterate except the sub node of current node
-      ---- 'S': Break the iterate
     
 * Support matching pred function via parameter 'pred'
   -- The format of pred is: (node,idx,count) => Boolean
