@@ -29,6 +29,18 @@ CRITERIA_PATT = [
 ]
 CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
        
+
+# 定义常见的数据类型children_relationship映射表
+TYPIC_CHILDREN_RELATIONSHIP = {
+    list : lambda *node: node[0],       # 列表的子元素集合就是列表本身
+    tuple: lambda *node: node[0],
+    Index: lambda *node: getattr(node[0], 'sub'),   # iterator库包含的子项
+    IndexSub: lambda *node: getattr(node[0], 'sub'),
+    Counter: lambda *node: getattr(node[0], 'sub'),
+}
+DEFAULT_CHILDREN_RELATIONSHIP = lambda *node: []
+
+
 class Pred:        
     def __init__(self, nflag='', cls_name1='*', pred1='', cls_name2='*', pred2='', flags=''):
        
@@ -292,6 +304,7 @@ Issue:
 
   
     """
+    @staticmethod
     def configure(**cfg):
         for k,v in cfg.items():
             if k=='prefix':
@@ -303,7 +316,7 @@ Issue:
                 CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
                 
     
-    def __init__(self, node=None, sSelect='*', gnxt=[], **cfg):
+    def __init__(self, node=None, sSelect='*', gnxt=[], children={}, **cfg):
         """
         Arguments:
         - node {collection}: operated data
@@ -326,17 +339,65 @@ Issue:
             self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
             
         # 子节点索引
+
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
-        self.nxt = gnxt
+        # self.default_child = gnxt
+        # self.children = children
+
 
         # Filter string特殊表示前缀符
         
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
-            
+    # 设置children获取表
+    def _configure_children_relationship(self, children):
+        for k,v in children.items():
+            if isinstance(v, str):  # 字符串：查询属性
+                children[k] = lambda node: getattr(node, str)
+            elif isinstance(v, LinkList):
+                def nxt(node):
+                    return LinkList(node, v.nxt)
+                children[k] = nxt
+        self.children_relationship = dict(TYPIC_CHILDREN_RELATIONSHIP, **children)
    
+    def _get_children_iter(self, *node):
+        cls = type(node[0])
+        nxt = self.children_relationship.get(cls, DEFAULT_CHILDREN_RELATIONSHIP)
+        return nxt(*node)
     
+    def _get_children_iter_multi(self, *node):
+        return zip( *map(lambda n: self._get_children_iter(n, *node), node))
+
+    def _iter_common( self, preds, *node ):
+        pred = preds[0]
+           
+        # 过滤判断
+        succ = pred.match( node )
+       
+        if succ == 1:  # 匹配成功，迭代子对象
+            if pred.yield_typ==1: yield node
+                
+            if len(preds)>1: preds = preds[1:]
+ 
+            for ss in self.get_children(*node):
+                yield from self._iter_common( preds, ss )
+            
+        elif succ == -1:  # 匹配不成功，迭代子对象
+            for ss in self.get_children(*node):
+                yield from self._iter_single( preds, ss )
+            
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if pred.yield_typ != 0: yield node
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if pred.yield_typ != 0: yield node
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
+            raise StopIteration()
+
+
     def assist(self, node, gnxt=[]):
         """
         Append assist collection for iterator.
@@ -357,10 +418,9 @@ Issue:
 
         return self
     
-    def _get_sub_iter(self, nodes):
-        cls = nodes[0].class
-        nxt = self.nxt.get(cls, None)
-        return nxt(*nodes)
+    # def _get_children(self, nodes):
+    #     nxt = self.children.get(type(nodes[0]), self.default_child)     # 获取映射表内容
+    #     return nxt.next(*nodes)
 
     def _iter_single_root( self, preds, node ):
         for ss in self.subrs[0].sub(node, node, preds[0]):
@@ -396,10 +456,13 @@ Issue:
         elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()
         
-    def _get_subnode(self, n, rs, nodes, args):
+    def _get_subnode(self, n, rs, nodes, args=0):
         sub = rs.sub(n,nodes, args)
         return sub if hasattr(sub, '__iter__') else []
         
+
+
+
     def _iter_multi_root( self, preds, node ):
         for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,node,preds[0]), node, self.subrs)):
             yield from self._iter_multi( preds, ss )
