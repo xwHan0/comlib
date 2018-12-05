@@ -42,3 +42,42 @@ class IndexSub(CommonIterator):
     def idx(self): return self.prefix + [self.curr]
     def lvl(self): return len(self.prefix)
     def sub(self): return IndexSub(self.prefix + [self.curr])
+    
+
+class LinkList:
+    def __init__(self, node, nxt):
+        self.node = node
+        self.nxt = nxt
+        
+    def __iter__(self): return self
+    
+    def __next__(self):
+        try:
+            nxt = getattr(self.node, self.nxt)
+            self.node = nxt
+            return nxt
+        except Exception:
+            raise StopIteration()
+            
+           
+class intetpose:
+    def __init__(self, node, pos):
+        self.it = iter(node)
+        self.pos = pos
+        self.isPos = False
+        self.status = 0  # IDLE
+        
+    def __iter__(): return self
+    
+    def __next__():
+        if self.status == 0:  # FIRST
+            rst = next(it)
+            self.status == 1
+            return rst
+        elif self.status == 1:  # POS
+            self.data = next(it)
+            self.status = 2
+            return self.pos
+        elif self.status == 2:  # NEXT
+            self.status == 1
+            return self.data

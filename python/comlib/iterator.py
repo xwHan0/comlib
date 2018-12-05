@@ -135,7 +135,7 @@ def get_subnode_args1(gnxt):
             if isinstance(node, (list, tuple)): return node
             try:
                 sub = getattr(node,nxt)()
-                return sub if hasattr( sub, '__iter__' ) else []
+                return sub if hasattr( sub, '__iter__' ) else [sub]
             except Exception:
                 return []
     else:
@@ -143,7 +143,7 @@ def get_subnode_args1(gnxt):
             if isinstance(node, (list, tuple)): return node
             try:
                 sub = nxt(node)
-                return sub if hasattr( sub, '__iter__' ) else []
+                return sub if hasattr( sub, '__iter__' ) else [sub]
             except Exception:
                 return []
     return func
@@ -156,7 +156,7 @@ def get_subnode_args2_attr(gnxt):
             if isinstance(node, (list, tuple)): return node
             try:
                 sub = getattr(node,nxt)(gnxt[1])
-                return sub if hasattr( sub, '__iter__' ) else []
+                return sub if hasattr( sub, '__iter__' ) else [sub]
             except Exception:
                 return []
     else:
@@ -164,7 +164,7 @@ def get_subnode_args2_attr(gnxt):
             if isinstance(node, (list, tuple)): return node
             try:
                 sub = nxt(node, gnxt[1])
-                return sub if hasattr( sub, '__iter__' ) else []
+                return sub if hasattr( sub, '__iter__' ) else [sub]
             except Exception:
                 return []
     return func
@@ -177,7 +177,7 @@ def get_subnode_args2_search(gnxt):
             if isinstance(node, (list, tuple)): return node
             try:
                 sub = getattr(node,nxt)(node, args[0])
-                return sub if hasattr( sub, '__iter__' ) else []
+                return sub if hasattr( sub, '__iter__' ) else [sub]
             except Exception:
                 return []
     else:
@@ -185,7 +185,7 @@ def get_subnode_args2_search(gnxt):
             if isinstance(node, (list, tuple)): return node
             try:
                 sub = nxt(node, args[0])
-                return sub if hasattr( sub, '__iter__' ) else []
+                return sub if hasattr( sub, '__iter__' ) else [sub]
             except Exception:
                 return []
     return func
@@ -227,6 +227,9 @@ class iterator:
 
     * Notes: iterator supports getting the sub from List, Tuple and CommonIterator automatic 
     
+    * Support 单跳节点：
+      ** 若获取的下一跳不是迭代器，则返回[下一跳]。
+ 
 # Filter String
     Filter string is a string represent one or more filter conditions.
     The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
