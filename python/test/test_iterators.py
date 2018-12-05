@@ -7,7 +7,7 @@ from comlib import iterator, Counter
 class TestCounter:
     def test_counter(self):
         a = [10,20,30,40]
-        r = [(x,c) for x,c in iterator(a).assist(Counter())]
-        assert r == [(1,10),(2,20),(3,30),(4,40)]
+        r = [(c,x) for x,c in iterator(a).assist(Counter())]
+        assert r == [(0,10),(1,20),(2,30),(3,40)]
 
 

@@ -328,6 +328,8 @@ Issue:
         # 子节点索引
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
+        self.nxt = gnxt
+
         # Filter string特殊表示前缀符
         
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
@@ -354,6 +356,11 @@ Issue:
             self.subrs.append( SubRelation( gnxt ) )
 
         return self
+    
+    def _get_sub_iter(self, nodes):
+        cls = nodes[0].class
+        nxt = self.nxt.get(cls, None)
+        return nxt(*nodes)
 
     def _iter_single_root( self, preds, node ):
         for ss in self.subrs[0].sub(node, node, preds[0]):

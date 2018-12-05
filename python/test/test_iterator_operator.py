@@ -5,9 +5,9 @@ from comlib import deq, interpose
 
 
 class TestInterpose:
-    def test_interpos(self):
+    def test_interpose(self):
         a = [10,20,30,40]
-        r = [x for x in iterpose(a,'>')]
+        r = [x for x in interpose(a,'>')]
         assert r == [10,'>',20,'>',30,'>',40]
 
 class TestDeq:
