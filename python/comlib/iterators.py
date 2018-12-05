@@ -4,6 +4,7 @@ class CommonIterator:
 
 
 class Counter(CommonIterator):
+    """返回迭代遍历过的节点个数迭代器"""
     def __init__(self):
         CommonIterator.__init__(self)
         self.cnt = -1
@@ -14,6 +15,7 @@ class Counter(CommonIterator):
         
 
 class Index(CommonIterator):
+    """返回节点序号迭代器"""
     def __init__(self, prefix=[], root=True):
         CommonIterator.__init__(self)
         self.curr = -1
@@ -45,7 +47,9 @@ class IndexSub(CommonIterator):
     
 
 class LinkList:
+    """返回node.nxt做指针的迭代器"""
     def __init__(self, node, nxt):
+        """返回node.nxt做指针的迭代器"""
         self.node = node
         self.nxt = nxt
         
@@ -59,25 +63,3 @@ class LinkList:
         except Exception:
             raise StopIteration()
             
-           
-class intetpose:
-    def __init__(self, node, pos):
-        self.it = iter(node)
-        self.pos = pos
-        self.isPos = False
-        self.status = 0  # IDLE
-        
-    def __iter__(): return self
-    
-    def __next__():
-        if self.status == 0:  # FIRST
-            rst = next(it)
-            self.status == 1
-            return rst
-        elif self.status == 1:  # POS
-            self.data = next(it)
-            self.status = 2
-            return self.pos
-        elif self.status == 2:  # NEXT
-            self.status == 1
-            return self.data
