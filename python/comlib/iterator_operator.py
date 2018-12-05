@@ -1,10 +1,12 @@
 def deq(it, n=1): return [next(it) for i in range(n)]
 
+from iterators import CommomIterator
            
-class intetpose:
+class intetpose(CommonIterator):
     """在集合node迭代内容之间插入pos，返回迭代器"""
     def __init__(self, node, pos):
         """在集合node迭代内容之间插入pos"""
+        CommonIterator.__init__(self)
         self.it = iter(node)
         self.pos = pos
         self.isPos = False
