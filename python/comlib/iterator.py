@@ -30,16 +30,53 @@ CRITERIA_PATT = [
 CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
        
 
+######################################################
+# 定义常用的子节点关系类
+
+#### 定义直接透传关系
+class ChildBypass:
+    def sub(self,*node):
+        return node[0]
+
+
+class ChildFunction:
+    def __init__(self,func):
+        self.func = func
+        
+    def sub(self,*node):
+        return self.func(*node)
+
+
+class ChildNone:
+    def sub(*node):
+        return []
+
+        
+class ChildAttr:
+    def __init__(self, attr):
+        self.attr = attr
+    
+    def sub(self,*node):
+        return getattr(node[0], self.attr)
+        
+
+class ChildSub:
+    def sub(self,*node):
+        return node[0].sub(*node)
+
+
 # 定义常见的数据类型children_relationship映射表
 TYPIC_CHILDREN_RELATIONSHIP = {
-    list : lambda *node: node[0],       # 列表的子元素集合就是列表本身
-    tuple: lambda *node: node[0],
-    Index: lambda *node: getattr(node[0], 'sub'),   # iterator库包含的子项
-    IndexSub: lambda *node: getattr(node[0], 'sub'),
-    Counter: lambda *node: getattr(node[0], 'sub'),
+    list : ChildBypass(),       # 列表的子元素集合就是列表本身
+    tuple: ChildBypass(),
+    Index: ChildSub(),   # iterator库包含的子项
+    IndexSub: ChildSub(),
+    Counter: ChildSub(),
 }
-DEFAULT_CHILDREN_RELATIONSHIP = lambda *node: []
+DEFAULT_CHILDREN_RELATIONSHIP = ChildNone()
 
+######################################################
+# 定义匹配条件类
 
 class Pred:        
     def __init__(self, nflag='', cls_name1='*', pred1='', cls_name2='*', pred2='', flags=''):
@@ -342,7 +379,7 @@ Issue:
 
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
-        # self.default_child = gnxt
+        self.get_child = self._get_child_iter
         # self.children = children
 
 
@@ -354,17 +391,13 @@ Issue:
     def _configure_children_relationship(self, children):
         for k,v in children.items():
             if isinstance(v, str):  # 字符串：查询属性
-                children[k] = lambda node: getattr(node, str)
-            elif isinstance(v, LinkList):
-                def nxt(node):
-                    return LinkList(node, v.nxt)
-                children[k] = nxt
+                children[k] = ChildAttr(v)
         self.children_relationship = dict(TYPIC_CHILDREN_RELATIONSHIP, **children)
    
     def _get_children_iter(self, *node):
-        cls = type(node[0])
-        nxt = self.children_relationship.get(cls, DEFAULT_CHILDREN_RELATIONSHIP)
-        return nxt(*node)
+        cls = type(node[0])  # 获取节点类型
+        nxt = self.children_relationship.get(cls, DEFAULT_CHILDREN_RELATIONSHIP)  # 查找处理类实例
+        return nxt.sub(*node)  # 调用类函数处理
     
     def _get_children_iter_multi(self, *node):
         return zip( *map(lambda n: self._get_children_iter(n, *node), node))
@@ -380,13 +413,17 @@ Issue:
                 
             if len(preds)>1: preds = preds[1:]
  
-            for ss in self.get_children(*node):
-                yield from self._iter_common( preds, ss )
+            nxt = self.get_children(*node)
+            if hasattr(nxt, '__iter__') and nxt!=[]:
+                for ss in nxt:
+                    yield from self._iter_common( preds, ss )
             
         elif succ == -1:  # 匹配不成功，迭代子对象
-            for ss in self.get_children(*node):
-                yield from self._iter_single( preds, ss )
-            
+            nxt = self.get_children(*node)
+            if hasattr(nxt, '__iter__') and nxt!=[]:
+                for ss in nxt:
+                    yield from self._iter_common( preds, ss )
+                
         elif succ == 2: # 匹配成功，不迭代子对象
             if pred.yield_typ != 0: yield node
 

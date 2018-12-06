@@ -1,6 +1,6 @@
 class CommonIterator:
     def __iter__(self): return self
-    def sub(self): return self
+    def sub(self,*node): return self
 
 
 class Counter(CommonIterator):
@@ -28,7 +28,7 @@ class Index(CommonIterator):
 
     def idx(self): return self.prefix if self.root else self.prefix + [self.curr]
     def lvl(self): return len(self.prefix)
-    def sub(self): return Index( self.prefix, False ) if self.root else Index(self.prefix + [self.curr], False)
+    def sub(self,*node): return Index( self.prefix, False ) if self.root else Index(self.prefix + [self.curr], False)
 
 
 class IndexSub(CommonIterator):
@@ -43,17 +43,15 @@ class IndexSub(CommonIterator):
 
     def idx(self): return self.prefix + [self.curr]
     def lvl(self): return len(self.prefix)
-    def sub(self): return IndexSub(self.prefix + [self.curr])
+    def sub(self,*node): return IndexSub(self.prefix + [self.curr])
     
 
-class LinkList:
+class LinkList(CommonIterator):
     """返回node.nxt做指针的迭代器"""
     def __init__(self, node, nxt):
         """返回node.nxt做指针的迭代器"""
         self.node = node
         self.nxt = nxt
-        
-    def __iter__(self): return self
     
     def __next__(self):
         try:
@@ -62,6 +60,9 @@ class LinkList:
             return nxt
         except Exception:
             raise StopIteration()
+            
+    def sub(*node):
+        return LinkList(node,self.nxt)
             
 
 class LinkNext:
