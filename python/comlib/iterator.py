@@ -25,7 +25,7 @@ PATT_SELECT = re.compile(PATT_CONDITION)
 CRITERIA_PATT = [
     (re.compile(r'#(\d+)'), r'node[\g<1>]'),
     (re.compile(r'##'), r'node'),
-    (re.compile(r'#\.'), r'node[0].'),
+    (re.compile(r'#\.'), r'node.'),
 ]
 CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
        
@@ -397,7 +397,7 @@ Issue:
         else:
             self.yield_func = yield_multi
     
-    
+        _configure_children_relationship(gnxt)
     
     # 设置children获取表
     def _configure_children_relationship(self, children):
@@ -417,8 +417,9 @@ Issue:
     def proc(self,func):
         """使用func(nodes)对返回的结果进行后处理"""
         self.yield_func = func
+        return self
 
-    def _iter_common( self, preds, *node ):
+    def _iter_common( self, preds, node ):
         pred = preds[0]
            
         # 过滤判断
@@ -429,13 +430,13 @@ Issue:
                 
             if len(preds)>1: preds = preds[1:]
  
-            nxt = self.get_children(*node)
+            nxt = self.get_children(node)
             if hasattr(nxt, '__iter__') and nxt!=[]:
                 for ss in nxt:
                     yield from self._iter_common( preds, ss )
             
         elif succ == -1:  # 匹配不成功，迭代子对象
-            nxt = self.get_children(*node)
+            nxt = self.get_children(node)
             if hasattr(nxt, '__iter__') and nxt!=[]:
                 for ss in nxt:
                     yield from self._iter_common( preds, ss )
@@ -468,6 +469,9 @@ Issue:
             self.subrs.append( COMMON_ITERATOR_RELATION )
         else:
             self.subrs.append( SubRelation( gnxt ) )
+
+        #self.yild_func = yield_muli
+        self.get_children = self._get_children_iter_multi
 
         return self
     
@@ -559,10 +563,10 @@ Issue:
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.nodes)))
         
         if isinstance(self.nodes[0], (list,tuple,LinkList)):
-            for ss in nxt:
+            for ss in self.get_children(*self.nodes):
                 yield from self._iter_common( preds, ss )
         else:
-            return self._iter_common( *self.preds, self.nodes )
+            return self._iter_common( self.preds, self.nodes )
         
             
 
