@@ -258,7 +258,7 @@ COMMON_ITERATOR_RELATION = SubRelation(['sub'])
 ######################################################
 # 定义常用的返回处理函数
 
-def yield_single(node): return node[0]
+def yield_single(node): return node
 def yield_multi(node): return node
 
 
@@ -397,7 +397,7 @@ Issue:
         else:
             self.yield_func = yield_multi
     
-        _configure_children_relationship(gnxt)
+        self._configure_children_relationship(gnxt)
     
     # 设置children获取表
     def _configure_children_relationship(self, children):
@@ -564,7 +564,7 @@ Issue:
         
         if isinstance(self.nodes[0], (list,tuple,LinkList)):
             for ss in self.get_children(*self.nodes):
-                yield from self._iter_common( preds, ss )
+                yield from self._iter_common( self.preds, ss )
         else:
             return self._iter_common( self.preds, self.nodes )
         
