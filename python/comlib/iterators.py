@@ -65,7 +65,7 @@ class LinkList(CommonIterator):
         return LinkList(node,self.nxt)
             
 
-class LinkNext:
+class LinkNext(CommonIterator):
     """返回node.nxt做指针的迭代器。从第二个元素开始"""
     def __init__(self, node, nxt):
         """返回node.nxt做指针的迭代器"""
@@ -82,8 +82,12 @@ class LinkNext:
         except Exception:
             raise StopIteration()
 
+    def sub(*node):
+        return LinkList(node.nxt,self.nxt)
 
-class LinkArray:
+
+
+class LinkArray(CommonIterator):
     def __init__(self, nxt):
         self.nxt = nxt
         

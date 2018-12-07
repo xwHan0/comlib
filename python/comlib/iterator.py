@@ -255,6 +255,12 @@ DEFAULT_PREDS = [Pred()]
 DEFAULT_SUB_RELATION = [SubRelation()]
 COMMON_ITERATOR_RELATION = SubRelation(['sub'])
 
+######################################################
+# 定义常用的返回处理函数
+
+def yield_single(node): return node[0]
+def yield_multi(node): return node
+
 
 class iterator:
     """
@@ -262,7 +268,7 @@ class iterator:
   按序筛选并打平。
   Filter by designed order and flatten into dimension 1-D.
 
-# Sub-node Acquire Method Define
+# Sub-node Acquire Method Defineu.
     Parameter "gnxt" formatted with list indicates the link method to sub data. There are below style:
     - [](Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
     - [func]: Acquire the sub-nodes set via node.func() method
@@ -353,7 +359,7 @@ Issue:
                 CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
                 
     
-    def __init__(self, node=None, sSelect='*', gnxt=[], children={}, **cfg):
+    def __init__(self, node=None, sSelect='*', gnxt={}, children={}, **cfg):
         """
         Arguments:
         - node {collection}: operated data
@@ -361,9 +367,9 @@ Issue:
         - gnxt {list}: Sub-node acquire method
         - cfg {map}: optional parameters
         """
+        self.nodes = [node]
+        #self.nodes = node   # 保存数据结构
         
-        self.nodes = node   # 保存数据结构
-        # self.attr = cfg.get('attr', 'getattr')  # 获取属性读取函数
         # 迭代调用函数选择
         self._iter = self._iter_single_root if isinstance(node, (list,tuple)) else self._iter_single
 
@@ -379,14 +385,20 @@ Issue:
 
         self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
 
-        self.get_child = self._get_child_iter
-        # self.children = children
-
+        self.get_children = self._get_children_iter
+        
 
         # Filter string特殊表示前缀符
         
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
+        if self.min_node_num <= 1:
+            self.yield_func = yield_single
+        else:
+            self.yield_func = yield_multi
+    
+    
+    
     # 设置children获取表
     def _configure_children_relationship(self, children):
         for k,v in children.items():
@@ -402,6 +414,10 @@ Issue:
     def _get_children_iter_multi(self, *node):
         return zip( *map(lambda n: self._get_children_iter(n, *node), node))
 
+    def proc(self,func):
+        """使用func(nodes)对返回的结果进行后处理"""
+        self.yield_func = func
+
     def _iter_common( self, preds, *node ):
         pred = preds[0]
            
@@ -409,7 +425,7 @@ Issue:
         succ = pred.match( node )
        
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred.yield_typ==1: yield node
+            if pred.yield_typ==1: yield self.yield_func(node)
                 
             if len(preds)>1: preds = preds[1:]
  
@@ -425,10 +441,10 @@ Issue:
                     yield from self._iter_common( preds, ss )
                 
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.yield_typ != 0: yield node
+            if pred.yield_typ != 0: yield self.yield_func(node)
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred.yield_typ != 0: yield node
+            if pred.yield_typ != 0: yield self.yield_func(node)
             raise StopIteration()
 
         elif succ == -3: # 匹配不成功，终止迭代
@@ -439,14 +455,14 @@ Issue:
         """
         Append assist collection for iterator.
         """
-        if self._iter == self._iter_single:
-            self.nodes = [self.nodes, node]
-            self._iter = self._iter_multi
-        elif self._iter == self._iter_single_root:
-            self.nodes = [self.nodes, node]
-            self._iter = self._iter_multi_root
-        else:
-            self.nodes.append(node)
+        #if self._iter == self._iter_single:
+        #    self.nodes = [self.nodes, node]
+        #    self._iter = self._iter_multi
+        #elif self._iter == self._iter_single_root:
+        #    self.nodes = [self.nodes, node]
+        #    self._iter = self._iter_multi_root
+        #else:
+        self.nodes.append(node)
 
         if isinstance( node, CommonIterator ):
             self.subrs.append( COMMON_ITERATOR_RELATION )
@@ -542,7 +558,11 @@ Issue:
         elif self.min_node_num > len(self.nodes):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.nodes)))
         
-        return self._iter( self.preds, self.nodes )
+        if isinstance(self.nodes[0], (list,tuple,LinkList)):
+            for ss in nxt:
+                yield from self._iter_common( preds, ss )
+        else:
+            return self._iter_common( *self.preds, self.nodes )
         
             
 
