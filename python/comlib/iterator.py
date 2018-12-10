@@ -48,7 +48,7 @@ class ChildFunction:
 
 
 class ChildNone:
-    def sub(self,*node):
+    def sub(*node):
         return []
 
         
@@ -97,7 +97,7 @@ class Pred:
             self.pred = pred2
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s, self.pred)
-            self.match = self.match_full
+            self.match = self.match_condition if cls_name2=='*' else self.match_full
 
                
         # 无论匹配成功与否，默认总是继续其余匹配
@@ -122,9 +122,9 @@ class Pred:
                 self.obj_fail_rst = -2
                 self.pred_fail_rst = -2
 
-    def match_none(self, *node): return self.match_succ_rst            
+    def match_none(self, node): return self.match_succ_rst            
             
-    def match_obj_condition( self, *node ):
+    def match_obj_condition( self, node ):
         # 对象匹配
         if node[0].__class__.__name__ != self.cls_name:
                 return self.obj_fail_rst
@@ -140,12 +140,12 @@ class Pred:
                     
         return self.match_succ_rst
 
-    def match_obj( self, *node ):
+    def match_obj( self, node ):
         if node[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
         return self.match_succ_rst
 
-    def match_condition( self, *node ):
+    def match_condition( self, node ):
         try:
             rst = eval(self.pred)
             if rst == False: return self.pred_fail_rst
@@ -155,7 +155,7 @@ class Pred:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
         return self.match_succ_rst
 
-    def match_full( self, *node ):
+    def match_full( self, node ):
         # 对象匹配
         if self.cls_name!='*' and node[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
@@ -172,14 +172,95 @@ class Pred:
                       
         return self.match_succ_rst
     
+def get_subnode_args0(node, nodes, *args):
+    """调用node(自身)获取子节点集合"""
+    return node if hasattr(node,'__iter__') else []
 
+def get_subnode_args1(gnxt):
+    """使用node.gnxt[0]获取子节点集合"""
+    nxt = gnxt[0]
+    if isinstance(nxt, str):    # [sMethod] 第一个参数为字符串，一定为类成员函数
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = getattr(node,nxt)()
+                return sub if hasattr( sub, '__iter__' ) else [sub]
+            except Exception:
+                return []
+    else:
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = nxt(node)
+                return sub if hasattr( sub, '__iter__' ) else [sub]
+            except Exception:
+                return []
+    return func
+
+def get_subnode_args2_attr(gnxt):
+    """调用gnxt[0](node, gnxt[1])获取子节点集合"""
+    nxt = gnxt[0]
+    if isinstance(nxt, str):  # [sMethod] 第一个参数为字符串，一定为类成员函数
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = getattr(node,nxt)(gnxt[1])
+                return sub if hasattr( sub, '__iter__' ) else [sub]
+            except Exception:
+                return []
+    else:
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = nxt(node, gnxt[1])
+                return sub if hasattr( sub, '__iter__' ) else [sub]
+            except Exception:
+                return []
+    return func
+
+def get_subnode_args2_search(gnxt):
+    """调用gnxt[0](node, args[0])搜索子节点集合"""
+    nxt = gnxt[0]
+    if isinstance(nxt, str):
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = getattr(node,nxt)(node, args[0])
+                return sub if hasattr( sub, '__iter__' ) else [sub]
+            except Exception:
+                return []
+    else:
+        def func(node, nodes, *args):
+            if isinstance(node, (list, tuple)): return node
+            try:
+                sub = nxt(node, args[0])
+                return sub if hasattr( sub, '__iter__' ) else [sub]
+            except Exception:
+                return []
+    return func
+
+
+class SubRelation:
+    def __init__(self, gnxt=[]):
+    
+        l = len(gnxt)
+        if l==0: self.sub = get_subnode_args0
+        elif l==1: self.sub = get_subnode_args1(gnxt)
+        elif l==2: self.sub = get_subnode_args2_search(gnxt) if gnxt[1][0] == '$' else get_subnode_args2_attr(gnxt)
+
+
+    
 
 DEFAULT_PREDS = [Pred()]
+DEFAULT_SUB_RELATION = [SubRelation()]
+COMMON_ITERATOR_RELATION = SubRelation(['sub'])
 
 ######################################################
 # 定义常用的返回处理函数
 
-import types
+def yield_single(node): return node
+def yield_multi(node): return node
+
 
 class iterator:
     """
@@ -286,8 +367,12 @@ Issue:
         - gnxt {list}: Sub-node acquire method
         - cfg {map}: optional parameters
         """
-        self.node = node   # 保存数据结构
+        self.nodes = [node]
+        #self.nodes = node   # 保存数据结构
         
+        # 迭代调用函数选择
+        self._iter = self._iter_single_root if isinstance(node, (list,tuple)) else self._iter_single
+
         # 条件判断
         if sSelect == '*':
             self.preds = DEFAULT_PREDS
@@ -296,53 +381,57 @@ Issue:
             r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
             self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
             
-        self.get_children = self._get_children_iter
+        # 子节点索引
 
-        # 判断主数据是否为典型线性集合对象。对于典型线性集合对象，iterator会跳过对顶层节点的yield
-        self.isArray = isinstance(node, (list, tuple, LinkList))
+        self.subrs = DEFAULT_SUB_RELATION if gnxt==[] else [SubRelation(gnxt)]
+
+        self.get_children = self._get_children_iter
+        
+
+        # Filter string特殊表示前缀符
         
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
+        if self.min_node_num <= 1:
+            self.yield_func = yield_single
+        else:
+            self.yield_func = yield_multi
+    
         self._configure_children_relationship(gnxt)
     
     # 设置children获取表
     def _configure_children_relationship(self, children):
-        self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
-        if isinstance(children,str):
-            self.children_relationship['*'] = ChildAttr(children)
-        elif isinstance(children,types.FunctionType):
-            self.children_relationship['*'] = ChildFunction(children)
-        elif isinstance(children,dict)：
-            for k,v in children.items():
-                if isinstance(v, str):  # 字符串：查询属性
-                    self.children_relationship[k] = ChildAttr(v)
-                else:
-                    self.children_relationship[k] = v
+        for k,v in children.items():
+            if isinstance(v, str):  # 字符串：查询属性
+                children[k] = ChildAttr(v)
+        self.children_relationship = dict(TYPIC_CHILDREN_RELATIONSHIP, **children)
    
-    def _get_children_iter(self,*node):
-        # 按照node节点的数据类型获取子节点指针索引类实例
-        nxt = self.children_relationship.get(
-            type(node[0]), # 无论是否有多个，都引用第一个
-            self.children_relationship.get('*', DEFAULT_CHILDREN_RELATIONSHIP)) # ‘*’为用户定义默认节点处理
-        # 调用索引类函数处理。注意：索引类函数的参数为“一系列”node对象。其中第一个为当前node，其余为整个nodes
-        # 若len(node)==1，*node也可以引用第一个
-        return nxt.sub(*node)
+    def _get_children_iter(self, *node):
+        cls = type(node[0])  # 获取节点类型
+        nxt = self.children_relationship.get(cls, DEFAULT_CHILDREN_RELATIONSHIP)  # 查找处理类实例
+        return nxt.sub(*node)  # 调用类函数处理
+    
+    def _get_children_iter_multi(self, *node):
+        return zip( *map(lambda n: self._get_children_iter(n, *node), node))
 
-    def _get_children_iter_multi(self, node):
-        return zip( *map(lambda n: self._get_children_iter(n, node), node))
+    def proc(self,func):
+        """使用func(nodes)对返回的结果进行后处理"""
+        self.yield_func = func
+        return self
 
     def _iter_common( self, preds, node ):
         pred = preds[0]
            
         # 过滤判断
-        succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
+        succ = pred.match( node )
        
         if succ == 1:  # 匹配成功，迭代子对象
-            if pred.yield_typ==1: yield node
+            if pred.yield_typ==1: yield self.yield_func(node)
+                
+            if len(preds)>1: preds = preds[1:]
  
             nxt = self.get_children(node)
             if hasattr(nxt, '__iter__') and nxt!=[]:
-                if len(preds)>1: preds = preds[1:]
                 for ss in nxt:
                     yield from self._iter_common( preds, ss )
             
@@ -353,10 +442,10 @@ Issue:
                     yield from self._iter_common( preds, ss )
                 
         elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.yield_typ != 0: yield node
+            if pred.yield_typ != 0: yield self.yield_func(node)
 
         elif succ == 3: # 匹配成功，终止迭代
-            if pred.yield_typ != 0: yield node
+            if pred.yield_typ != 0: yield self.yield_func(node)
             raise StopIteration()
 
         elif succ == -3: # 匹配不成功，终止迭代
@@ -367,26 +456,117 @@ Issue:
         """
         Append assist collection for iterator.
         """
-        if self.get_children == self._get_children_iter:
-            self.node = [self.node, node]
-            self.get_children = self._get_children_iter_multi
+        #if self._iter == self._iter_single:
+        #    self.nodes = [self.nodes, node]
+        #    self._iter = self._iter_multi
+        #elif self._iter == self._iter_single_root:
+        #    self.nodes = [self.nodes, node]
+        #    self._iter = self._iter_multi_root
+        #else:
+        self.nodes.append(node)
+
+        if isinstance( node, CommonIterator ):
+            self.subrs.append( COMMON_ITERATOR_RELATION )
         else:
-            self.node.append(node)
+            self.subrs.append( SubRelation( gnxt ) )
+
+        #self.yild_func = yield_muli
+        self.get_children = self._get_children_iter_multi
 
         return self
     
+    # def _get_children(self, nodes):
+    #     nxt = self.children.get(type(nodes[0]), self.default_child)     # 获取映射表内容
+    #     return nxt.next(*nodes)
+
+    def _iter_single_root( self, preds, node ):
+        for ss in self.subrs[0].sub(node, node, preds[0]):
+                yield from self._iter_single( preds, ss )
+        
+    def _iter_single( self, preds, node ):
+        pred = preds[0]
+           
+        # 过滤判断
+        succ = pred.match( (node,) )
+       
+        if succ == 1:  # 匹配成功，迭代子对象
+            if pred.yield_typ==1: yield node
+                
+            if len(preds)>1: preds = preds[1:]
+ 
+            for ss in self.subrs[0].sub(node, node, pred):
+                yield from self._iter_single( preds, ss )
+            
+            if pred.yield_typ==2: yield node
+         
+        elif succ == -1:  # 匹配不成功，迭代子对象
+            for ss in self.subrs[0].sub(node, node, pred):
+                yield from self._iter_single( preds, ss )
+            
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if pred.yield_typ != 0: yield node
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if pred.yield_typ != 0: yield node
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
+            raise StopIteration()
+        
+    def _get_subnode(self, n, rs, nodes, args=0):
+        sub = rs.sub(n,nodes, args)
+        return sub if hasattr(sub, '__iter__') else []
+        
+
+
+
+    def _iter_multi_root( self, preds, node ):
+        for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,node,preds[0]), node, self.subrs)):
+            yield from self._iter_multi( preds, ss )
+
+    def _iter_multi( self, preds, nodes ):
+        pred = preds[0]
+           
+        # 过滤判断
+        succ = pred.match( nodes )
+        
+        if succ == 1:  # 匹配成功，迭代子对象
+            if pred.yield_typ==1: yield nodes
+                
+            if len(preds)>1: preds = preds[1:]
+        
+            for ss in zip( *map(lambda n,rs: self._get_subnode(n,rs,nodes,pred), nodes, self.subrs)): # 当nodes[0]不需要迭代时，退出nodes[1]的处理
+                yield from self._iter_multi( preds, ss )
+            
+            if pred.yield_typ==2: yield nodes
+         
+        elif succ == -1:  # 匹配不成功，迭代子对象
+
+            for ss in zip( *map(lambda n,rs:rs.sub(n,nodes,pred), nodes, self.subrs) ):
+                yield from self._iter_multi( preds, ss )
+            
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if pred.yield_typ!=0: yield nodes
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if pred.yield_typ!=0: yield nodes
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
+            raise StopIteration()    
+               
     def __iter__(self):
-        if self.get_children == self._get_children_iter:
+        if self._iter == self._iter_single or self._iter == self._iter_single_root:
             if self.min_node_num > 1:
                 raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
-        elif self.min_node_num > len(self.node):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
+        elif self.min_node_num > len(self.nodes):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.nodes)))
         
-        if self.isArray:
-            for ss in self.get_children(self.node):
+        if isinstance(self.nodes[0], (list,tuple,LinkList)):
+            for ss in self.get_children(*self.nodes):
                 yield from self._iter_common( self.preds, ss )
         else:
-            yield from self._iter_common( self.preds, self.node )
+            return self._iter_common( self.preds, self.nodes )
         
             
 
