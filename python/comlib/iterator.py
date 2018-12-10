@@ -335,7 +335,7 @@ Issue:
         pred = preds[0]
            
         # 过滤判断
-        succ = pred.match( node )
+        succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
        
         if succ == 1:  # 匹配成功，迭代子对象
             if pred.yield_typ==1: yield node
@@ -376,8 +376,11 @@ Issue:
         return self
     
     def __iter__(self):
-        if self.min_node_num > len(self.node):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.nodes)))
+        if self.get_children == self._get_children_iter:
+            if self.min_node_num > 1:
+                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
+        elif self.min_node_num > len(self.node):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
         if self.isArray:
             for ss in self.get_children(self.node):
