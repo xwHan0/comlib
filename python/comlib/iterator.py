@@ -312,7 +312,7 @@ Issue:
             self.children_relationship['*'] = ChildAttr(children)
         elif isinstance(children,types.FunctionType):
             self.children_relationship['*'] = ChildFunction(children)
-        elif isinstance(children,dict)
+        elif isinstance(children,dict)：
             for k,v in children.items():
                 if isinstance(v, str):  # 字符串：查询属性
                     self.children_relationship[k] = ChildAttr(v)
