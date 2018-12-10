@@ -179,6 +179,7 @@ DEFAULT_PREDS = [Pred()]
 ######################################################
 # 定义常用的返回处理函数
 
+import types
 
 class iterator:
     """
@@ -307,11 +308,16 @@ Issue:
     # 设置children获取表
     def _configure_children_relationship(self, children):
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
-        for k,v in children.items():
-            if isinstance(v, str):  # 字符串：查询属性
-                self.children_relationship[k] = ChildAttr(v)
-            else:
-                self.children_relationship[k] = v
+        if isinstance(children,str):
+            self.children_relationship['*'] = ChildAttr(children)
+        elif isinstance(children,types.FunctionType):
+            self.children_relationship['*'] = ChildFunction(children)
+        elif isinstance(children,dict)
+            for k,v in children.items():
+                if isinstance(v, str):  # 字符串：查询属性
+                    self.children_relationship[k] = ChildAttr(v)
+                else:
+                    self.children_relationship[k] = v
    
     def _get_children_iter(self,*node):
         # 按照node节点的数据类型获取子节点指针索引类实例
