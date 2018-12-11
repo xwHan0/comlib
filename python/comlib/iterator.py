@@ -287,7 +287,7 @@ Issue:
         - cfg {map}: optional parameters
         """
         
-        self.nodes = node   # 保存数据结构
+        self.node = node   # 保存数据结构
         
         # 条件判断
         if sSelect == '*':
@@ -314,7 +314,7 @@ Issue:
         elif isinstance(children,dict):
             for k,v in children.items():
                 if isinstance(v, str):  # 字符串：查询属性
-                    children[k] = ChildAttr(v)
+                    self.children_relationship[k] = ChildAttr(v)
                 else:
                     self.children_relationship[k] = v
    
