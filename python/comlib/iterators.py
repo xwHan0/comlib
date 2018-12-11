@@ -47,7 +47,7 @@ class IndexSub(CommonIterator):
     
 
 class LinkList(CommonIterator):
-    """返回node.nxt做指针的迭代器"""
+    """返回node.nxt做指针的迭代器, 直到gatattr(.nxt)异常"""
     def __init__(self, node, nxt):
         """返回node.nxt做指针的迭代器"""
         self.node = node
@@ -63,6 +63,21 @@ class LinkList(CommonIterator):
             
     def sub(*node):
         return LinkList(node,self.nxt)
+            
+            
+class LinkListWhile(LinkList):
+    """返回node.nxt做指针的迭代器, 直到gatattr(.nxt)异常或者pred结束条件满足。"""
+    def __init__(self, node, nxt, pred):
+        """返回node.nxt做指针的迭代器"""
+        super.__init__(node,nxt)
+        self.pred = pred
+    
+    def __next__(self):
+        if self.pred(self.node):
+            return super.__next__()
+        else:
+            raise StopIteration()
+             
             
 
 class LinkNext(CommonIterator):
@@ -96,13 +111,12 @@ class LinkArray(CommonIterator):
 
            
 class interpose(CommonIterator):
-    """在集合node迭代内容之间插入pos，返回迭代器"""
+    """在集合node迭代内容之间插入pos，返回迭代器。不可迭代返回空"""
     def __init__(self, node, pos):
         """在集合node迭代内容之间插入pos"""
         CommonIterator.__init__(self)
-        self.it = iter(node)
+        self.it = iter(node) if hasattr(node,'__iter__') else iter([])
         self.pos = pos
-        #self.isPos = False
         
         
     def __iter__(self): 
