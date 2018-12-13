@@ -55,9 +55,10 @@ class LinkList(CommonIterator):
     
     def __next__(self):
         try:
+            rst = self.node
             nxt = getattr(self.node, self.nxt)
             self.node = nxt
-            return nxt
+            return rst
         except Exception:
             raise StopIteration()
             
