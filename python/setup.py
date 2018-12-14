@@ -9,7 +9,14 @@ setup(
     maintainer='',
     maintainer_email='',
     url='',
-    packages=['comlib'],
+    packages=[
+        'comlib', 
+         'comlib.ex',
+    ],
+    package_dir={
+        'comlib':'comlib',
+        'comlib.ex':'comlib/ex',
+    },
     long_description="",
     license='Public domain',
     platforms=['any']
