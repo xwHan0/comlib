@@ -10,11 +10,11 @@ class TestCounter:
         r = [(c,x) for x,c in iterator(a).assist(Counter())]
         assert r == [(0,10),(1,20),(2,30),(3,40)]
 
-    def test_linklist_of_none:
-        r = [x for x in LinkList(x,'sub')]
+    def test_linklist_of_none(self):
+        r = [x for x in LinkList(None,'sub')]
         assert r == []
         
-    def test_interpose_of_none:
-        r = [x for x in interpose(x,'sub')]
+    def test_interpose_of_none(self):
+        r = [x for x in interpose(None,'sub')]
         assert r == []
 
