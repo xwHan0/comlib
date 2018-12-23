@@ -81,3 +81,7 @@ def xlcm(*args):
     return lcmv
     
 
+def sumwgt(wgt,rate):
+    rates = sum(map(lambda x,y: x*y, wgt, rate))
+    wgts = sum(iter(wgt))
+    return rates / wgts
