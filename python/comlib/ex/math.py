@@ -1,4 +1,4 @@
-import ex.__private__ as lib
+import comlib.ex.__private__ as lib
 
 def xmin(*args):
     """寻找{args}列表中的最小值。

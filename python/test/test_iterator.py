@@ -66,5 +66,5 @@ class TestIterator:
         """复杂数据 + 复杂Filter字符串 + 字符串下一跳"""
         n1, n2 = (node(200), node(300))
         n0 = node(100, [n1, n2])
-        r = [x.val for x,i in iterator(n0, gnxt={node:'sub'}, sSelect='*[not (#1.lvl()==1 and #.val==300)]').assist(Index())]
+        r = [x.val for x,i in iterator(n0, gnxt={node:'sub'}, sSelect='*[not (#0.val==300)]').assist(Index())]
         assert r == [100,200]

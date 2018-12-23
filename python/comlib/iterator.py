@@ -9,14 +9,14 @@ PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
 PATT_CONDITION_2 = r'(?:{0})+'.format(PATT_CONDITION_BASE2)
 PATT_CONDITION_BASE3 = r'(?:{0}|{1})*\[(?:{1})+\](?:{0}|{1})*'.format(PATT_CONDITION_BASE1, PATT_CONDITION_BASE2)
 PATT_CONDITION_3 = r'(?:{0})+'.format(PATT_CONDITION_BASE3)
-PATT_CONDITION = r'\s*(\w+|\*)(?:\[({0}|{1}|{2})\])?(/[a-zA-Z]+)?\s*'.format(
+PATT_CONDITION = r'\s*(\w+|\*)(?:\[({2}|{1}|{0})\])?(/[a-zA-Z]+)?\s*'.format(
     PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3
 )
 
 CRITERIA_SEGMENT_PATT1 = r'(\w+|\*)'
-CRITERIA_SEGMENT_PATT2 = r'\[({0}|{1}|{2})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
-CRITERIA_SEGMENT_PATT3 = r'(\w+|\*)\[({0}|{1}|{2})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
-CRITERIA_SEGMENT_PATT = r'\s*(?:{0}|{1}|{2})(/[a-zA-Z]+)?\s*'.format(CRITERIA_SEGMENT_PATT1, CRITERIA_SEGMENT_PATT2, CRITERIA_SEGMENT_PATT3)
+CRITERIA_SEGMENT_PATT2 = r'\[({2}|{1}|{0})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
+CRITERIA_SEGMENT_PATT3 = r'(\w+|\*)\[({2}|{1}|{0})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
+CRITERIA_SEGMENT_PATT = r'\s*(?:{2}|{1}|{0})(/[a-zA-Z]+)?\s*'.format(CRITERIA_SEGMENT_PATT1, CRITERIA_SEGMENT_PATT2, CRITERIA_SEGMENT_PATT3)
 
 PATT_CONDITION = CRITERIA_SEGMENT_PATT
 
@@ -48,7 +48,7 @@ class ChildFunction:
 
 
 class ChildNone:
-    def sub(self,*node):
+    def sub(*node):
         return []
 
         
@@ -79,7 +79,7 @@ DEFAULT_CHILDREN_RELATIONSHIP = ChildNone()
 # 定义匹配条件类
 
 class Pred:        
-    def __init__(self, nflag='', cls_name1='*', pred1='', cls_name2='*', pred2='', flags=''):
+    def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', flags=''):
        
         if cls_name1:
             if cls_name1=='*':
@@ -97,7 +97,7 @@ class Pred:
             self.pred = pred2
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s, self.pred)
-            self.match = self.match_full
+            self.match = self.match_condition if cls_name2=='*' else self.match_full
 
                
         # 无论匹配成功与否，默认总是继续其余匹配
@@ -172,12 +172,13 @@ class Pred:
                       
         return self.match_succ_rst
     
-
+    
 
 DEFAULT_PREDS = [Pred()]
 
 ######################################################
 # 定义常用的返回处理函数
+import types
 
 
 class iterator:
@@ -285,6 +286,7 @@ Issue:
         - gnxt {list}: Sub-node acquire method
         - cfg {map}: optional parameters
         """
+        
         self.node = node   # 保存数据结构
         
         # 条件判断
@@ -295,11 +297,9 @@ Issue:
             r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
             self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
             
-        self.get_children = self._get_children_iter
 
-        # 判断主数据是否为典型线性集合对象。对于典型线性集合对象，iterator会跳过对顶层节点的yield
-        self.isArray = isinstance(node, (list, tuple, LinkList))
-        
+        self.get_children = self._get_children_iter
+        self.isArray = isinstance(node,(list,tuple,LinkList))
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
         self._configure_children_relationship(gnxt)
@@ -307,21 +307,23 @@ Issue:
     # 设置children获取表
     def _configure_children_relationship(self, children):
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
-        for k,v in children.items():
-            if isinstance(v, str):  # 字符串：查询属性
-                self.children_relationship[k] = ChildAttr(v)
-            else:
-                self.children_relationship[k] = v
+        if isinstance(children,str):
+            self.children_relationship['*'] = ChildAttr(children)
+        elif isinstance(children, types.FunctionType):
+            self.children_relationship['*'] = ChildFunction(children)
+        elif isinstance(children,dict):
+            for k,v in children.items():
+                if isinstance(v, str):  # 字符串：查询属性
+                    self.children_relationship[k] = ChildAttr(v)
+                else:
+                    self.children_relationship[k] = v
    
-    def _get_children_iter(self,*node):
-        # 按照node节点的数据类型获取子节点指针索引类实例
+    def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
-            type(node[0]), # 无论是否有多个，都引用第一个
-            self.children_relationship.get('*', DEFAULT_CHILDREN_RELATIONSHIP)) # ‘*’为用户定义默认节点处理
-        # 调用索引类函数处理。注意：索引类函数的参数为“一系列”node对象。其中第一个为当前node，其余为整个nodes
-        # 若len(node)==1，*node也可以引用第一个
-        return nxt.sub(*node)
-
+            type(node[0]),
+            self.children_relationship.get('*',DEFAULT_CHILDREN_RELATIONSHIP))  # 查找处理类实例
+        return nxt.sub(*node)  # 调用类函数处理
+    
     def _get_children_iter_multi(self, node):
         return zip( *map(lambda n: self._get_children_iter(n, node), node))
 
@@ -329,11 +331,12 @@ Issue:
         pred = preds[0]
            
         # 过滤判断
-        succ = pred.match( node )
+        succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
        
         if succ == 1:  # 匹配成功，迭代子对象
             if pred.yield_typ==1: yield node
- 
+                
+            
             nxt = self.get_children(node)
             if hasattr(nxt, '__iter__') and nxt!=[]:
                 if len(preds)>1: preds = preds[1:]
@@ -365,13 +368,17 @@ Issue:
             self.node = [self.node, node]
             self.get_children = self._get_children_iter_multi
         else:
-            self.node.append(node)
+            self.nodes.append(node)
 
         return self
-    
+
+               
     def __iter__(self):
-        if self.min_node_num > len(self.node):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.nodes)))
+        if self.get_children == self._get_children_iter:
+            if self.min_node_num > 1:
+                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
+        elif self.min_node_num > len(self.node):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
         if self.isArray:
             for ss in self.get_children(self.node):
