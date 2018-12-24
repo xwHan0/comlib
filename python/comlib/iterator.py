@@ -335,13 +335,17 @@ Issue:
        
         if succ == 1:  # 匹配成功，迭代子对象
             if pred.yield_typ==1: yield node
-                
             
             nxt = self.get_children(node)
             if hasattr(nxt, '__iter__') and nxt!=[]:
                 if len(preds)>1: preds = preds[1:]
-                for ss in nxt:
-                    yield from self._iter_common( preds, ss )
+
+                if pred.yield_typ == 1:     # 遍历行为
+                    for ss in nxt:
+                        yield from self._iter_common( preds, ss )
+                else:   # 迭代行为
+                    pass
+
             
         elif succ == -1:  # 匹配不成功，迭代子对象
             nxt = self.get_children(node)
@@ -359,6 +363,9 @@ Issue:
         elif succ == -3: # 匹配不成功，终止迭代
             raise StopIteration()
 
+        # elif succ == -2: # 匹配不成功，不迭代子对象
+        #     pass
+
 
     def assist(self, node, gnxt=[]):
         """
@@ -368,7 +375,7 @@ Issue:
             self.node = [self.node, node]
             self.get_children = self._get_children_iter_multi
         else:
-            self.nodes.append(node)
+            self.node.append(node)
 
         return self
 
