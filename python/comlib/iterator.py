@@ -79,6 +79,13 @@ DEFAULT_CHILDREN_RELATIONSHIP = ChildNone()
 # 定义匹配条件类
 
 class Pred:        
+
+    @staticmethod
+    def set_match(pred):
+        p = Pred()
+        p.match = pred
+        return p
+
     def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', flags=''):
        
         if cls_name1:
@@ -220,8 +227,8 @@ class iterator:
     
     Support below special expression: ('nodes' represents current access nodes from all node)
     * #.attr: Get the attribute of nodes[0] like: 'nodes[0].attr'
-    * #n: Get the n-th node
-    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr'
+    * #n: Get the n-th node(n=0-N)
+    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr' (n=0-N)
     * ##: List of all nodes
     The special expression prefix '#' can be configured via 'prefix' argument of **cfg in constructor. For example,
     cfg['prefix']='$' means using '$n', '$n.attr' and '$$' to replace '#n', '#n.attr' and '##'
@@ -293,20 +300,25 @@ Issue:
         if sSelect == '*':
             self.preds = DEFAULT_PREDS
         else:
-            r = PATT_SELECT.split(sSelect)
-            r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
-            self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
+            self.filter(sSelect)
+           # r = PATT_SELECT.split(sSelect)
+           # r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
+            #self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
             
 
         self.get_children = self._get_children_iter
         self.isArray = isinstance(node,(list,tuple,LinkList))
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
-        self._configure_children_relationship(gnxt)
+        # Set initial children relationship map table
+        self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
+        # Append new children relationship map table
+        self.append_children_relationship(gnxt)
     
     # 设置children获取表
-    def _configure_children_relationship(self, children):
-        self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
+    def append_children_relationship(self, children):
+        """Append new children relationship 'children' to this iterator object."""
+        #self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
         if isinstance(children,str):
             self.children_relationship['*'] = ChildAttr(children)
         elif isinstance(children, types.FunctionType):
@@ -317,6 +329,29 @@ Issue:
                     self.children_relationship[k] = ChildAttr(v)
                 else:
                     self.children_relationship[k] = v
+   
+    def assist(self, node, gnxt={}):
+        """
+        Append assist collection 'node' which gnxt is gnxt for iterator.
+        """
+        if self.get_children == self._get_children_iter:
+            self.node = [self.node, node]
+            self.get_children = self._get_children_iter_multi
+        else:
+            self.node.append(node)
+            
+        self.append_children_relationship(gnxt)
+
+        return self
+   
+    def filter(self, sSelect):
+        if isinstance(sSelect, str):
+            r = PATT_SELECT.split(sSelect)
+            r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
+            self.preds = [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
+        elif isinstance(sSelect, types.FunctinType):
+            self.preds = Pred.set_match(sSelect)
+        return self
    
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
@@ -367,17 +402,7 @@ Issue:
         #     pass
 
 
-    def assist(self, node, gnxt=[]):
-        """
-        Append assist collection for iterator.
-        """
-        if self.get_children == self._get_children_iter:
-            self.node = [self.node, node]
-            self.get_children = self._get_children_iter_multi
-        else:
-            self.node.append(node)
-
-        return self
+    
 
                
     def __iter__(self):
