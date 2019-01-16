@@ -3,14 +3,9 @@ from comlib.mapreduce.pred import *
 from comlib.mapreduce.child_relationship import *
 from comlib.iterators import *
         
-
-
-
-
-
-######################################################
-# 定义常用的返回处理函数
 import types
+
+CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
 
 
 class IterCore:
@@ -110,7 +105,7 @@ Issue:
                 CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
                 
     
-    def __init__(self, node=None, sSelect='*', gnxt={}, children={}, **cfg):
+    def __init__(self, *node, sSelect='*', gnxt={}, children={}, **cfg):
         """
         Arguments:
         - node {collection}: operated data
@@ -119,43 +114,38 @@ Issue:
         - cfg {map}: optional parameters
         """
         
-        self.node = node   # 保存数据结构
-        
-        self.preds = gen_preds(sSelect)
+        if len(node) == 1:
+            self.node = node[0]     # 保存待处理的数据结构
+            self.get_children = self._get_children_iter     # 保存子关系
+        else:
+            self.node = node
+            self.get_children = self._get_children_iter_multi
 
-        self.get_children = self._get_children_iter
+        # 保存并解析选择字符串
+        self.preds = gen_preds(sSelect)
         self.isArray = isinstance(node,(list,tuple,LinkList))
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
         # Append new children relationship map table
-        self.append_children_relationship(gnxt)
+        append_children_relationship(self.children_relationship, gnxt)
     
     # 设置children获取表
     def append_children_relationship(self, children):
-        """Append new children relationship 'children' to this iterator object."""
-        #self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
-        if isinstance(children,str):
-            self.children_relationship['*'] = ChildAttr(children)
-        elif isinstance(children, types.FunctionType):
-            self.children_relationship['*'] = ChildFunction(children)
-        elif isinstance(children,dict):
-            for k,v in children.items():
-                if isinstance(v, str):  # 字符串：查询属性
-                    self.children_relationship[k] = ChildAttr(v)
-                else:
-                    self.children_relationship[k] = v
+        self.children_relationship = append_children_relationship(self.children_relationship, children)
+        return self
    
-    def assist(self, node, gnxt={}):
+    def assist(self, *node, gnxt={}):
         """
         Append assist collection 'node' which gnxt is gnxt for iterator.
         """
         if self.get_children == self._get_children_iter:
-            self.node = [self.node, node]
+            self.node = [self.node] + node
             self.get_children = self._get_children_iter_multi
         else:
-            self.node.append(node)
+            for n in node:
+                self.node.append(n)
             
         self.append_children_relationship(gnxt)
 

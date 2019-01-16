@@ -147,12 +147,12 @@ def gen_preds(sSelect):
         r = PATT_SELECT.split(sSelect)
         r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
         return [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
-    if isinstance(sSelect, types.FunctinType):
+    if isinstance(sSelect, types.FunctionType):
         return Pred.set_match(sSelect)
     return DEFAULT_PREDS
 
 __all__ = [
     'Pred',
-    'DEFAULT_PREDS ',
+    'DEFAULT_PREDS',
     'gen_preds',
 ]

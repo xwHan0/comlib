@@ -1,4 +1,5 @@
 import re
+from comlib.iterators import Index,IndexSub,Counter
 
 ######################################################
 # 定义常用的子节点关系类
@@ -18,7 +19,7 @@ class ChildFunction:
 
 
 class ChildNone:
-    def sub(*node):
+    def sub(self,*node):
         return []
 
         
@@ -45,6 +46,23 @@ TYPIC_CHILDREN_RELATIONSHIP = {
 }
 DEFAULT_CHILDREN_RELATIONSHIP = ChildNone()
 
+import types
+
+def append_children_relationship(dest, children):
+    """Append new children relationship 'children' to this iterator object."""
+    if isinstance(children,str):
+        dest['*'] = ChildAttr(children)
+    elif isinstance(children, types.FunctionType):
+        dest['*'] = ChildFunction(children)
+    elif isinstance(children,dict):
+        for k,v in children.items():
+            if isinstance(v, str):  # 字符串：查询属性
+                dest[k] = ChildAttr(v)
+            else:
+                dest[k] = v
+    return dest
+
+
 __all__ = [
     'DEFAULT_CHILDREN_RELATIONSHIP',
     'TYPIC_CHILDREN_RELATIONSHIP',
@@ -53,6 +71,7 @@ __all__ = [
     'ChildNone',
     'ChildFunction',
     'ChildBypass',
+    'append_children_relationship',
 ]
     
 
