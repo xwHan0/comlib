@@ -1,14 +1,18 @@
 import re
 from comlib.mapreduce.pred import *
 from comlib.mapreduce.child_relationship import *
+from comlib.mapreduce.map import *
 from comlib.iterators import *
         
 import types
 
 CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
 
+__all__ = [
+    'xiter',
+]
 
-class IterCore:
+class xiter:
     """
     # Introduce
   按序筛选并打平。
@@ -131,6 +135,8 @@ Issue:
         # Append new children relationship map table
         append_children_relationship(self.children_relationship, gnxt)
     
+        self.map_proc = None
+    
     # 设置children获取表
     def append_children_relationship(self, children):
         self.children_relationship = append_children_relationship(self.children_relationship, children)
@@ -154,6 +160,13 @@ Issue:
     def filter(self, sSelect):
         self.preds = gen_preds(sSelect)
         return self
+        
+   def map(self, proc=None):
+        if isinstance(proc, types.FunctionType):
+            self.map_proc = MapFunction(proc)
+        else:
+            self.map_proc = proc
+        return self
    
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
@@ -164,6 +177,88 @@ Issue:
     def _get_children_iter_multi(self, node):
         return zip( *map(lambda n: self._get_children_iter(n, node), node))
 
-    
+
+    def _iter_common( self, preds, node ):
+        pred = preds[0]
+           
+        # 过滤判断
+        succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
+       
+        if succ == 1:  # 匹配成功，迭代子对象
+            if pred.yield_typ==1: 
+                if self.map_proc==None:
+                    yield node
+                else:
+                    yield self.map_proc.map(*node)
+            
+            nxt = self.get_children(node)
+            if hasattr(nxt, '__iter__') and nxt!=[]:
+                if len(preds)>1: preds = preds[1:]
+
+                if pred.yield_typ == 1:     # 遍历行为
+                    for ss in nxt:
+                        yield from self._iter_common( preds, ss )
+                else:   # 迭代行为
+                    pass
+
+            
+        elif succ == -1:  # 匹配不成功，迭代子对象
+            nxt = self.get_children(node)
+            if hasattr(nxt, '__iter__') and nxt!=[]:
+                for ss in nxt:
+                    yield from self._iter_common( preds, ss )
+                
+        elif succ == 2: # 匹配成功，不迭代子对象
+            if pred.yield_typ != 0:
+                if self.map_proc==None:
+                    yield node
+                else:
+                    yield self.map_proc.map(*node)
+
+        elif succ == 3: # 匹配成功，终止迭代
+            if pred.yield_typ != 0:
+                if self.map_proc==None:
+                    yield node
+                else:
+                    yield self.map_proc.run(*node)
+            raise StopIteration()
+
+        elif succ == -3: # 匹配不成功，终止迭代
+            raise StopIteration()
+
+        # elif succ == -2: # 匹配不成功，不迭代子对象
+        #     pass
+
+               
+    def __iter__(self):
+        if self.get_children == self._get_children_iter:
+            if self.min_node_num > 1:
+                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
+        elif self.min_node_num > len(self.node):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
+        
+        if self.isArray:
+            for ss in self.get_children(self.node):
+                yield from self._iter_common( self.preds, ss )
+        else:
+            yield from self._iter_common( self.preds, self.node )
+        
+    def _iter_reduce( self, proc, preds, node ):
+        pass
+        
+    def reduce(self, reduce_proc):
+        """"""
+        if self.get_children == self._get_children_iter:
+            if self.min_node_num > 1:
+                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
+        elif self.min_node_num > len(self.node):
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
+        
+        if self.isArray:
+            for ss in self.get_children(self.node):
+                return self._iter_reduce( reduce_proc, self.preds, ss )
+        else:
+            return self._iter_reduce( reduce_proc, self.preds, self.node )
+        
             
 
