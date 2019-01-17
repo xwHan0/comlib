@@ -121,13 +121,14 @@ Issue:
         if len(node) == 1:
             self.node = node[0]     # 保存待处理的数据结构
             self.get_children = self._get_children_iter     # 保存子关系
+            self.isArray = isinstance(self.node,(list,tuple,LinkList))
         else:
             self.node = node
             self.get_children = self._get_children_iter_multi
-
+            self.isArray = isinstance(self.node[0],(list,tuple,LinkList))
+        
         # 保存并解析选择字符串
         self.preds = gen_preds(sSelect)
-        self.isArray = isinstance(node,(list,tuple,LinkList))
         self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
         # Set initial children relationship map table
@@ -161,7 +162,7 @@ Issue:
         self.preds = gen_preds(sSelect)
         return self
         
-   def map(self, proc=None):
+    def map(self, proc=None):
         if isinstance(proc, types.FunctionType):
             self.map_proc = MapFunction(proc)
         else:
