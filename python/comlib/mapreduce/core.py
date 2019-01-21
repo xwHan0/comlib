@@ -109,7 +109,7 @@ Issue:
                 CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
                 
     
-    def __init__(self, *node, sSelect='*', gnxt={}, children={}, **cfg):
+    def __init__(self, *node, sSelect='*', gnxt={}, **cfg):
         """
         Arguments:
         - node {collection}: operated data
@@ -281,9 +281,9 @@ Issue:
             nxt = self.get_children(node)
             if hasattr(nxt, '__iter__') and nxt!=[]:
                 if len(preds)>1: preds = preds[1:]
-                rst_l = self.init(node) # 定义当前节点的reduce初始值
+                rst_l = proc.init(node) # 定义当前节点的reduce初始值
                 for ss in nxt:
-                    status, rst_n = self._recur( preds, ss )    # 处理子节点
+                    status, rst_n = self._iter_reduce( proc, preds, ss )    # 处理子节点
 
                     # 返回状态判断
                     # status > 0 : 匹配成功； status < 0: 匹配不成功
@@ -299,16 +299,16 @@ Issue:
                     elif status in [-3,-4]:
                         break
                     
-                rst_l = self.post( node, rst_l )
+                rst_l = proc.reduce( node, rst_l )
                 return 3 if status==3 else 1, rst_l
             else:
-                return 1, self.post( node, self.init(node) )
+                return 1, proc.reduce( node )
 
         elif succ < 0:  # 匹配不成功，返回匹配结果和None。不应该出现匹配不成功，还要继续迭代
             return succ, None
         
         elif succ > 0: # 匹配成功，但所有可能都不需要继续
-            return succ, self.post(node,self.init(node))
+            return succ, proc.post(node)
 
         
     
