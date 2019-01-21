@@ -2,6 +2,7 @@ import re
 from comlib.mapreduce.pred import *
 from comlib.mapreduce.child_relationship import *
 from comlib.mapreduce.map import *
+from comlib.mapreduce.reduce import *
 from comlib.iterators import *
         
 import types
@@ -171,19 +172,31 @@ Issue:
             self.map_proc = proc
         return self
         
-    def reduce(self, reduce_proc):
+    def reduce(self, reduce_proc, initial=None, post=None):
         """归并"""
+
+        if isinstance(reduce_proc, ReduceBase):
+            pass
+        elif initial and post==None:
+            reduce_proc = ReduceInit(reduce_proc, initial)
+
         if self.get_children == self._get_children_iter:
             if self.min_node_num > 1:
                 raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
         elif self.min_node_num > len(self.node):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
-        if self.isArray:
-            for ss in self.get_children(self.node):
-                return self._iter_reduce( reduce_proc, self.preds, ss )
+        if self.get_children == self._get_children_iter:
+            nodes = [self.node]
         else:
-            return self._iter_reduce( reduce_proc, self.preds, self.node )
+            nodes = self.node
+
+        # if self.isArray:
+        #     for ss in self.get_children(self.node):
+        #         return self._iter_reduce( reduce_proc, self.preds, ss )
+        # else:
+        #     return self._iter_reduce( reduce_proc, self.preds, self.node )
+        return self._iter_reduce( reduce_proc, self.preds, *nodes )[1]
         
     def r(self):
         """返回当前求值结果为内容的xiter"""
@@ -198,6 +211,8 @@ Issue:
     def _get_children_iter_multi(self, node):
         return zip( *map(lambda n: self._get_children_iter(n, node), node))
 
+    def _get_children_iter_multi2(self, *nodes):
+        return zip( *map(lambda n: self._get_children_iter(n, nodes), nodes))
 
     def _iter_common( self, preds, node ):
         pred = preds[0]
@@ -264,7 +279,7 @@ Issue:
         else:
             yield from self._iter_common( self.preds, self.node )
         
-    def _iter_reduce( self, proc, preds, node ):
+    def _iter_reduce( self, proc, preds, *nodes ):
         """
         使用preds判断node处理动作。
         若需要处理，则使用self.reduce迭代处理node的子节点，最后self.reduce的结果使用self.post
@@ -275,40 +290,54 @@ Issue:
         pred = preds[0] # 获取头判断条件
            
         # 过滤判断。TBD：考虑到yield必须有后处理，所以是否有必要
-        succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
+        succ = pred.match( *nodes )
        
         if succ == 1:  # 匹配成功，迭代子对象
-            nxt = self.get_children(node)
+            
+            # 获取子节点
+            nxt = self.get_children( *nodes )
+
             if hasattr(nxt, '__iter__') and nxt!=[]:
                 if len(preds)>1: preds = preds[1:]
-                rst_l = proc.init(node) # 定义当前节点的reduce初始值
+
+                # 使用当前节点求取初始值
+                rst_l = proc.initial( *nodes )
+
                 for ss in nxt:
-                    status, rst_n = self._iter_reduce( proc, preds, ss )    # 处理子节点
+
+                    # 处理子节点
+                    if self.get_children == self._get_children_iter:
+                        status, rst_n = self._iter_reduce( proc, preds, ss )    # 处理子节点
+                    else:
+                        status, rst_n = self._iter_reduce( proc, preds, *ss )    # 处理子节点
+
 
                     # 返回状态判断
                     # status > 0 : 匹配成功； status < 0: 匹配不成功
                     # |status|==
                     #   1: 继续处理；2：不迭代子对象(返回值不应该出现)；3：终止迭代；4：不迭代兄弟对象；
                     if status == 1: 
-                        rst_l = self.reduce(rst_l, rst_n)
+                        rst_l = proc.reduce(rst_l, rst_n)
                     elif status == -1:
                         continue
                     elif status in [3,4]:
-                        rst_l = self.reduce(rst_l, rst_n)
+                        rst_l = proc.reduce(rst_l, rst_n)
                         break
                     elif status in [-3,-4]:
                         break
                     
-                rst_l = proc.reduce( node, rst_l )
+                # 合并当前节点(后处理)，然后作为返回值返回
+                rst_l = proc.post( rst_l, *nodes )
                 return 3 if status==3 else 1, rst_l
             else:
-                return 1, proc.reduce( node )
+                # 非可迭代节点
+                return 1, proc.initial( *nodes )
 
         elif succ < 0:  # 匹配不成功，返回匹配结果和None。不应该出现匹配不成功，还要继续迭代
             return succ, None
         
         elif succ > 0: # 匹配成功，但所有可能都不需要继续
-            return succ, proc.post(node)
+            return succ, proc.initial(*nodes)
 
         
     

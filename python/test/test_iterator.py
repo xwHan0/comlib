@@ -68,3 +68,14 @@ class TestIterator:
         n0 = node(100, [n1, n2])
         r = [x.val for x,i in xiter(n0, Index(), gnxt={node:'sub'}, sSelect='*[not (#0.val==300)]')]
         assert r == [100,200]
+
+
+def reduce_proc(last, next): return last + next
+def reduce_init(*node): return node[0].val
+
+class TestReduce:
+    def test_reduce_common(self):
+        n1, n2 = (node(1000), node(2000))
+        n0 = node(3000, [n1, n2])
+        r = xiter(n0, gnxt='sub').reduce(reduce_proc, reduce_init)
+        assert r == 6000
