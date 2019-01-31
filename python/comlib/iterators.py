@@ -1,5 +1,6 @@
 class CommonIterator:
     def __iter__(self): return self
+    def __next__(self): return self
     def sub(self,*node): return self
 
 
@@ -62,7 +63,7 @@ class LinkList(CommonIterator):
         except Exception:
             raise StopIteration()
             
-    def sub(*node):
+    def sub(self,*node):
         return LinkList(node,self.nxt)
             
             
@@ -98,8 +99,8 @@ class LinkNext(CommonIterator):
         except Exception:
             raise StopIteration()
 
-    def sub(*node):
-        return LinkList(node.nxt,self.nxt)
+    def sub(self,*node):
+        return LinkList(node[0].nxt,self.nxt)
 
 
 

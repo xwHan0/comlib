@@ -2,6 +2,16 @@ import re
 from comlib.iterator_operator import deq
 import types
 
+
+########################################## Global variable definition
+
+
+#########################################  Local variable definition
+
+PRE_YIELD = 1
+POST_YIELD = 2
+NONE_YIELD = 0
+
 PATT_CONDITION_BASE1 = r'[^[\]]'
 PATT_CONDITION_1 = r'(?:{0})+'.format(PATT_CONDITION_BASE1)
 PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
@@ -65,7 +75,7 @@ class Pred:
                
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
-        self.yield_typ = 1  # 默认子项前
+        self.yield_typ = PRE_YIELD  # 默认子项前
 
         for f in (flags if flags else ''): # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
@@ -74,8 +84,8 @@ class Pred:
             elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
             elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
             elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-            elif f == 'P': self.yield_typ = 0  # 匹配成功后不返回当前节点
-            elif f == 'p': self.yield_typ = 2 # 匹配成功后调用子节点后返回当前节点
+            elif f == 'P': self.yield_typ = NONE_YIELD  # 匹配成功后不返回当前节点
+            elif f == 'p': self.yield_typ = POST_YIELD # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
@@ -85,55 +95,93 @@ class Pred:
                 self.obj_fail_rst = -2
                 self.pred_fail_rst = -2
 
-    def match_none(self, *node): return self.match_succ_rst            
-            
+        self.succ_sta = 1
+        
+    def is_stop(self): 
+        return (self.succ_sta==3) or (self.succ_sta==-3)
+
+    def is_sub(self): 
+        return not ((self.succ_sta==-2) or (self.succ_sta==2))
+
+    def is_succ(self): 
+        return self.succ_sta > 0
+
+    def is_pre_yield(self): 
+        return self.yield_typ == PRE_YIELD
+
+    def is_post_yield(self): 
+        return self.yield_typ == POST_YIELD
+        
+    def match_none(self, *node):
+        self.succ_sta = self.match_succ_rst
+        return self.succ_sta
+
     def match_obj_condition( self, *node ):
         # 对象匹配
         if node[0].__class__.__name__ != self.cls_name:
-                return self.obj_fail_rst
+            self.succ_sta = self.obj_fail_rst
+            return self.succ_sta
             
         # 条件匹配
         try:
             rst = eval(self.pred)
-            if rst == False: return self.pred_fail_rst
-            elif rst == True: return self.match_succ_rst
+            if rst == False: 
+                self.succ_sta = self.pred_fail_rst
+                return self.succ_sta
+            elif rst == True: 
+                self.succ_sta = self.match_succ_rst
+                return self.succ_sta
             else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                     
-        return self.match_succ_rst
+        self.succ_sta = self.match_succ_rst
+        return self.succ_sta
 
     def match_obj( self, *node ):
         if node[0].__class__.__name__ != self.cls_name:
-            return self.obj_fail_rst
-        return self.match_succ_rst
+            self.succ_sta = self.obj_fail_rst
+            return self.succ_sta
+        self.succ_sta = self.match_succ_rst
+        return self.succ_sta
 
     def match_condition( self, *node ):
         try:
             rst = eval(self.pred)
-            if rst == False: return self.pred_fail_rst
-            elif rst == True: return self.match_succ_rst
+            if rst == False: 
+                self.succ_sta = self.pred_fail_rst
+                return self.succ_sta
+            elif rst == True: 
+                self.succ_sta = self.match_succ_rst
+                return self.succ_sta
             else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
-        return self.match_succ_rst
+        self.succ_sta = self.match_succ_rst
+        return self.succ_sta
 
     def match_full( self, *node ):
         # 对象匹配
         if self.cls_name!='*' and node[0].__class__.__name__ != self.cls_name:
-            return self.obj_fail_rst
+            self.succ_sta = self.obj_fail_rst
+            return self.succ_sta
             
         # 条件匹配
         if self.pred and self.pred!='':
             try:
                 rst = eval(self.pred)
-                if rst == False: return self.pred_fail_rst
-                elif rst == True: return self.match_succ_rst
+                if rst == False: 
+                    self.succ_sta = self.pred_fail_rst
+                    return self.succ_sta
+                elif rst == True: 
+                    self.succ_sta = self.match_succ_rst
+                    return self.succ_sta
                 else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
             except Exception:
                 raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                       
-        return self.match_succ_rst
+        self.succ_sta = self.match_succ_rst
+        return self.succ_sta
     
     
     

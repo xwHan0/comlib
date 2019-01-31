@@ -1,13 +1,14 @@
 import re
-from comlib.mapreduce.pred import *
-from comlib.mapreduce.child_relationship import *
-from comlib.mapreduce.map import *
-from comlib.mapreduce.reduce import *
-from comlib.iterators import *
+from comlib.mapreduce.pred import Pred, DEFAULT_PREDS, gen_preds
+from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
+from comlib.mapreduce.map import MapFunction
+from comlib.mapreduce.reduce import ReduceFunction,ReduceBase,ReduceInit
+from comlib.iterators import LinkList
+from comlib.mapreduce.stack import NodeInfo,PRE,POST
         
 import types
 
-CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
+
 
 __all__ = [
     'xiter',
@@ -98,18 +99,24 @@ Issue:
 
   
     """
+    
+    MAX_IT_NUM = 999999
+    CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
+
     @staticmethod
     def configure(**cfg):
         for k,v in cfg.items():
             if k=='prefix':
-                CRITERIA_PATT = [
+                xiter.CRITERIA_PATT = [
                     (re.compile(r'{0}(\d+)'.format(v)), r'node[\g<1>]'),
                     (re.compile(r'{0}{0}'.format(v)), r'node'),
                     (re.compile(r'{0}\.'.format(v)), r'node[0].'),
                 ]
-                CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
-                
+                xiter.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
+            elif k=='max_it_num':
+                xiter.MAX_IT_NUM = v
     
+
     def __init__(self, *node, sSelect='*', gnxt={}, **cfg):
         """
         Arguments:
@@ -130,7 +137,7 @@ Issue:
         
         # 保存并解析选择字符串
         self.preds = gen_preds(sSelect)
-        self.min_node_num = max(map(int, CRITERIA_NODE_PATT.findall(sSelect)), default=1)
+        self.min_node_num = max(map(int, xiter.CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
@@ -139,6 +146,13 @@ Issue:
     
         self.map_proc = None
     
+        # New architecture fields
+        self.stack = []
+        self.datum = node
+        self.iterable = True
+        self.result = None
+        self.proc = None
+
     # 设置children获取表
     def append_children_relationship(self, children):
         self.children_relationship = append_children_relationship(self.children_relationship, children)
@@ -273,11 +287,15 @@ Issue:
         elif self.min_node_num > len(self.node):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
-        if self.isArray:
-            for ss in self.get_children(self.node):
-                yield from self._iter_common( self.preds, ss )
-        else:
-            yield from self._iter_common( self.preds, self.node )
+        # Initial process stacks
+        self.stack = [NodeInfo(self.datum)]
+
+        # if self.isArray:
+        #     for ss in self.get_children(self.node):
+        #         # yield from self._iter_common( self.preds, ss )
+        # else:
+        #     # yield from self._iter_common( self.preds, self.node )
+        return self._next_new()
         
     def _iter_reduce( self, proc, preds, *nodes ):
         """
@@ -339,7 +357,85 @@ Issue:
         elif succ > 0: # 匹配成功，但所有可能都不需要继续
             return succ, proc.initial(*nodes)
 
+    def _next_new( self ):
         
+        for ite_cnt in range(xiter.MAX_IT_NUM):
+            # Finish judgement
+            if len(self.stack) == 0 or ite_cnt >= xiter.MAX_IT_NUM:
+                if self.iterable:
+                    raise StopIteration()
+                else:
+                    return self.result
+            
+            # Get stack tail information for process
+            node = self.stack[-1]
+            
+            # Filter
+            pred = self.preds[node.pred_idx]
+            pred.match(*node.datum)
+            
+            # Stop judgement
+            if pred.is_stop():
+                self.stack.clear()
+        
+            # Process with sta
+            if node.sta == PRE:
+                # Modify top element status of stack
+                node.sta = POST
+                try:
+                    if pred.is_sub():
+                        # Get all datum iterators
+                        ites = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
+                        # Get next elements of iterators
+                        nxt_datum = [next(i) for i in ites]
+                        # Modify parent node status
+                        node.ites = ites
+                        
+                    # Record filter result
+                    if pred.is_succ():
+                        node.succ = True
+
+                    # Push next elements into stack
+                    if node.succ:
+                        if node.pred_idx == len(self.preds) - 1:
+                            pred_idx = node.pred_idx
+                        else:
+                            pred_idx = node.pred_idx + 1
+                    else:
+                        pred_idx = node.pred_idx
+                    self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
+
+                    if pred.is_pre_yield() and node.succ: 
+                        return self.proc.pre(*node.datum, node=node) if self.proc.pre else node.datum
+                    else:
+                        continue
+                except (StopIteration,TypeError): # Sub node is not iterable<TypeError> or iteration finish<StopIteration>
+                    # Next loop
+                    continue
+                    
+            elif node.sta == POST:
+                try:
+                    # Pop stack
+                    self.stack.pop()
+                    # Parent element forward
+                    nxt_datum = [next(i) for i in self.stack[-1].ites]
+                    self.stack.append(NodeInfo(nxt_datum))
+                except (IndexError, StopIteration): # IndexError for empty-stack
+                    if pred.is_post_yield() and node.succ:
+                        return self.proc.post(*node.datum, node=node) if self.proc.post else node.datum
+                    else:
+                        continue
+              
+            else:
+                raise Exception('Invalid status of FSM!')
+        
+       
+        
+        # pred = preds[0]
+           
+        # # 过滤判断
+        # succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
+       
     
             
 
