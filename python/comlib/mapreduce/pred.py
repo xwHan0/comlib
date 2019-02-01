@@ -44,7 +44,7 @@ CRITERIA_PATT = [
 
 class Pred:
     def __init__(self):
-        self.match = match_none
+        self.match = self.match_none
         
     # Always success match function
     def match_none(self, *node): return 1
@@ -55,24 +55,25 @@ class Pred:
     def is_sub(self, result):  return not ((result==-2) or (result==2))
     # Return weather or not match success
     def is_succ(self, result):  return result > 0
-
-    def is_pre_yield(self): 
-        return self.yield_typ == PRE_YIELD
-
-    def is_post_yield(self): 
-        return self.yield_typ == POST_YIELD
+    # 返回当前Pred是否已经匹配完成
+    def is_done(self, result): return result > 0
+    # 返回是否子迭代前处理
+    def is_pre_yield(self): return True
+    # 返回是否子迭代后处理
+    def is_post_yield(self): return False
+    # 设置自定义过滤函数
+    def set_match(self,pred): 
+        self.match = pred
+        return self
         
+
+
+class PredSkip(Pred):
+    def is_succ(self,result): return False
+    def is_done(self,result): return True
 
 
 class PredSelect(Pred):        
-
-    @staticmethod
-    def set_match(pred):
-        p = Pred()
-        p.match = pred
-        return p
-        
-    
 
     def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', flags=''):
        
@@ -117,109 +118,72 @@ class PredSelect(Pred):
                 self.obj_fail_rst = -2
                 self.pred_fail_rst = -2
 
-        self.succ_sta = 1
+    def is_pre_yield(self):  return self.yield_typ == PRE_YIELD
+    def is_post_yield(self): return self.yield_typ == POST_YIELD
         
-    def is_stop(self, result): 
-        return (result==3) or (result==-3)
-
-    def is_sub(self, result): 
-        return not ((result==-2) or (result==2))
-
-    def is_succ(self, result): 
-        return result > 0
-
-    def is_pre_yield(self): 
-        return self.yield_typ == PRE_YIELD
-
-    def is_post_yield(self): 
-        return self.yield_typ == POST_YIELD
-        
-    
     def match_obj_condition( self, *node ):
         # 对象匹配
         if node[0].__class__.__name__ != self.cls_name:
-            self.succ_sta = self.obj_fail_rst
-            return self.succ_sta
+            return self.obj_fail_rst
             
         # 条件匹配
         try:
             rst = eval(self.pred)
             if rst == False: 
-                self.succ_sta = self.pred_fail_rst
-                return self.succ_sta
+                return self.pred_fail_rst
             elif rst == True: 
-                self.succ_sta = self.match_succ_rst
-                return self.succ_sta
+                return self.match_succ_rst
             else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                     
-        self.succ_sta = self.match_succ_rst
-        return self.succ_sta
+        return self.match_succ_rst
 
     def match_obj( self, *node ):
         if node[0].__class__.__name__ != self.cls_name:
-            self.succ_sta = self.obj_fail_rst
-            return self.succ_sta
-        self.succ_sta = self.match_succ_rst
-        return self.succ_sta
+            return self.obj_fail_rst
+        return self.match_succ_rst
 
     def match_condition( self, *node ):
         try:
             rst = eval(self.pred)
             if rst == False: 
-                self.succ_sta = self.pred_fail_rst
-                return self.succ_sta
+                return self.pred_fail_rst
             elif rst == True: 
-                self.succ_sta = self.match_succ_rst
-                return self.succ_sta
+                return self.match_succ_rst
             else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
-        self.succ_sta = self.match_succ_rst
-        return self.succ_sta
+        return self.match_succ_rst
 
     def match_full( self, *node ):
         # 对象匹配
         if self.cls_name!='*' and node[0].__class__.__name__ != self.cls_name:
-            self.succ_sta = self.obj_fail_rst
-            return self.succ_sta
+            return self.obj_fail_rst
             
         # 条件匹配
         if self.pred and self.pred!='':
             try:
                 rst = eval(self.pred)
                 if rst == False: 
-                    self.succ_sta = self.pred_fail_rst
-                    return self.succ_sta
+                    return self.pred_fail_rst
                 elif rst == True: 
-                    self.succ_sta = self.match_succ_rst
-                    return self.succ_sta
+                    return self.match_succ_rst
                 else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
             except Exception:
                 raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                       
-        self.succ_sta = self.match_succ_rst
-        return self.succ_sta
+        return self.match_succ_rst
     
-    
-    
-
-DEFAULT_PREDS = [Pred()]
 
 def gen_preds(sSelect):
     if sSelect == '*':
-        return DEFAULT_PREDS
+        return [Pred()]
     if isinstance(sSelect, str):
         r = PATT_SELECT.split(sSelect)
         r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
-        return [Pred(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]     
+        return [PredSelect(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r].reverse()
     if isinstance(sSelect, types.FunctionType):
-        return Pred.set_match(sSelect)
-    return DEFAULT_PREDS
+        return Pred().set_match(sSelect)
+    return [Pred()]
 
-__all__ = [
-    'Pred',
-    'DEFAULT_PREDS',
-    'gen_preds',
-]
