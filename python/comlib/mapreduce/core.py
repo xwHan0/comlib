@@ -303,6 +303,9 @@ Issue:
         #         # yield from self._iter_common( self.preds, ss )
         # else:
         #     # yield from self._iter_common( self.preds, self.node )
+        return self
+
+    def __next__(self):
         return self._next_new()
         
     def _iter_reduce( self, proc, preds, *nodes ):
@@ -392,8 +395,8 @@ Issue:
                         self.stack.clear()
 
                     # Record filter result
-                    if pred.is_succ(result):
-                        node.succ = True
+                    node.succ = pred.is_succ(result)
+                    node.is_post_yield = pred.is_post_yield()
 
                     if pred.is_sub(result):
                         # Get all datum iterators
@@ -430,7 +433,7 @@ Issue:
 
                 if node.succ:
                     rst = self.proc.post(*node.datum, node=node) if self.proc.post else node.datum
-                    if pred.is_post_yield():
+                    if node.is_post_yield:
                         return rst
                     else:
                         pass

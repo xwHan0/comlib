@@ -13,6 +13,7 @@ class NodeInfo:
         self.idx = 0
         self.pred_idx = pred_idx
         self.succ = False
+        self.is_post_yield = False
         
         
         
