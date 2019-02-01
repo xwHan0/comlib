@@ -42,7 +42,29 @@ CRITERIA_PATT = [
 ######################################################
 # 定义匹配条件类
 
-class Pred:        
+class Pred:
+    def __init__(self):
+        self.match = match_none
+        
+    # Always success match function
+    def match_none(self, *node): return 1
+
+    # Return weather or not stop all other nodes iteration
+    def is_stop(self, result): return (result==3) or (result==-3)
+    # Return weather or not stop sub nodes iteration
+    def is_sub(self, result):  return not ((result==-2) or (result==2))
+    # Return weather or not match success
+    def is_succ(self, result):  return result > 0
+
+    def is_pre_yield(self): 
+        return self.yield_typ == PRE_YIELD
+
+    def is_post_yield(self): 
+        return self.yield_typ == POST_YIELD
+        
+
+
+class PredSelect(Pred):        
 
     @staticmethod
     def set_match(pred):
@@ -97,14 +119,14 @@ class Pred:
 
         self.succ_sta = 1
         
-    def is_stop(self): 
-        return (self.succ_sta==3) or (self.succ_sta==-3)
+    def is_stop(self, result): 
+        return (result==3) or (result==-3)
 
-    def is_sub(self): 
-        return not ((self.succ_sta==-2) or (self.succ_sta==2))
+    def is_sub(self, result): 
+        return not ((result==-2) or (result==2))
 
-    def is_succ(self): 
-        return self.succ_sta > 0
+    def is_succ(self, result): 
+        return result > 0
 
     def is_pre_yield(self): 
         return self.yield_typ == PRE_YIELD
@@ -112,10 +134,7 @@ class Pred:
     def is_post_yield(self): 
         return self.yield_typ == POST_YIELD
         
-    def match_none(self, *node):
-        self.succ_sta = self.match_succ_rst
-        return self.succ_sta
-
+    
     def match_obj_condition( self, *node ):
         # 对象匹配
         if node[0].__class__.__name__ != self.cls_name:
