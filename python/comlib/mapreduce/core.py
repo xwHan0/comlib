@@ -399,12 +399,10 @@ Issue:
                     node.is_post_yield = pred.is_post_yield()
 
                     if pred.is_sub(result):
-                        # Get all datum iterators
-                        ites = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
+                        # Get all datum iterators and assign to parent
+                        node.ites = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
                         # Get next elements of iterators
-                        nxt_datum = [next(i) for i in ites]
-                        # Modify parent node status
-                        node.ites = ites
+                        nxt_datum = [next(i) for i in node.ites]
 
                     # Push next elements into stack
                     pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
