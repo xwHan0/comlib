@@ -1,4 +1,5 @@
 
+import types
 
 
 class Proc:
@@ -35,7 +36,7 @@ class ProcReduce(Proc):
         if isinstance(proc, ProcReduce):
             self = proc
         elif isinstance(proc, types.FunctionType):
-            self.proc
+            self.proc = proc
             
     def post(self, result, *datum, node=None):
         if self.proc.__code__.co_argcount == 1:

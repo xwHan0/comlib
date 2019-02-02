@@ -1,11 +1,11 @@
 import re
 from comlib.mapreduce.pred import Pred, PredSelect, PredSkip, gen_preds
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
-from comlib.mapreduce.map import MapFunction
-from comlib.mapreduce.reduce import ReduceFunction,ReduceBase,ReduceInit
+# from comlib.mapreduce.map import MapFunction
+# from comlib.mapreduce.reduce import ReduceFunction,ReduceBase,ReduceInit
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo,PRE,POST
-from comlib.mapreduce.proc import Proc, ProcMap
+from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
         
 import types
 
@@ -127,15 +127,6 @@ Issue:
         - cfg {map}: optional parameters
         """
         
-        if len(node) == 1:
-            self.node = node[0]     # 保存待处理的数据结构
-            self.get_children = self._get_children_iter     # 保存子关系
-            self.isArray = isinstance(self.node,(list,tuple,LinkList))
-        else:
-            self.node = node
-            self.get_children = self._get_children_iter_multi
-            self.isArray = isinstance(self.node[0],(list,tuple,LinkList))
-        
         # 保存并解析选择字符串
         self.preds = gen_preds(sSelect)
         self.min_node_num = max(map(int, xiter.CRITERIA_NODE_PATT.findall(sSelect)), default=1)
@@ -145,13 +136,11 @@ Issue:
         # Append new children relationship map table
         append_children_relationship(self.children_relationship, gnxt)
     
-        self.map_proc = None
-    
         # New architecture fields
         #self.stack = []       declare when used
-        self.datum = node
+        self.datum = list(node)
         self.iterable = True
-        #self.result = None    declare when used
+        self.result = None
         self.proc = Proc() 
         self.cfg = cfg
 
@@ -166,16 +155,12 @@ Issue:
         self.children_relationship = append_children_relationship(self.children_relationship, children)
         return self
    
-    def assist(self, *node, gnxt={}):
+    def assist(self, *datum, gnxt={}):
         """
         Append assist collection 'node' which gnxt is gnxt for iterator.
         """
-        if self.get_children == self._get_children_iter:
-            self.node = [self.node] + node
-            self.get_children = self._get_children_iter_multi
-        else:
-            for n in node:
-                self.node.append(n)
+        for d in datum:
+            self.datum.append(d)
             
         self.append_children_relationship(gnxt)
 
@@ -197,10 +182,7 @@ Issue:
     def reduce(self, reduce_proc, initial=None, post=None):
         """归并"""
 
-        if self.get_children == self._get_children_iter:
-            if self.min_node_num > 1:
-                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
-        elif self.min_node_num > len(self.node):
+        if self.min_node_num > len(self.datum):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
         self.proc = ProcReduce(reduce_proc)
@@ -225,144 +207,18 @@ Issue:
             self.children_relationship.get('*',DEFAULT_CHILDREN_RELATIONSHIP))  # 查找处理类实例
         return nxt.sub(*node)  # 调用类函数处理
     
-    def _get_children_iter_multi(self, node):
-        return zip( *map(lambda n: self._get_children_iter(n, node), node))
-
-    def _get_children_iter_multi2(self, *nodes):
-        return zip( *map(lambda n: self._get_children_iter(n, nodes), nodes))
-
-    def _iter_common( self, preds, node ):
-        pred = preds[0]
-           
-        # 过滤判断
-        succ = pred.match( node ) if self.get_children==self._get_children_iter else pred.match(*node)
-       
-        if succ == 1:  # 匹配成功，迭代子对象
-            if pred.yield_typ==1: 
-                if self.map_proc==None:
-                    yield node
-                else:
-                    yield self.map_proc.map(*node)
-            
-            nxt = self.get_children(node)
-            if hasattr(nxt, '__iter__') and nxt!=[]:
-                if len(preds)>1: preds = preds[1:]
-
-                if pred.yield_typ == 1:     # 遍历行为
-                    for ss in nxt:
-                        yield from self._iter_common( preds, ss )
-                else:   # 迭代行为
-                    pass
-
-            
-        elif succ == -1:  # 匹配不成功，迭代子对象
-            nxt = self.get_children(node)
-            if hasattr(nxt, '__iter__') and nxt!=[]:
-                for ss in nxt:
-                    yield from self._iter_common( preds, ss )
-                
-        elif succ == 2: # 匹配成功，不迭代子对象
-            if pred.yield_typ != 0:
-                if self.map_proc==None:
-                    yield node
-                else:
-                    yield self.map_proc.map(*node)
-
-        elif succ == 3: # 匹配成功，终止迭代
-            if pred.yield_typ != 0:
-                if self.map_proc==None:
-                    yield node
-                else:
-                    yield self.map_proc.run(*node)
-            raise StopIteration()
-
-        elif succ == -3: # 匹配不成功，终止迭代
-            raise StopIteration()
-
-        # elif succ == -2: # 匹配不成功，不迭代子对象
-        #     pass
-
-               
     def __iter__(self):
-        if self.get_children == self._get_children_iter:
-            if self.min_node_num > 1:
-                raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, 1))
-        elif self.min_node_num > len(self.node):
+        if self.min_node_num > len(self.datum):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
         # Initial process stacks
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
-        # if self.isArray:
-        #     for ss in self.get_children(self.node):
-        #         # yield from self._iter_common( self.preds, ss )
-        # else:
-        #     # yield from self._iter_common( self.preds, self.node )
         return self
 
     def __next__(self):
         return self._next_new()
         
-    def _iter_reduce( self, proc, preds, *nodes ):
-        """
-        使用preds判断node处理动作。
-        若需要处理，则使用self.reduce迭代处理node的子节点，最后self.reduce的结果使用self.post
-        和node节点一并处理后返回。
-        若不需要处理，则根据条件跳过该节点以及子节点，或者直接终止迭代。
-        """
-        
-        pred = preds[0] # 获取头判断条件
-           
-        # 过滤判断。TBD：考虑到yield必须有后处理，所以是否有必要
-        succ = pred.match( *nodes )
-       
-        if succ == 1:  # 匹配成功，迭代子对象
-            
-            # 获取子节点
-            nxt = self.get_children( *nodes )
-
-            if hasattr(nxt, '__iter__') and nxt!=[]:
-                if len(preds)>1: preds = preds[1:]
-
-                # 使用当前节点求取初始值
-                rst_l = proc.initial( *nodes )
-
-                for ss in nxt:
-
-                    # 处理子节点
-                    if self.get_children == self._get_children_iter:
-                        status, rst_n = self._iter_reduce( proc, preds, ss )    # 处理子节点
-                    else:
-                        status, rst_n = self._iter_reduce( proc, preds, *ss )    # 处理子节点
-
-
-                    # 返回状态判断
-                    # status > 0 : 匹配成功； status < 0: 匹配不成功
-                    # |status|==
-                    #   1: 继续处理；2：不迭代子对象(返回值不应该出现)；3：终止迭代；4：不迭代兄弟对象；
-                    if status == 1: 
-                        rst_l = proc.reduce(rst_l, rst_n)
-                    elif status == -1:
-                        continue
-                    elif status in [3,4]:
-                        rst_l = proc.reduce(rst_l, rst_n)
-                        break
-                    elif status in [-3,-4]:
-                        break
-                    
-                # 合并当前节点(后处理)，然后作为返回值返回
-                rst_l = proc.post( rst_l, *nodes )
-                return 3 if status==3 else 1, rst_l
-            else:
-                # 非可迭代节点
-                return 1, proc.initial( *nodes )
-
-        elif succ < 0:  # 匹配不成功，返回匹配结果和None。不应该出现匹配不成功，还要继续迭代
-            return succ, None
-        
-        elif succ > 0: # 匹配成功，但所有可能都不需要继续
-            return succ, proc.initial(*nodes)
-
     def _next_new( self ):
         
         for ite_cnt in range(xiter.MAX_IT_NUM):
@@ -411,8 +267,6 @@ Issue:
                     rst = self.proc.pre(*node.datum, node=node)
                     if pred.is_pre_yield():
                         return rst
-                    else:
-                        pass
                     
             elif node.sta == POST:
                 try:
@@ -428,8 +282,6 @@ Issue:
                     rst = self.proc.post(self.result, *node.datum, node=node)
                     if node.is_post_yield:
                         return rst
-                    else:
-                        pass
               
             else:
                 raise Exception('Invalid status of FSM!')

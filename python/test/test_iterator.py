@@ -70,12 +70,15 @@ class TestIterator:
         assert r == [100,200]
 
 
-def reduce_proc(last, next): return last + next
-def reduce_init(*node): return node[0].val
+def reduce_proc(last, next): 
+    if last:
+        return last + next
+    else:
+        return next
 
 class TestReduce:
     def test_reduce_common(self):
         n1, n2 = (node(1000), node(2000))
         n0 = node(3000, [n1, n2])
-        r = xiter(n0, gnxt='sub').reduce(reduce_proc, reduce_init)
+        r = xiter(n0, gnxt='sub').reduce(reduce_proc, None)
         assert r == 6000
