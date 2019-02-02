@@ -43,11 +43,11 @@ CRITERIA_PATT = [
 # 定义匹配条件类
 
 class Pred:
-    def __init__(self):
-        self.match = self.match_none
+    #def __init__(self):
+   #     self.match = self.match_none
         
     # Always success match function
-    def match_none(self, *node): return 1
+    def match(self, *node): return 1
 
     # Return weather or not stop all other nodes iteration
     def is_stop(self, result): return (result==3) or (result==-3)
