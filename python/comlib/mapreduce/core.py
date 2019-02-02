@@ -415,7 +415,7 @@ Issue:
                     pass
 
                 if node.succ:
-                    rst = self.proc.pre(*node.datum, node=node) if self.proc.pre else node.datum
+                    rst = self.proc.pre(*node.datum, node=node)
                     if pred.is_pre_yield():
                         return rst
                     else:
@@ -432,7 +432,7 @@ Issue:
                     pass
 
                 if node.succ:
-                    rst = self.proc.post(*node.datum, node=node) if self.proc.post else node.datum
+                    rst = self.proc.post(*node.datum, node=node)
                     if node.is_post_yield:
                         return rst
                     else:

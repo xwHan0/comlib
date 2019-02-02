@@ -1,4 +1,18 @@
+
+
+
 class Proc:
-    def __init__(self, pre=None, post=None):
-        self.pre = pre
-        self.post = post
+        
+    def pre(self,  *datum, node=None):
+        if len(datum) == 1:
+            return datum[0]
+        else:
+            return datum
+            
+    def post(self, *datum, node=None):
+        if len(datum) == 1:
+            return datum[0]
+        else:
+            return datum
+        
+        
