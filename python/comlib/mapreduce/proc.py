@@ -9,7 +9,7 @@ class Proc:
         else:
             return datum
             
-    def post(self, *datum, node=None):
+    def post(self, init, *datum, node=None):
         if len(datum) == 1:
             return datum[0]
         else:

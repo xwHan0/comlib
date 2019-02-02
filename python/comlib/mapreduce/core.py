@@ -416,8 +416,6 @@ Issue:
                     rst = self.proc.pre(*node.datum, node=node)
                     if pred.is_pre_yield():
                         return rst
-                    else:
-                        pass
                     
             elif node.sta == POST:
                 try:
@@ -430,11 +428,9 @@ Issue:
                     pass
 
                 if node.succ:
-                    rst = self.proc.post(*node.datum, node=node)
+                    rst = self.proc.post(self.result, *node.datum, node=node)
                     if node.is_post_yield:
                         return rst
-                    else:
-                        pass
               
             else:
                 raise Exception('Invalid status of FSM!')
