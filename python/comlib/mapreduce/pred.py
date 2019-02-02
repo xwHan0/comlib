@@ -182,7 +182,9 @@ def gen_preds(sSelect):
     if isinstance(sSelect, str):
         r = PATT_SELECT.split(sSelect)
         r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
-        return [PredSelect(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r].reverse()
+        r = [PredSelect(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]
+        r.reverse()
+        return r
     if isinstance(sSelect, types.FunctionType):
         return Pred().set_match(sSelect)
     return [Pred()]

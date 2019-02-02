@@ -5,7 +5,7 @@ from comlib.mapreduce.map import MapFunction
 from comlib.mapreduce.reduce import ReduceFunction,ReduceBase,ReduceInit
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo,PRE,POST
-from comlib.mapreduce.proc import Proc
+from comlib.mapreduce.proc import Proc, ProcMap
         
 import types
 
@@ -148,11 +148,11 @@ Issue:
         self.map_proc = None
     
         # New architecture fields
-        self.stack = []
+        #self.stack = []       declare when used
         self.datum = node
         self.iterable = True
-        self.result = None
-        self.proc = Proc()
+        #self.result = None    declare when used
+        self.proc = Proc() 
         self.cfg = cfg
 
         # Skip first sequence process
@@ -189,18 +189,13 @@ Issue:
     def map(self, proc=None):
         """并行处理"""
         if isinstance(proc, types.FunctionType):
-            self.map_proc = MapFunction(proc)
+            self.proc = ProcMap(proc)
         else:
-            self.map_proc = proc
+            self.proc = proc
         return self
         
     def reduce(self, reduce_proc, initial=None, post=None):
         """归并"""
-
-        if isinstance(reduce_proc, ReduceBase):
-            pass
-        elif initial and post==None:
-            reduce_proc = ReduceInit(reduce_proc, initial)
 
         if self.get_children == self._get_children_iter:
             if self.min_node_num > 1:
@@ -208,17 +203,17 @@ Issue:
         elif self.min_node_num > len(self.node):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
-        if self.get_children == self._get_children_iter:
-            nodes = [self.node]
-        else:
-            nodes = self.node
+        self.proc = ProcReduce(reduce_proc)
+        self.result = initial
+        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+
 
         # if self.isArray:
         #     for ss in self.get_children(self.node):
         #         return self._iter_reduce( reduce_proc, self.preds, ss )
         # else:
         #     return self._iter_reduce( reduce_proc, self.preds, self.node )
-        return self._iter_reduce( reduce_proc, self.preds, *nodes )[1]
+        return self._next_new( )
         
     def r(self):
         """返回当前求值结果为内容的xiter"""
@@ -416,6 +411,8 @@ Issue:
                     rst = self.proc.pre(*node.datum, node=node)
                     if pred.is_pre_yield():
                         return rst
+                    else:
+                        pass
                     
             elif node.sta == POST:
                 try:
@@ -431,6 +428,8 @@ Issue:
                     rst = self.proc.post(self.result, *node.datum, node=node)
                     if node.is_post_yield:
                         return rst
+                    else:
+                        pass
               
             else:
                 raise Exception('Invalid status of FSM!')
