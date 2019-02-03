@@ -5,9 +5,9 @@ POST = 3
 DONE = 4
 
 class NodeInfo:
-    def __init__(self, datum=[], ites=[], sta=1, pred_idx=0 ):
+    def __init__(self, datum=[],  sta=1, pred_idx=0 ):
         self.datum = datum
-        # self.ites = ites  define when used
+        # self.children  define when used
         self.sta = sta
         # self.rst = rst
         # self.idx = 0

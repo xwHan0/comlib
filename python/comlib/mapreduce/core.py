@@ -4,7 +4,7 @@ from comlib.mapreduce.pred import Pred, PredSelect, PredSkip, gen_preds
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo,PRE,POST
-from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
+from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
 from comlib.mapreduce.result import Result
 
 
@@ -112,7 +112,7 @@ Issue:
                 xiter.MAX_IT_NUM = v
     
 
-    def __init__(self, *node, sSelect='*', gnxt={}, **cfg):
+    def __init__(self, *node, sSelect='*', gnxt={}, procs=None, **cfg):
         """
         Arguments:
         - node {collection}: operated data
@@ -135,7 +135,7 @@ Issue:
         self.datum = list(node)
         #self.iterable = True
         self.result = Result()
-        self.procs = [ProcIter()]
+        self.procs = procs if procs else [ProcIter()]
         self.cfg = cfg
 
         # Skip first sequence process
@@ -197,7 +197,9 @@ Issue:
 
         return self._next_new( )
         
-    def run(self): return self._next_new()
+    def run(self): 
+        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        return self._next_new()
         
     def r(self):
         """返回当前求值结果为内容的xiter"""
@@ -225,7 +227,7 @@ Issue:
         
         for ite_cnt in range(xiter.MAX_IT_NUM):
             # Finish judgement
-            if len(self.stack) == 0 or ite_cnt >= xiter.MAX_IT_NUM:
+            if len(self.stack) == 0:
                 if self.procs[0].is_yield():
                     raise StopIteration()
                 else:
@@ -236,8 +238,6 @@ Issue:
             
             # Process with sta
             if node.sta == PRE:
-                # Modify top element status of stack
-                node.sta = POST
                 
                 # Filter
                 pred = self.preds[node.pred_idx]
@@ -247,21 +247,18 @@ Issue:
                 node.succ = pred.is_succ(result)
                 node.proc_idx = pred.proc_idx
                 
-                # Process
-                if node.succ:
-                    self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
-                    
                 # Next prepare
                 try:
-                    # Stop judgement
-                    if pred.is_stop(result):
-                        self.stack.clear()
                     
                     if pred.is_sub(result):
                         # Get all datum iterators and assign to parent
-                        node.ites = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
+                        node.children = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
                         # Get next elements of iterators
                         nxt_datum = [next(i) for i in node.ites]
+
+                    # Process
+                    if node.succ:
+                        self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
 
                     # Push next elements into stack
                     pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
@@ -269,7 +266,18 @@ Issue:
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError): 
-                    pass
+                    node.children = None
+                    # Process
+                    if node.succ:
+                        self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
+                
+                    
+                # Modify top element status of stack
+                node.sta = POST
+                
+                # Stop judgement
+                if pred.is_stop(result): self.stack.clear()
+                    
 
                 # Return
                 if node.succ and self.procs[node.proc_idx].pre_yield():
@@ -278,13 +286,13 @@ Issue:
             elif node.sta == POST:
                 # Process
                 if node.succ:
-                    self.procs[node.proc_idx].post(self.result, *node.datum, stack=stack)
+                    self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
                     
                 try:
                     # Pop stack
                     self.stack.pop()
                     # Parent element forward
-                    nxt_datum = [next(i) for i in self.stack[-1].ites]
+                    nxt_datum = [next(i) for i in self.stack[-1].children]
                     self.stack.append(NodeInfo(nxt_datum))
                 except (IndexError, StopIteration): # IndexError for empty-stack
                     pass

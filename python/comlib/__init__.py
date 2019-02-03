@@ -9,4 +9,4 @@ from comlib.iterator_operator import *
 
 from comlib.mapreduce.core import xiter
 from comlib.mapreduce.child_relationship import *
-from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
+from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
