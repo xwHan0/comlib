@@ -137,7 +137,7 @@ Issue:
         # New architecture fields
         #self.stack = []       declare when used
         self.datum = list(node)
-        self.iterable = True
+        #self.iterable = True
         self.result = None
         self.proc = Proc() 
         self.cfg = cfg
@@ -216,7 +216,7 @@ Issue:
         for ite_cnt in range(xiter.MAX_IT_NUM):
             # Finish judgement
             if len(self.stack) == 0 or ite_cnt >= xiter.MAX_IT_NUM:
-                if self.iterable:
+                if self.proc.is_yield():
                     raise StopIteration()
                 else:
                     return self.result

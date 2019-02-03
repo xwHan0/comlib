@@ -18,6 +18,7 @@ class Proc:
             
     def pre_yield(self): return True
     def post_yield(self): return False
+    def is_yield(self): return True
         
         
 class ProcMap(Proc):
@@ -33,7 +34,7 @@ class ProcMap(Proc):
         elif self.func.__code__.co_argcount == 0:
             return self.func(*datum, node=node)
         
-        
+    
 class ProcReduce(Proc):
     def __init__(self, proc):
         if isinstance(proc, ProcReduce):
@@ -48,4 +49,5 @@ class ProcReduce(Proc):
             return self.proc(result, *datum, node=node)
         
     def pre_yield(self): return False
-   
+    def is_yield(self): return False
+        
