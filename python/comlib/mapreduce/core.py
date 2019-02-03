@@ -1,8 +1,6 @@
 import re
 from comlib.mapreduce.pred import Pred, PredSelect, PredSkip, gen_preds
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
-# from comlib.mapreduce.map import MapFunction
-# from comlib.mapreduce.reduce import ReduceFunction,ReduceBase,ReduceInit
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo,PRE,POST
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
@@ -189,12 +187,6 @@ Issue:
         self.result = initial
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
-
-        # if self.isArray:
-        #     for ss in self.get_children(self.node):
-        #         return self._iter_reduce( reduce_proc, self.preds, ss )
-        # else:
-        #     return self._iter_reduce( reduce_proc, self.preds, self.node )
         return self._next_new( )
         
     def r(self):
