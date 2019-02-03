@@ -43,7 +43,7 @@ class ProcReduce(Proc):
             self.proc = proc
             
     def post(self, result, *datum, node=None):
-        if self.proc.__code__.co_argcount == 1:
+        if self.proc.__code__.co_argcount == 2:
             return self.proc(result, datum[0])
         elif self.proc.__code__.co_argcount == 0:
             return self.proc(result, *datum, node=node)
