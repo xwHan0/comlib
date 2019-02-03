@@ -72,9 +72,9 @@ class TestIterator:
 
 def reduce_proc(last, next): 
     if last:
-        return last + next
+        return last + next.val
     else:
-        return next
+        return next.val
 
 class TestReduce:
     def test_reduce_common(self):
