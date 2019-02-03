@@ -5,6 +5,7 @@ from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEF
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo,PRE,POST
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
+from comlib.mapreduce.result import Result
 
 
 
@@ -133,7 +134,7 @@ Issue:
         #self.stack = []       declare when used
         self.datum = list(node)
         #self.iterable = True
-        self.result = None
+        self.result = Result()
         self.procs = [Proc()]
         self.cfg = cfg
 
@@ -148,7 +149,7 @@ Issue:
         self.children_relationship = append_children_relationship(self.children_relationship, children)
         return self
    
-   def append_proc(self, proc):
+    def append_proc(self, proc):
        self.procs.append(proc)
        return self
    
@@ -183,7 +184,7 @@ Issue:
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
         self.procs = [ProcReduce(reduce_proc)]
-        self.result = initial
+        self.result.init = initial
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         return self._next_new( )
@@ -256,9 +257,9 @@ Issue:
                     pass
 
                 if node.succ:
-                    self.result = self.procs[node.proc_idx].pre(*node.datum, node=node)
+                    self.procs[node.proc_idx].pre(self.result, *node.datum, node=node)
                     if self.procs[node.proc_idx].pre_yield():
-                        return self.result
+                        return self.result.rst
                     
             elif node.sta == POST:
                 try:
@@ -271,9 +272,9 @@ Issue:
                     pass
 
                 if node.succ:
-                    self.result = self.procs[node.proc_idx].post(self.result, *node.datum, node=node)
+                    self.procs[node.proc_idx].post(self.result, *node.datum, node=node)
                     if self.procs[node.proc_idx].post_yield():
-                        return self.result
+                        return self.result.rst
               
             else:
                 raise Exception('Invalid status of FSM!')

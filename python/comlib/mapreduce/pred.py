@@ -77,6 +77,8 @@ class PredSelect(Pred):
 
     def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', flags=''):
        
+        super().__init__()
+       
         if cls_name1:
             if cls_name1=='*':
                 self.match = self.match_none
