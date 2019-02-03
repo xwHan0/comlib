@@ -1,17 +1,12 @@
 import re
+import types
 from comlib.mapreduce.pred import Pred, PredSelect, PredSkip, gen_preds
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo,PRE,POST
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
-        
-import types
 
 
-
-__all__ = [
-    'xiter',
-]
 
 class xiter:
     """
@@ -139,7 +134,7 @@ Issue:
         self.datum = list(node)
         #self.iterable = True
         self.result = None
-        self.proc = Proc() 
+        self.procs = [Proc()]
         self.cfg = cfg
 
         # Skip first sequence process
@@ -152,6 +147,10 @@ Issue:
     def append_children_relationship(self, children):
         self.children_relationship = append_children_relationship(self.children_relationship, children)
         return self
+   
+   def append_proc(self, proc):
+       self.procs.append(proc)
+       return self
    
     def assist(self, *datum, gnxt={}):
         """
@@ -172,9 +171,9 @@ Issue:
     def map(self, proc=None):
         """并行处理"""
         if isinstance(proc, types.FunctionType):
-            self.proc = ProcMap(proc)
+            self.procs = [ProcMap(proc)]
         else:
-            self.proc = proc
+            self.procs = [proc]
         return self
         
     def reduce(self, reduce_proc, initial=None, post=None):
@@ -183,7 +182,7 @@ Issue:
         if self.min_node_num > len(self.datum):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
-        self.proc = ProcReduce(reduce_proc)
+        self.procs = [ProcReduce(reduce_proc)]
         self.result = initial
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
@@ -216,7 +215,7 @@ Issue:
         for ite_cnt in range(xiter.MAX_IT_NUM):
             # Finish judgement
             if len(self.stack) == 0 or ite_cnt >= xiter.MAX_IT_NUM:
-                if self.proc.is_yield():
+                if self.procs[0].is_yield():
                     raise StopIteration()
                 else:
                     return self.result
@@ -239,6 +238,7 @@ Issue:
 
                     # Record filter result
                     node.succ = pred.is_succ(result)
+                    node.proc_idx = pred.proc_idx
                     #node.is_post_yield = pred.is_post_yield()
 
                     if pred.is_sub(result):
@@ -250,14 +250,14 @@ Issue:
                     # Push next elements into stack
                     pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
                     self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
-
+                    
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError): 
                     pass
 
                 if node.succ:
-                    self.result = self.proc.pre(*node.datum, node=node)
-                    if self.proc.pre_yield():
+                    self.result = self.procs[node.proc_idx].pre(*node.datum, node=node)
+                    if self.procs[node.proc_idx].pre_yield():
                         return self.result
                     
             elif node.sta == POST:
@@ -271,8 +271,8 @@ Issue:
                     pass
 
                 if node.succ:
-                    self.result = self.proc.post(self.result, *node.datum, node=node)
-                    if self.proc.post_yield():
+                    self.result = self.procs[node.proc_idx].post(self.result, *node.datum, node=node)
+                    if self.procs[node.proc_idx].post_yield():
                         return self.result
               
             else:

@@ -43,8 +43,8 @@ CRITERIA_PATT = [
 # 定义匹配条件类
 
 class Pred:
-    #def __init__(self):
-   #     self.match = self.match_none
+    def __init__(self, proc_idx=0):
+        self.proc_idx = 0
         
     # Always success match function
     def match(self, *node): return 1

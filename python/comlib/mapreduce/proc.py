@@ -3,7 +3,10 @@ import types
 
 
 class Proc:
-        
+    
+    #def __init__(self):
+    #    
+    
     def pre(self,  *datum, node=None):
         if len(datum) == 1:
             return datum[0]
