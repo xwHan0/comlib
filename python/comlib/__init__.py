@@ -7,6 +7,6 @@
 from comlib.iterators import Index, CommonIterator, Counter, LinkList, interpose
 from comlib.iterator_operator import *
 
-from comlib.mapreduce.core import *
+from comlib.mapreduce.core import xiter
 from comlib.mapreduce.child_relationship import *
-from comlib.mapreduce.map import *
+from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce
