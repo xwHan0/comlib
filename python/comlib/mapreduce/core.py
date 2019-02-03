@@ -239,7 +239,7 @@ Issue:
 
                     # Record filter result
                     node.succ = pred.is_succ(result)
-                    node.is_post_yield = pred.is_post_yield()
+                    #node.is_post_yield = pred.is_post_yield()
 
                     if pred.is_sub(result):
                         # Get all datum iterators and assign to parent
