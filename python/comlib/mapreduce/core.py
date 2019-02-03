@@ -257,7 +257,7 @@ Issue:
 
                 if node.succ:
                     rst = self.proc.pre(*node.datum, node=node)
-                    if pred.is_pre_yield():
+                    if self.proc.pre_yield():
                         return rst
                     
             elif node.sta == POST:
@@ -272,7 +272,7 @@ Issue:
 
                 if node.succ:
                     rst = self.proc.post(self.result, *node.datum, node=node)
-                    if node.is_post_yield:
+                    if self.proc.post_yield():
                         return rst
               
             else:
