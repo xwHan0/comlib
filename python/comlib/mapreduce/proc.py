@@ -39,6 +39,8 @@ class ProcMap(Proc):
             result.rst = self.func(datum[0])
         elif self.func.__code__.co_argcount == 0:
             result.rst = self.func(*datum, stack=stack)
+
+    def pre_yield(self): return True
         
     
 class ProcReduce(Proc):

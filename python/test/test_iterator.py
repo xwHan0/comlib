@@ -70,6 +70,12 @@ class TestIterator:
         assert r == [100,200]
 
 
+class TestMap:
+    def test_map_commom(self):
+        rst = [x for x in xiter([1,2,3,4]).map(lambda x:x+10)]
+        assert rst == [11,12,13,14]
+
+
 def reduce_proc(last, next): 
     if last:
         return last + next.val

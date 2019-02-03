@@ -189,7 +189,7 @@ Issue:
         """归并"""
 
         if self.min_node_num > len(self.datum):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
         
         self.procs = [ProcReduce(reduce_proc)]
         self.result.rst = initial
@@ -213,7 +213,7 @@ Issue:
     
     def __iter__(self):
         if self.min_node_num > len(self.datum):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
+            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
         
         # Initial process stacks
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
@@ -254,7 +254,7 @@ Issue:
                         # Get all datum iterators and assign to parent
                         node.children = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
                         # Get next elements of iterators
-                        nxt_datum = [next(i) for i in node.ites]
+                        nxt_datum = [next(i) for i in node.children]
 
                     # Process
                     if node.succ:
@@ -299,7 +299,7 @@ Issue:
 
                 if node.succ and self.procs[node.proc_idx].post_yield():
                     return self.result.rst
-              
+
             else:
                 raise Exception('Invalid status of FSM!')
         
