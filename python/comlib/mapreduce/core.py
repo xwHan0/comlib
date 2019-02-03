@@ -135,7 +135,7 @@ Issue:
         self.datum = list(node)
         #self.iterable = True
         self.result = Result()
-        self.procs = [Proc()]
+        self.procs = [ProcIter()]
         self.cfg = cfg
 
         # Skip first sequence process
@@ -150,8 +150,16 @@ Issue:
         return self
    
     def append_proc(self, proc):
-       self.procs.append(proc)
-       return self
+        self.procs.append(proc)
+        return self
+       
+    def set_proc(self,proc):
+        self.procs = [proc]
+        return self
+       
+    def initial(self, init=None):
+        self.result.rst = init
+        return self
    
     def assist(self, *datum, gnxt={}):
         """
@@ -184,10 +192,12 @@ Issue:
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.node)))
         
         self.procs = [ProcReduce(reduce_proc)]
-        self.result.init = initial
+        self.result.rst = initial
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         return self._next_new( )
+        
+    def run(self): return self._next_new()
         
     def r(self):
         """返回当前求值结果为内容的xiter"""
@@ -219,7 +229,7 @@ Issue:
                 if self.procs[0].is_yield():
                     raise StopIteration()
                 else:
-                    return self.result
+                    return self.result.rst
             
             # Get stack tail information for process
             node = self.stack[-1]
@@ -228,20 +238,25 @@ Issue:
             if node.sta == PRE:
                 # Modify top element status of stack
                 node.sta = POST
-                try:
-                    # Filter
-                    pred = self.preds[node.pred_idx]
-                    result = pred.match(*node.datum)
+                
+                # Filter
+                pred = self.preds[node.pred_idx]
+                result = pred.match(*node.datum)
             
-                   # Stop judgement
+                # Record filter result
+                node.succ = pred.is_succ(result)
+                node.proc_idx = pred.proc_idx
+                
+                # Process
+                if node.succ:
+                    self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
+                    
+                # Next prepare
+                try:
+                    # Stop judgement
                     if pred.is_stop(result):
                         self.stack.clear()
-
-                    # Record filter result
-                    node.succ = pred.is_succ(result)
-                    node.proc_idx = pred.proc_idx
-                    #node.is_post_yield = pred.is_post_yield()
-
+                    
                     if pred.is_sub(result):
                         # Get all datum iterators and assign to parent
                         node.ites = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
@@ -256,12 +271,15 @@ Issue:
                 except (StopIteration,TypeError): 
                     pass
 
-                if node.succ:
-                    self.procs[node.proc_idx].pre(self.result, *node.datum, node=node)
-                    if self.procs[node.proc_idx].pre_yield():
-                        return self.result.rst
+                # Return
+                if node.succ and self.procs[node.proc_idx].pre_yield():
+                    return self.result.rst
                     
             elif node.sta == POST:
+                # Process
+                if node.succ:
+                    self.procs[node.proc_idx].post(self.result, *node.datum, stack=stack)
+                    
                 try:
                     # Pop stack
                     self.stack.pop()
@@ -271,10 +289,8 @@ Issue:
                 except (IndexError, StopIteration): # IndexError for empty-stack
                     pass
 
-                if node.succ:
-                    self.procs[node.proc_idx].post(self.result, *node.datum, node=node)
-                    if self.procs[node.proc_idx].post_yield():
-                        return self.result.rst
+                if node.succ and self.procs[node.proc_idx].post_yield():
+                    return self.result.rst
               
             else:
                 raise Exception('Invalid status of FSM!')
