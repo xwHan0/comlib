@@ -9,7 +9,7 @@ from comlib.mapreduce.result import Result
 
 
 
-class xiter:
+class xquery:
     """
     # Introduce
   按序筛选并打平。
@@ -102,14 +102,14 @@ Issue:
     def configure(**cfg):
         for k,v in cfg.items():
             if k=='prefix':
-                xiter.CRITERIA_PATT = [
+                xquery.CRITERIA_PATT = [
                     (re.compile(r'{0}(\d+)'.format(v)), r'node[\g<1>]'),
                     (re.compile(r'{0}{0}'.format(v)), r'node'),
                     (re.compile(r'{0}\.'.format(v)), r'node[0].'),
                 ]
-                xiter.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
+                xquery.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
             elif k=='max_it_num':
-                xiter.MAX_IT_NUM = v
+                xquery.MAX_IT_NUM = v
     
 
     def __init__(self, *node, sSelect='*', gnxt={}, procs=None, **cfg):
@@ -123,7 +123,7 @@ Issue:
         
         # 保存并解析选择字符串
         self.preds = gen_preds(sSelect)
-        self.min_node_num = max(map(int, xiter.CRITERIA_NODE_PATT.findall(sSelect)), default=1)
+        self.min_node_num = max(map(int, xquery.CRITERIA_NODE_PATT.findall(sSelect)), default=1)
             
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
@@ -202,8 +202,8 @@ Issue:
         return self._next_new()
         
     def r(self):
-        """返回当前求值结果为内容的xiter"""
-        return xiter(list(iter(self)))
+        """返回当前求值结果为内容的xquery"""
+        return xquery(list(iter(self)))
 
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
@@ -225,7 +225,7 @@ Issue:
         
     def _next_new( self ):
         
-        for ite_cnt in range(xiter.MAX_IT_NUM):
+        for ite_cnt in range(xquery.MAX_IT_NUM):
             # Finish judgement
             if len(self.stack) == 0:
                 if self.procs[0].is_yield():
