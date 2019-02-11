@@ -11,6 +11,16 @@ from comlib.mapreduce.result import Result
 
 class query:
     """
+    迭代-过滤-执行。
+    
+    # 查询字符串
+    查询字符串是由用户指定的、告知query如何进行查询的字符串。查询字符串定义了查询过滤的动作，查询成功的执行动作和查询后的迭代动作。
+    每个查询字符串由查询类型，过滤条件，动作序号和跳转标识四个部分组成。其格式为：
+    '''
+    查询类型[过滤条件]@动作序号/跳转标识
+    '''
+    
+    
     # Introduce
   按序筛选并打平。
   Filter by designed order and flatten into dimension 1-D.
