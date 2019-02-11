@@ -111,7 +111,7 @@ class PredSelect(Pred):
         self.yield_typ = PRE_YIELD  # 默认子项前
 
         # Searh and process prox_idx
-        self.proc_idx = proc_idx
+        self.proc_idx = int(proc_idx) if proc_idx!='' else 0
 
         for f in (flags if flags else ''): # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
