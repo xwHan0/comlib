@@ -11,22 +11,38 @@ from comlib.mapreduce.result import Result
 
 class query:
     """
-    迭代-过滤-执行。
-    
-    # 查询字符串
+    在给定的树中，按给定顺序迭代-匹配过滤-执行动作。
+
+
+    # 查询字符串(Query-String)
     查询字符串是由用户指定的、告知query如何进行查询的字符串。查询字符串定义了查询过滤的动作，查询成功的执行动作和查询后的迭代动作。
     每个查询字符串由查询类型，过滤条件，动作序号和跳转标识四个部分组成。其格式为：
     '''
     查询类型[过滤条件]@动作序号/跳转标识
     '''
     
-    
-    # Introduce
-  按序筛选并打平。
-  Filter by designed order and flatten into dimension 1-D.
+    ## 查询类型(Query-Type)
+    匹配数据的数据类型。'*'或者忽略查询类型表示匹配所有的数据类型。
 
+    ## 过滤条件(Query-Creitial)
+    由'[]'包裹的匹配条件表达式。该表达式的运算结果必须返回True或者False。省略过滤条件时（包括'[]'），表示无条件匹配。
+
+    ## 动作序号(Match-Action)
+    由'@'开头的数字字符串表达式。省略动作序号时（包括'@'），表示采用默认的动作序号：0
+
+    ## 跳转标识(Jump-Flags)
+    由'/'开头的字符表达式。表示匹配后的搜索跳转控制标识。
+
+
+    # 子迭代器(Children-Relationship)
+    
+
+    # 处理动作(Actions)
+    匹配成功后的执行动作。为Proc类的子类实例。请参考Proc类说明。
+
+    
 # Sub-node Acquire Method Defineu.
-    Parameter "gnxt" formatted with list indicates the link method to sub data. There are below style:
+    Parameter "children" formatted with list indicates the link method to sub data. There are below style:
     - [](Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
     - [func]: Acquire the sub-nodes set via node.func() method
     - [func args]: Acquire the sub-nodes set via node.func(args) method. Now support below args parameter
@@ -96,12 +112,12 @@ Issue:
 2. 子函数如何判断继承关系
 
 # Feature
-* Support custom sub-pointer via parameter gnxt
-  -- Support 3 types for gnxt. See 'Sub-node Acquire Method Define' for more detail
+* Support custom sub-pointer via parameter children
+  -- Support 3 types for children. See 'Sub-node Acquire Method Define' for more detail
   -- Support Array-like automatic get sub
-    *** ***Note:*** Function gnxt NOT support
+    *** ***Note:*** Function children NOT support
 
-* Support JQuery-like search Syntax String via parameter 'sSelect'
+* Support JQuery-like search Syntax String via parameter 'query'
   -- SearchString ::= SearchPattern, .../glb_flags
     *** SearchPattern ::= [obj][pred][flags]
   -- Support many flags in searchPattern
@@ -129,23 +145,23 @@ Issue:
                 query.MAX_IT_NUM = v
     
 
-    def __init__(self, *node, sSelect='*', gnxt={}, procs=None, **cfg):
+    def __init__(self, *node, query='*', children={}, procs=None, **cfg):
         """
-        Arguments:
+        Arguments:  
         - node {collection}: operated data
         - sSlection {String}: Filter string
-        - gnxt {list}: Sub-node acquire method
+        - children {list}: Sub-node acquire method
         - cfg {map}: optional parameters
         """
         
         # 保存并解析选择字符串
-        self.preds = gen_preds(sSelect)
-        self.min_node_num = max(map(int, query.CRITERIA_NODE_PATT.findall(sSelect)), default=1)
+        self.preds = gen_preds(query)
+        self.min_node_num = max(map(int, query.CRITERIA_NODE_PATT.findall(query)), default=1)
             
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
         # Append new children relationship map table
-        append_children_relationship(self.children_relationship, gnxt)
+        append_children_relationship(self.children_relationship, children)
     
         # New architecture fields
         #self.stack = []       declare when used
@@ -178,20 +194,20 @@ Issue:
         self.result.rst = init
         return self
    
-    def assist(self, *datum, gnxt={}):
+    def assist(self, *datum, children={}):
         """
-        Append assist collection 'node' which gnxt is gnxt for iterator.
+        Append assist collection 'node' which children is children for iterator.
         """
         for d in datum:
             self.datum.append(d)
             
-        self.append_children_relationship(gnxt)
+        self.append_children_relationship(children)
 
         return self
    
-    def filter(self, sSelect):
+    def filter(self, query):
         """过滤"""
-        self.preds = gen_preds(sSelect)
+        self.preds = gen_preds(query)
         return self
         
     def map(self, proc=None):
