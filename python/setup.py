@@ -12,10 +12,12 @@ setup(
     packages=[
         'comlib', 
          'comlib.ex',
+         'comlib.mapreduce',
     ],
     package_dir={
         'comlib':'comlib',
         'comlib.ex':'comlib/ex',
+        'comlib.mapreduce':'comlib/mapreduce',
     },
     long_description="",
     license='Public domain',
