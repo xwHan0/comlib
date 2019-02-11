@@ -9,7 +9,7 @@ from comlib.mapreduce.result import Result
 
 
 
-class query:
+class Query:
     """
     在给定的树中，按给定顺序迭代-匹配过滤-执行动作。
 
@@ -135,14 +135,14 @@ Issue:
     def configure(**cfg):
         for k,v in cfg.items():
             if k=='prefix':
-                query.CRITERIA_PATT = [
+                Query.CRITERIA_PATT = [
                     (re.compile(r'{0}(\d+)'.format(v)), r'node[\g<1>]'),
                     (re.compile(r'{0}{0}'.format(v)), r'node'),
                     (re.compile(r'{0}\.'.format(v)), r'node[0].'),
                 ]
-                query.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
+                Query.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
             elif k=='max_it_num':
-                query.MAX_IT_NUM = v
+                Query.MAX_IT_NUM = v
     
 
     def __init__(self, *node, query='*', children={}, procs=None, **cfg):
@@ -156,7 +156,7 @@ Issue:
         
         # 保存并解析选择字符串
         self.preds = gen_preds(query)
-        self.min_node_num = max(map(int, query.CRITERIA_NODE_PATT.findall(query)), default=1)
+        self.min_node_num = max(map(int, Query.CRITERIA_NODE_PATT.findall(query)), default=1)
             
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
@@ -236,7 +236,7 @@ Issue:
         
     def r(self):
         """返回当前求值结果为内容的query"""
-        return query(list(iter(self)))
+        return Query(list(iter(self)))
 
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
@@ -258,7 +258,7 @@ Issue:
         
     def _next_new( self ):
         
-        for ite_cnt in range(query.MAX_IT_NUM):
+        for ite_cnt in range(Query.MAX_IT_NUM):
             # Finish judgement
             if len(self.stack) == 0:
                 if self.procs[0].is_yield():
