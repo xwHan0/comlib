@@ -56,6 +56,13 @@ class xquery:
         
     * Node: Support 3-level '[]' pair in max in condition statement
      
+     
+     
+  ## Action
+  匹配满足后的执行动作。
+  使用@N来表示。其中N为参数procs定义的动作序号(0-$)。
+  
+  
   ## Flags   
     'flags' decide the selection action and direction. They can be ignore with '/'
     - P: Disable yield current node before sub-nodes enumerate. Default is enable

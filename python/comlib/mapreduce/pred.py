@@ -25,7 +25,15 @@ PATT_CONDITION = r'\s*(\w+|\*)(?:\[({2}|{1}|{0})\])?(/[a-zA-Z]+)?\s*'.format(
 CRITERIA_SEGMENT_PATT1 = r'(\w+|\*)'
 CRITERIA_SEGMENT_PATT2 = r'\[({2}|{1}|{0})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
 CRITERIA_SEGMENT_PATT3 = r'(\w+|\*)\[({2}|{1}|{0})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3)
-CRITERIA_SEGMENT_PATT = r'\s*(?:{2}|{1}|{0})(/[a-zA-Z]+)?\s*'.format(CRITERIA_SEGMENT_PATT1, CRITERIA_SEGMENT_PATT2, CRITERIA_SEGMENT_PATT3)
+
+# Action pattern
+ACTION_PATT = r'(?:@([0-9]+))?'
+
+CRITERIA_SEGMENT_PATT = r'\s*(?:{2}|{1}|{0}){3}(/[a-zA-Z]+)?\s*'.format(
+    CRITERIA_SEGMENT_PATT1, 
+    CRITERIA_SEGMENT_PATT2, 
+    CRITERIA_SEGMENT_PATT3,
+    ACTION_PATT)
 
 PATT_CONDITION = CRITERIA_SEGMENT_PATT
 
@@ -75,7 +83,7 @@ class PredSkip(Pred):
 
 class PredSelect(Pred):        
 
-    def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', flags=''):
+    def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', proc_idx, flags=''):
        
         super().__init__()
        
@@ -101,6 +109,9 @@ class PredSelect(Pred):
         # 无论匹配成功与否，默认总是继续其余匹配
         self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
         self.yield_typ = PRE_YIELD  # 默认子项前
+
+        # Searh and process prox_idx
+        self.proc_idx = proc_idx
 
         for f in (flags if flags else ''): # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
@@ -183,8 +194,8 @@ def gen_preds(sSelect):
         return [Pred()]
     if isinstance(sSelect, str):
         r = PATT_SELECT.split(sSelect)
-        r = [deq(iter(r), 6) for i in range(int(len(r)/6))]
-        r = [PredSelect(n,o1,c1,o2,c2,f) for [n,o1,c1,o2,c2,f] in r]
+        r = [deq(iter(r), 7) for i in range(int(len(r)/7))]
+        r = [PredSelect(n,o1,c1,o2,c2,a,f) for [n,o1,c1,o2,c2,a,f] in r]
         r.reverse()
         return r
     if isinstance(sSelect, types.FunctionType):
