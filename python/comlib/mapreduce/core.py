@@ -244,8 +244,7 @@ class Query:
                 result = pred.match(*node.datum)
             
                 # Record filter result
-                node.succ = pred.is_succ(result)
-                node.proc_idx = pred.proc_idx
+                node.succ, node.proc_idx = pred.is_succ(result), qpred.proc_idx
                 
                 # Next prepare
                 try:
@@ -261,8 +260,9 @@ class Query:
                         self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
 
                     # Push next elements into stack
-                    pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
-                    self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
+                    if len(self.stack) > 0: 
+                        pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
+                        self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError): 
@@ -275,8 +275,8 @@ class Query:
                 # Modify top element status of stack
                 node.sta = POST
                 
-                # Stop judgement
-                if pred.is_stop(result): self.stack.clear()
+                # Stop judgement: implement in Proc via clear stack
+                # if pred.is_stop(result): self.stack.clear()
                     
 
                 # Return
