@@ -91,24 +91,21 @@ class PredSelect(Pred):
             if cls_name1=='*':
                 self.match = self.match_none
             else:
-                self.cls_name = cls_name1
-                self.match = self.match_obj
+                self.cls_name, self.match = cls_name1, self.match_obj
         elif pred1:
             self.pred = pred1
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s,self.pred)
             self.match = self.match_condition
         else:
-            self.cls_name = cls_name2
-            self.pred = pred2
+            self.cls_name, self.pred = cls_name2,  pred2
             for p,s in CRITERIA_PATT:
                 self.pred = p.sub(s, self.pred)
             self.match = self.match_condition if cls_name2=='*' else self.match_full
 
                
         # 无论匹配成功与否，默认总是继续其余匹配
-        self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = (-1,-1,1)
-        self.yield_typ = PRE_YIELD  # 默认子项前
+        self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = -1,-1,1
 
         # Searh and process prox_idx
         self.proc_idx = int(proc_idx) if proc_idx else 0
@@ -120,19 +117,12 @@ class PredSelect(Pred):
             elif f == 'C': self.pred_fail_rst = -3 # 匹配失败后，终止其余匹配
             elif f == 's': self.match_succ_rst = 2  # 匹配成功后，跳过当前节点的子节点
             elif f == 'S': self.match_succ_rst = 3  # 匹配成功后，终止其余匹配
-            elif f == 'P': self.yield_typ = NONE_YIELD  # 匹配成功后不返回当前节点
-            elif f == 'p': self.yield_typ = POST_YIELD # 匹配成功后调用子节点后返回当前节点
 
         for f in nflag:
             if f == '': 
-                self.obj_fail_rst = -1
-                self.pred_fail_rst = -1
+                self.obj_fail_rst, self.pred_fail_rst = -1, -1
             elif f.rstrip() == '>':
-                self.obj_fail_rst = -2
-                self.pred_fail_rst = -2
-
-    def is_pre_yield(self):  return self.yield_typ == PRE_YIELD
-    def is_post_yield(self): return self.yield_typ == POST_YIELD
+                self.obj_fail_rst, self.pred_fail_rst = -2, -2
         
     def match_obj_condition( self, *node ):
         # 对象匹配
