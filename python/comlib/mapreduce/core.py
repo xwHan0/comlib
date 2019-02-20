@@ -138,7 +138,7 @@ class Query:
     
         # New architecture fields
         #self.stack = []       declare when used
-        self.datum, self.result, self.procs, self.cfg = list(datum), Result(), self.procs = procs if procs else [ProcIter()], self.cfg = cfg
+        self.datum, self.result, self.procs, self.cfg = datum, Result(), self.procs = procs if procs else [ProcIter()], self.cfg = cfg
 
         # Skip first sequence process
         skip_first_seq = self.cfg.get('skip_first_seq', True)
@@ -168,11 +168,8 @@ class Query:
         """
         Append assist collection 'node' which children is children for iterator.
         """
-        for d in datum:
-            self.datum.append(d)
-            
+        self.datum += datum
         self.append_children_relationship(children)
-
         return self
    
     def filter(self, query='*'):
