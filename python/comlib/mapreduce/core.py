@@ -18,8 +18,14 @@ class Query:
     查询字符串是由用户指定的、告知query如何进行查询的字符串。查询字符串定义了查询过滤的动作，查询成功的执行动作和查询后的迭代动作。
     每个查询字符串由查询类型，过滤条件，动作序号和跳转标识四个部分组成。其格式为：
     '''
-    objName[过滤条件]@动作序号/跳转标识
+    关系条件 objName[过滤条件]@动作序号/跳转标识
     '''
+    
+    
+    ## Relation Condition
+    * ' ': Ancestor-Descendant relationship.
+    * '>': Parent-Son relationship.
+
     
     ## 查询类型(Query-Type)
     匹配数据的数据类型。'*'或者忽略查询类型表示匹配所有的数据类型。
@@ -41,10 +47,24 @@ class Query:
     ## 动作序号(Match-Action)
     由'@'开头的数字字符串表达式(n=0~$)。省略动作序号时（包括'@'），表示采用默认的动作序号：0
     该序号为Actions定义的动作列表的序号。
+    为Proc类的子类实例。请参考Proc类说明。
 
     ## 跳转标识(Jump-Flags)
     由'/'开头的字符表达式。表示匹配后的搜索跳转控制标识。
-
+    'flags' decide the selection action and direction. They can be ignore with '/'
+    - The iterate process when object match fail
+      -- Default is continue next iterate
+      -- 'o': Continue next iterate except the sub node of current node
+      -- 'O': Break the iterate
+    - The iterate process when pred match fail
+      -- Default is continue next iterate
+      -- 'c': Continue next iterate except the sub node of current node
+      -- 'C': Break the iterate
+    - The iterate process when match success
+      -- Default is continue next iterate
+      -- 's': Continue next iterate except the sub node of current node
+      -- 'S': Break the iterate
+    
 
     # 子迭代器(Children-Relationship)
     Parameter "children" formatted with list indicates the link method to sub data. There are below style:
@@ -64,37 +84,8 @@ class Query:
       ** 若获取的下一跳不是迭代器，则返回[下一跳]。
  
 
-    # 处理动作(Actions)
-    匹配成功后的执行动作。为Proc类的子类实例。请参考Proc类说明。
-
-    
-
-# Filter String
-    Filter string is a string represent one or more filter conditions.
-    The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
-    - ' ': Ancestor-Descendant relationship.
-    - '>': Parent-Son relationship.
-
-    filter-pattern ::= objName[filter-condition]/flags
 
 
-  ## Flags   
-    'flags' decide the selection action and direction. They can be ignore with '/'
-    - P: Disable yield current node before sub-nodes enumerate. Default is enable
-    - p: Enable yield current node after sub-nodes enumerate. Default is disable
-    - The iterate process when object match fail
-      -- Default is continue next iterate
-      -- 'o': Continue next iterate except the sub node of current node
-      -- 'O': Break the iterate
-    - The iterate process when pred match fail
-      -- Default is continue next iterate
-      -- 'c': Continue next iterate except the sub node of current node
-      -- 'C': Break the iterate
-    - The iterate process when match success
-      -- Default is continue next iterate
-      -- 's': Continue next iterate except the sub node of current node
-      -- 'S': Break the iterate
-    
 
 
 # Feature
@@ -131,13 +122,9 @@ class Query:
                 Query.MAX_IT_NUM = v
     
 
-    def __init__(self, *node, query='*', children={}, procs=None, **cfg):
-        """
-        Arguments:  
-        - node {collection}: operated data
-        - sSlection {String}: Filter string
-        - children {list}: Sub-node acquire method
-        - cfg {map}: optional parameters
+    def __init__(self, *datum, query='*', children={}, procs=None, **cfg):
+        """cfg argument:
+            * skip_first_seq{Boolean}:
         """
         
         # 保存并解析选择字符串
@@ -151,11 +138,7 @@ class Query:
     
         # New architecture fields
         #self.stack = []       declare when used
-        self.datum = list(node)
-        #self.iterable = True
-        self.result = Result()
-        self.procs = procs if procs else [ProcIter()]
-        self.cfg = cfg
+        self.datum, self.result, self.procs, self.cfg = list(datum), Result(), self.procs = procs if procs else [ProcIter()], self.cfg = cfg
 
         # Skip first sequence process
         skip_first_seq = self.cfg.get('skip_first_seq', True)
@@ -192,8 +175,8 @@ class Query:
 
         return self
    
-    def filter(self, query):
-        """过滤"""
+    def filter(self, query='*'):
+        """Set query-string"""
         self.preds = gen_preds(query)
         return self
         
