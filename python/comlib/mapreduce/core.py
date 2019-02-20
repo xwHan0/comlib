@@ -18,30 +18,35 @@ class Query:
     查询字符串是由用户指定的、告知query如何进行查询的字符串。查询字符串定义了查询过滤的动作，查询成功的执行动作和查询后的迭代动作。
     每个查询字符串由查询类型，过滤条件，动作序号和跳转标识四个部分组成。其格式为：
     '''
-    查询类型[过滤条件]@动作序号/跳转标识
+    objName[过滤条件]@动作序号/跳转标识
     '''
     
     ## 查询类型(Query-Type)
     匹配数据的数据类型。'*'或者忽略查询类型表示匹配所有的数据类型。
 
     ## 过滤条件(Query-Creitial)
-    由'[]'包裹的匹配条件表达式。该表达式的运算结果必须返回True或者False。省略过滤条件时（包括'[]'），表示无条件匹配。
+    由'['和']'包裹的匹配条件表达式。该表达式的运算结果必须返回True或者False。省略过滤条件时（包括'[]'），表示无条件匹配。
+    条件表达式为满足python的任意表达式。可以包括：变量，运算符，函数等任意类型。
+    条件表达式支持下面的特殊变量表达。: ('nodes' represents current access nodes from all node)
+    * #.attr: 获取节点nodes[0]的'attr'属性值。Get the attribute of nodes[0] like: 'nodes[0].attr'
+    * #n: 获取nodes序列中的第n个节点node(n=0-N)。
+    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr' (n=0-N)
+    * ##: List of all nodes
+    The special expression prefix '#' can be configured via 'prefix' argument of **cfg in constructor. For example,
+    cfg['prefix']='$' means using '$n', '$n.attr' and '$$' to replace '#n', '#n.attr' and '##'
+        
+    * Node: Support 3-level '[]' pair in max in condition statement
+     
 
     ## 动作序号(Match-Action)
-    由'@'开头的数字字符串表达式。省略动作序号时（包括'@'），表示采用默认的动作序号：0
+    由'@'开头的数字字符串表达式(n=0~$)。省略动作序号时（包括'@'），表示采用默认的动作序号：0
+    该序号为Actions定义的动作列表的序号。
 
     ## 跳转标识(Jump-Flags)
     由'/'开头的字符表达式。表示匹配后的搜索跳转控制标识。
 
 
     # 子迭代器(Children-Relationship)
-    
-
-    # 处理动作(Actions)
-    匹配成功后的执行动作。为Proc类的子类实例。请参考Proc类说明。
-
-    
-# Sub-node Acquire Method Defineu.
     Parameter "children" formatted with list indicates the link method to sub data. There are below style:
     - [](Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
     - [func]: Acquire the sub-nodes set via node.func() method
@@ -58,6 +63,12 @@ class Query:
     * Support 单跳节点：
       ** 若获取的下一跳不是迭代器，则返回[下一跳]。
  
+
+    # 处理动作(Actions)
+    匹配成功后的执行动作。为Proc类的子类实例。请参考Proc类说明。
+
+    
+
 # Filter String
     Filter string is a string represent one or more filter conditions.
     The filter-string is form of a set of filter-patterns seperated by ' ' or '>':
@@ -66,29 +77,7 @@ class Query:
 
     filter-pattern ::= objName[filter-condition]/flags
 
-  ## objName
-    'objName' is the node class name or '*' represented all class.
 
-  ## Filter-Condition
-    'filter-condition' can be wrapped with pair '[' and ']'.
-    
-    Support below special expression: ('nodes' represents current access nodes from all node)
-    * #.attr: Get the attribute of nodes[0] like: 'nodes[0].attr'
-    * #n: Get the n-th node(n=0-N)
-    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr' (n=0-N)
-    * ##: List of all nodes
-    The special expression prefix '#' can be configured via 'prefix' argument of **cfg in constructor. For example,
-    cfg['prefix']='$' means using '$n', '$n.attr' and '$$' to replace '#n', '#n.attr' and '##'
-        
-    * Node: Support 3-level '[]' pair in max in condition statement
-     
-     
-     
-  ## Action
-  匹配满足后的执行动作。
-  使用@N来表示。其中N为参数procs定义的动作序号(0-$)。
-  
-  
   ## Flags   
     'flags' decide the selection action and direction. They can be ignore with '/'
     - P: Disable yield current node before sub-nodes enumerate. Default is enable
@@ -107,9 +96,6 @@ class Query:
       -- 'S': Break the iterate
     
 
-Issue:
-1. 条件中node和nodes的写法
-2. 子函数如何判断继承关系
 
 # Feature
 * Support custom sub-pointer via parameter children
@@ -179,6 +165,7 @@ Issue:
 
     # 设置children获取表
     def append_children_relationship(self, children):
+        """追加children子迭代器关系。"""
         self.children_relationship = append_children_relationship(self.children_relationship, children)
         return self
    
