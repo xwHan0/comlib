@@ -2,15 +2,24 @@
 import types
 
 class Proc:
-    """处理动作基类。"""
+    """处理动作基类。
+
+    * result: 保存于Query中的处理结果Result类实例。其内容由用户自己在pre和post函数中定义。
+
+    * datum: 当前处理的树结构节点集合。
+
+    * stack: 当前遍历堆栈。其每一个节点内容包含：
+        -- datum: datum的影子；
+        -- sta: 节点遍历状态。PRE和POST
+        -- pred_idx: 节点对应的Pred序号
+        -- children: 子元素迭代器
+        -- pred: 匹配条件对象
+      stack中最后一个元素为当前遍历的元素；倒数第二个元素为当前节点的父元素; ...; 第一个节点为根节点。
+      清空该stack将导致迭代终止。 
+    """
     
     def pre(self, result, *datum, stack=[]): 
-        """子项迭代前的处理动作函数。
-        Arguments:
-        - result {Result}: 保存在query实例中的处理结果。参看Result说明
-        - datum {data}: 当前的处理节点集合
-        - stack {list<NodeInfo>}: 当前处理堆栈。栈底为当前处理的节点。每个节点为一个NodeInfo实列。参看NodeInfo说明。
-        """
+        """子项迭代前的处理动作函数。"""
         pass
 
     def post(self, result, *datum, stack=[]): 

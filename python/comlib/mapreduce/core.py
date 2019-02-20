@@ -14,94 +14,20 @@ class Query:
     在给定的树中，按给定顺序迭代-匹配过滤-执行动作。
 
 
-    # 查询字符串(Query-String)
-    查询字符串是由用户指定的、告知query如何进行查询的字符串。查询字符串定义了查询过滤的动作，查询成功的执行动作和查询后的迭代动作。
-    每个查询字符串由查询类型，过滤条件，动作序号和跳转标识四个部分组成。其格式为：
-    '''
-    关系条件 objName[过滤条件]@动作序号/跳转标识
-    '''
-    
-    
-    ## Relation Condition
-    * ' ': Ancestor-Descendant relationship.
-    * '>': Parent-Son relationship.
+    # 基本概念
 
-    
-    ## 查询类型(Query-Type)
-    匹配数据的数据类型。'*'或者忽略查询类型表示匹配所有的数据类型。
+    * 查询字符串(query)：查找过滤条件表达式。具体格式参见Pred类说明
+      Query中使用一个Pred列表来保存各个查询字符串的解析内容。
 
-    ## 过滤条件(Query-Creitial)
-    由'['和']'包裹的匹配条件表达式。该表达式的运算结果必须返回True或者False。省略过滤条件时（包括'[]'），表示无条件匹配。
-    条件表达式为满足python的任意表达式。可以包括：变量，运算符，函数等任意类型。
-    条件表达式支持下面的特殊变量表达。: ('nodes' represents current access nodes from all node)
-    * #.attr: 获取节点nodes[0]的'attr'属性值。Get the attribute of nodes[0] like: 'nodes[0].attr'
-    * #n: 获取nodes序列中的第n个节点node(n=0-N)。
-    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr' (n=0-N)
-    * ##: List of all nodes
-    The special expression prefix '#' can be configured via 'prefix' argument of **cfg in constructor. For example,
-    cfg['prefix']='$' means using '$n', '$n.attr' and '$$' to replace '#n', '#n.attr' and '##'
-        
-    * Node: Support 3-level '[]' pair in max in condition statement
-     
+    * 匹配处理动作(procs)：查询匹配成功后的处理动作。参见Proc类说明
+      Query中使用一个Proc列表来保存可能的多个动作对象。然后使用Pred类的动作序号中查找调用
 
-    ## 动作序号(Match-Action)
-    由'@'开头的数字字符串表达式(n=0~$)。省略动作序号时（包括'@'），表示采用默认的动作序号：0
-    该序号为Actions定义的动作列表的序号。
-    为Proc类的子类实例。请参考Proc类说明。
+    * 子迭代器(children)：孩子节点迭代器获取类。参见ChildRelation类说明
+      Query中以一个格式为：{objType:ChildRelationObj}的Dict保存子迭代器队形。
+      Query按节点类型查找对应的子迭代器对象，然后获取节点的子节点迭代器。
 
-    ## 跳转标识(Jump-Flags)
-    由'/'开头的字符表达式。表示匹配后的搜索跳转控制标识。
-    'flags' decide the selection action and direction. They can be ignore with '/'
-    - The iterate process when object match fail
-      -- Default is continue next iterate
-      -- 'o': Continue next iterate except the sub node of current node
-      -- 'O': Break the iterate
-    - The iterate process when pred match fail
-      -- Default is continue next iterate
-      -- 'c': Continue next iterate except the sub node of current node
-      -- 'C': Break the iterate
-    - The iterate process when match success
-      -- Default is continue next iterate
-      -- 's': Continue next iterate except the sub node of current node
-      -- 'S': Break the iterate
-    
-
-    # 子迭代器(Children-Relationship)
-    Parameter "children" formatted with list indicates the link method to sub data. There are below style:
-    - [](Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
-    - [func]: Acquire the sub-nodes set via node.func() method
-    - [func args]: Acquire the sub-nodes set via node.func(args) method. Now support below args parameter
-      -- '$xxx': A string started with '$'. Iterator will use objName to replace this args
-      -- Other string: Iterator use this string to fill the args of func
-    
-    'func' support below two type:
-    - Function format: func has __call__ attribute. Iterator use this func
-    - String format: 对于类方法函数，存在继承。需要根据当前实例的类来调用对应的继承函数。所以使用字符串来标识这种函数
-
-    * Notes: iterator supports getting the sub from List, Tuple and CommonIterator automatic 
-    
-    * Support 单跳节点：
-      ** 若获取的下一跳不是迭代器，则返回[下一跳]。
- 
-
-
-
-
-
-# Feature
-* Support custom sub-pointer via parameter children
-  -- Support 3 types for children. See 'Sub-node Acquire Method Define' for more detail
-  -- Support Array-like automatic get sub
-    *** ***Note:*** Function children NOT support
-
-* Support JQuery-like search Syntax String via parameter 'query'
-  -- SearchString ::= SearchPattern, .../glb_flags
-    *** SearchPattern ::= [obj][pred][flags]
-  -- Support many flags in searchPattern
-    
-* Support matching pred function via parameter 'pred'
-  -- The format of pred is: (node,idx,count) => Boolean
-
+    Query按照children定义的树结构的父-子节点关系遍历整个树，然后使用query定义的条件筛选满足条件的
+    节点，筛选成功后使用procs定义的动作处理，然会返回。
   
     """
     
@@ -138,7 +64,7 @@ class Query:
     
         # New architecture fields
         #self.stack = []       declare when used
-        self.datum, self.result, self.procs, self.cfg = datum, Result(), self.procs = procs if procs else [ProcIter()], self.cfg = cfg
+        self.datum, self.result, self.cfg, self.procs = datum, Result(), cfg, procs if procs else [ProcIter()]
 
         # Skip first sequence process
         skip_first_seq = self.cfg.get('skip_first_seq', True)
@@ -148,15 +74,30 @@ class Query:
 
     # 设置children获取表
     def append_children_relationship(self, children):
-        """追加children子迭代器关系。"""
+        """追加children子迭代器关系。
+
+        children参数可以为以下类型：
+        * string: 设置默认子迭代器为ChildAttr(children)
+        * function: 设置默认子迭代器为ChildFunction(children)
+        * dict: 追加children迭代器映射表到当前Query中。若其中key为string，则使用ChildAttr(val)作为子迭代器
+
+            - [](Default): The "node" is iterable data, like array. The sub data can got by iterating the node data
+    - [func]: Acquire the sub-nodes set via node.func() method
+    - [func args]: Acquire the sub-nodes set via node.func(args) method. Now support below args parameter
+      -- '$xxx': A string started with '$'. Iterator will use objName to replace this args
+      -- Other string: Iterator use this string to fill the args of func
+
+        """
         self.children_relationship = append_children_relationship(self.children_relationship, children)
         return self
    
     def append_proc(self, proc):
+        """追加匹配成功动作处理Proc类实例proc"""
         self.procs.append(proc)
         return self
        
     def set_proc(self,proc):
+        """修改处理动作为proc"""
         self.procs = [proc]
         return self
        
@@ -198,6 +139,7 @@ class Query:
         return self._next_new( )
         
     def run(self): 
+        """执行迭代并返回结果。"""
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
         return self._next_new()
         
@@ -244,7 +186,7 @@ class Query:
                 result = pred.match(*node.datum)
             
                 # Record filter result
-                node.succ, node.proc_idx = pred.is_succ(result), qpred.proc_idx
+                node.succ, node.proc_idx, node.pred = pred.is_succ(result), pred.proc_idx, pred
                 
                 # Next prepare
                 try:
@@ -286,7 +228,7 @@ class Query:
             elif node.sta == POST:
                 # Process
                 if node.succ:
-                    self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
+                    self.procs[node.pred.proc_idx].post(self.result, *node.datum, stack=self.stack)
                     
                 try:
                     # Pop stack
@@ -297,7 +239,7 @@ class Query:
                 except (IndexError, StopIteration): # IndexError for empty-stack
                     pass
 
-                if node.succ and self.procs[node.proc_idx].post_yield():
+                if node.succ and self.procs[node.pred.proc_idx].post_yield():
                     return self.result.rst
 
             else:

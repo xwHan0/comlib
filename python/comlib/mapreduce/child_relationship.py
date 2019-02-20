@@ -4,36 +4,56 @@ from comlib.iterators import Index,IndexSub,Counter
 ######################################################
 # 定义常用的子节点关系类
 
-#### 定义直接透传关系
-class ChildBypass:
-    def sub(self,*node):
-        return node[0]
+class ChildRelation:
+    """子迭代器(Children-Relationship)
 
+    子节点迭代器为一个接口协议，告知Query如何获取当前节点的子节点迭代器。
 
-class ChildFunction:
-    def __init__(self,func):
-        self.func = func
-        
-    def sub(self,*node):
-        return self.func(*node)
+    Query预定义的子节点迭代器封装有(具体参见相关类帮助)：
+    * ChildNone
+    * ChildBypass
+    * ChildFunction
+    * ChildAttr
+    * ChildSub
 
+    Query定义了部分常用类型的迭代关系：
+    * list and tuple: ChildBypass
+    * Index, Counter, IndexSub: ChildSub
 
-class ChildNone:
-    def sub(self,*node):
+    此外，Query使用ChildNone对没有定义的类型进行处理。
+
+    """
+    def sub(self, *node): 
+        """子节点获取协议函数：获取node[0]节点的子节点迭代器。"""
         return []
 
+
+#### 定义直接透传关系
+class ChildBypass(ChildRelation):
+    """节点自身就是子节点迭代器。sub函数返回节点自身。"""
+    def sub(self,*node): return node[0]
+
+
+class ChildFunction(ChildRelation):
+    """使用func(*node)返回子节点迭代器。"""
+    def __init__(self,func): self.func = func
+    def sub(self,*node): return self.func(*node)
+
+
+class ChildNone(ChildRelation):
+    """返回空列表作为子节点迭代器（无子节点）"""
+    def sub(self,*node): return []
+
         
-class ChildAttr:
-    def __init__(self, attr):
-        self.attr = attr
-    
-    def sub(self,*node):
-        return getattr(node[0], self.attr)
+class ChildAttr(ChildRelation):
+    """使用node[0].attr作为子节点迭代器。"""
+    def __init__(self, attr): self.attr = attr
+    def sub(self,*node): return getattr(node[0], self.attr)
         
 
-class ChildSub:
-    def sub(self,*node):
-        return node[0].sub(*node)
+class ChildSub(ChildRelation):
+    """使用node[0].sub(*node)作为子节点迭代器。"""
+    def sub(self,*node): return node[0].sub(*node)
 
 
 # 定义常见的数据类型children_relationship映射表
@@ -66,6 +86,7 @@ def append_children_relationship(dest, children):
 __all__ = [
     'DEFAULT_CHILDREN_RELATIONSHIP',
     'TYPIC_CHILDREN_RELATIONSHIP',
+    'ChildRelation',
     'ChildSub',
     'ChildAttr',
     'ChildNone',

@@ -51,6 +51,64 @@ CRITERIA_PATT = [
 # 定义匹配条件类
 
 class Pred:
+    """条件处理类。
+    
+    查询字符串(Query-String)
+    查询字符串是由用户指定的、告知query如何进行查询的字符串。查询字符串定义了查询过滤的动作，查询成功的执行动作和查询后的迭代动作。
+    每个查询字符串由查询类型，过滤条件，动作序号和跳转标识四个部分组成。其格式为：
+
+    '''
+    {关系条件 objName[过滤条件]@动作序号/跳转标识 ...}/global_flags
+    '''
+    
+    
+    ## Relation Condition
+    * ' ': Ancestor-Descendant relationship.
+    * '>': Parent-Son relationship.
+
+    
+    ## 查询类型(Query-Type)
+    匹配数据的数据类型。'*'或者忽略查询类型表示匹配所有的数据类型。
+
+    ## 过滤条件(Query-Creitial)
+    由'['和']'包裹的匹配条件表达式。该表达式的运算结果必须返回True或者False。省略过滤条件时（包括'[]'），表示无条件匹配。
+    条件表达式为满足python的任意表达式。可以包括：变量，运算符，函数等任意类型。
+    条件表达式支持下面的特殊变量表达。: ('nodes' represents current access nodes from all node)
+    * #.attr: 获取节点nodes[0]的'attr'属性值。Get the attribute of nodes[0] like: 'nodes[0].attr'
+    * #n: 获取nodes序列中的第n个节点node(n=0-N)。
+    * #n.attr: Get the attribute of nodes[n] like: 'nodes[n].attr' (n=0-N)
+    * ##: List of all nodes
+    
+    The special expression prefix '#' can be configured via 'prefix' argument of **cfg in constructor. For example,
+    cfg['prefix']='$' means using '$n', '$n.attr' and '$$' to replace '#n', '#n.attr' and '##'
+        
+    * Node: Support 3-level '[]' pair in max in condition statement
+
+    ## 动作序号(Match-Action)
+    由'@'开头的数字字符串表达式(n=0~$)。省略动作序号时（包括'@'），表示采用默认的动作序号：0
+    该序号为Actions定义的动作列表的序号。
+    为Proc类的子类实例。请参考Proc类说明。
+
+    ## 跳转标识(Jump-Flags)
+    由'/'开头的字符表达式。表示匹配后的搜索跳转控制标识。
+    'flags' decide the selection action and direction. They can be ignore with '/'
+    - The iterate process when object match fail
+      -- Default is continue next iterate
+      -- 'o': Continue next iterate except the sub node of current node
+      -- 'O': Break the iterate
+    - The iterate process when pred match fail
+      -- Default is continue next iterate
+      -- 'c': Continue next iterate except the sub node of current node
+      -- 'C': Break the iterate
+    - The iterate process when match success
+      -- Default is continue next iterate
+      -- 's': Continue next iterate except the sub node of current node
+      -- 'S': Break the iterate
+    
+
+
+    """
+
     def __init__(self, proc_idx=0):
         self.proc_idx = 0
         
