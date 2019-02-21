@@ -43,7 +43,7 @@ PATT_SELECT = re.compile(PATT_CONDITION)
 CRITERIA_PATT = [
     (re.compile(r'#(\d+)'), r'node[\g<1>]'),
     (re.compile(r'##'), r'node'),
-    (re.compile(r'#\.'), r'node.'),
+    (re.compile(r'#\.'), r'node[0].'),
 ]
 
 
