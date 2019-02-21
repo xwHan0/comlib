@@ -191,7 +191,8 @@ class Query:
                 # Next prepare
                 try:
                     
-                    if pred.is_sub(result):
+                    is_sub = pred.is_sub(result)
+                    if is_sub:
                         # Get all datum iterators and assign to parent
                         node.children = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
                         # Get next elements of iterators
@@ -202,7 +203,7 @@ class Query:
                         self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
 
                     # Push next elements into stack
-                    if len(self.stack) > 0: 
+                    if is_sub and len(self.stack) > 0: 
                         pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
                         self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
                     
