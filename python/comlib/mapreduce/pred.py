@@ -41,9 +41,9 @@ PATT_SELECT = re.compile(PATT_CONDITION)
         
      
 CRITERIA_PATT = [
-    (re.compile(r'#(\d+)'), r'node[\g<1>]'),
-    (re.compile(r'##'), r'node'),
-    (re.compile(r'#\.'), r'node[0].'),
+    (re.compile(r'#(\d+)'), r'datum[\g<1>]'),
+    (re.compile(r'##'), r'datum'),
+    (re.compile(r'#\.'), r'datum[0].'),
 ]
 
 
@@ -113,7 +113,7 @@ class Pred:
         self.proc_idx = 0
         
     # Always success match function
-    def match(self, *node): return 1
+    def match(self, *datum): return 1
 
     # Return weather or not stop all other nodes iteration
     def is_stop(self, result): return (result==3) or (result==-3)
@@ -179,9 +179,9 @@ class PredSelect(Pred):
             elif f.rstrip() == '>':
                 self.obj_fail_rst, self.pred_fail_rst = -2, -2
         
-    def match_obj_condition( self, *node ):
+    def match_obj_condition( self, *datum ):
         # 对象匹配
-        if node[0].__class__.__name__ != self.cls_name:
+        if datum[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
             
         # 条件匹配
@@ -197,12 +197,12 @@ class PredSelect(Pred):
                     
         return self.match_succ_rst
 
-    def match_obj( self, *node ):
-        if node[0].__class__.__name__ != self.cls_name:
+    def match_obj( self, *datum ):
+        if datum[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
         return self.match_succ_rst
 
-    def match_condition( self, *node ):
+    def match_condition( self, *datum ):
         try:
             rst = eval(self.pred)
             if rst == False: 
@@ -214,9 +214,9 @@ class PredSelect(Pred):
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
         return self.match_succ_rst
 
-    def match_full( self, *node ):
+    def match_full( self, *datum ):
         # 对象匹配
-        if self.cls_name!='*' and node[0].__class__.__name__ != self.cls_name:
+        if self.cls_name!='*' and datum[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
             
         # 条件匹配
