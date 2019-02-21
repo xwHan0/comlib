@@ -3,11 +3,13 @@ import types
 from comlib.mapreduce.pred import Pred, PredSelect, PredSkip, gen_preds
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.iterators import LinkList
-from comlib.mapreduce.stack import NodeInfo,PRE,POST
+from comlib.mapreduce.stack import NodeInfo
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
 from comlib.mapreduce.result import Result
 
-
+PRE = 1
+POST = 3
+DONE = 4
 
 class Query:
     """
@@ -270,6 +272,13 @@ class Query:
                     pass
 
                 if node.succ and self.procs[node.pred.proc_idx].post_yield():
+                    return self.result.rst
+
+            elif node.sta == DONE:
+                
+                if self.procs[0].is_yield():
+                    raise StopIteration()
+                else:
                     return self.result.rst
 
             else:

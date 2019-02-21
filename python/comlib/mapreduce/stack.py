@@ -1,6 +1,4 @@
-    
-PRE = 1
-POST = 3
+
 
 class NodeInfo:
     def __init__(self, datum=[],  sta=1, pred_idx=0 ):
