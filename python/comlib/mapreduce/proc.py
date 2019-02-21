@@ -5,6 +5,7 @@ class Proc:
     """处理动作基类。
 
     * result: 保存于Query中的处理结果Result类实例。其内容由用户自己在pre和post函数中定义。
+        -- rst: 初始化和最终返回结果变量
 
     * datum: 当前处理的树结构节点集合。
 
