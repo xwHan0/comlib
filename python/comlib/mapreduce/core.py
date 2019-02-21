@@ -146,6 +146,32 @@ class Query:
     def r(self):
         """返回当前求值结果为内容的query"""
         return Query(list(iter(self)))
+        
+    def skip( self, n=1 ):
+        
+        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        
+        for ite_cnt in range(n):
+            
+            # Get stack tail information for process
+            node = self.stack[-1]
+            
+            node.sta, node.succ = POST, False
+            
+            # Next prepare
+            try:
+                    
+                # Get all datum iterators and assign to parent
+                node.children = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
+                # Get next elements of iterators
+                nxt_datum = [next(i) for i in node.children]
+
+                self.stack.append(NodeInfo(nxt_datum, pred_idx=0))
+                    
+            # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
+            except (StopIteration,TypeError): 
+                node.children = None
+                break
 
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
