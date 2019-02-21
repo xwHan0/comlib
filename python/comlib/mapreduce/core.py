@@ -134,13 +134,15 @@ class Query:
         
         self.procs = [ProcReduce(reduce_proc)]
         self.result.rst = initial
-        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        if self.stack == []:
+            self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         return self._next_new( )
         
     def run(self): 
         """执行迭代并返回结果。"""
-        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        if self.stack == []:
+            self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
         return self._next_new()
         
     def r(self):
@@ -184,7 +186,8 @@ class Query:
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
         
         # Initial process stacks
-        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        if self.stack == []:
+            self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         return self
 
