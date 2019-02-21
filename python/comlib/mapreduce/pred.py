@@ -191,7 +191,7 @@ class PredSelect(Pred):
                 return self.pred_fail_rst
             elif rst == True: 
                 return self.match_succ_rst
-            else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
+            else: raise Exception('Cannot cast the result<{1}> of CMD<{0}> to Boolean'.format(self.pred, rst))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                     
@@ -209,7 +209,7 @@ class PredSelect(Pred):
                 return self.pred_fail_rst
             elif rst == True: 
                 return self.match_succ_rst
-            else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
+            else: raise Exception('Cannot cast the result<{1}> of CMD<{0}> to Boolean'.format(self.pred, rst))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
         return self.match_succ_rst
@@ -227,7 +227,7 @@ class PredSelect(Pred):
                     return self.pred_fail_rst
                 elif rst == True: 
                     return self.match_succ_rst
-                else: raise Exception('Invalid condion result. CMD<{0}>'.format(self.pred))
+                else: raise Exception('Cannot cast the result<{1}> of CMD<{0}> to Boolean'.format(self.pred, rst))
             except Exception:
                 raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                       

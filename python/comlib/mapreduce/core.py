@@ -67,11 +67,16 @@ class Query:
         # New architecture fields
         #self.stack = []       declare when used
         self.datum, self.result, self.cfg, self.procs = datum, Result(), cfg, procs if procs else [ProcIter()]
+        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         # Skip first sequence process
         skip_first_seq = self.cfg.get('skip_first_seq', True)
         if skip_first_seq and isinstance(self.datum[0], (list,tuple,LinkList)):
-            self.preds.append(PredSkip())
+            # self.preds.append(PredSkip())
+            self.skip()
+
+        # self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        
 
 
     # 设置children获取表
@@ -113,11 +118,13 @@ class Query:
         """
         self.datum += datum
         self.append_children_relationship(children)
+        self.stack[-1].datum = self.datum
         return self
    
     def filter(self, query='*'):
         """Set query-string"""
         self.preds = gen_preds(query)
+        self.stack[-1].pred_idx = len(self.preds) - 1
         return self
         
     def map(self, proc=None):
@@ -136,15 +143,11 @@ class Query:
         
         self.procs = [ProcReduce(reduce_proc)]
         self.result.rst = initial
-        if self.stack == []:
-            self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         return self._next_new( )
         
     def run(self): 
         """执行迭代并返回结果。"""
-        if self.stack == []:
-            self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
         return self._next_new()
         
     def r(self):
@@ -153,14 +156,12 @@ class Query:
         
     def skip( self, n=1 ):
         
-        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
-        
         for ite_cnt in range(n):
             
             # Get stack tail information for process
             node = self.stack[-1]
             
-            node.sta, node.succ = POST, False
+            node.sta, node.succ = DONE, False   # 不需要迭代
             
             # Next prepare
             try:
@@ -177,6 +178,10 @@ class Query:
                 node.children = None
                 break
 
+        self.stack[-1].sta = PRE    # 栈顶设置为PRE，开始迭代
+
+        return self
+
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
             type(node[0]),
@@ -187,10 +192,6 @@ class Query:
         if self.min_node_num > len(self.datum):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
         
-        # Initial process stacks
-        if self.stack == []:
-            self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
-
         return self
 
     def __next__(self):
@@ -200,11 +201,11 @@ class Query:
         
         for ite_cnt in range(Query.MAX_IT_NUM):
             # Finish judgement
-            if len(self.stack) == 0:
-                if self.procs[0].is_yield():
-                    raise StopIteration()
-                else:
-                    return self.result.rst
+            # if len(self.stack) == 0:
+            #     if self.procs[0].is_yield():
+            #         raise StopIteration()
+            #     else:
+            #         return self.result.rst
             
             # Get stack tail information for process
             node = self.stack[-1]
@@ -258,6 +259,7 @@ class Query:
                     return self.result.rst
                     
             elif node.sta == POST:
+
                 # Process
                 if node.succ:
                     self.procs[node.pred.proc_idx].post(self.result, *node.datum, stack=self.stack)
@@ -268,8 +270,15 @@ class Query:
                     # Parent element forward
                     nxt_datum = [next(i) for i in self.stack[-1].children]
                     self.stack.append(NodeInfo(nxt_datum))
-                except (IndexError, StopIteration): # IndexError for empty-stack
+
+                except StopIteration: # IndexError for empty-stack
                     pass
+
+                except (IndexError):    # node is TOP element
+                    if self.procs[0].is_yield():
+                        self.stack.append(NodeInfo(node, sta=DONE))
+                    else:
+                        return self.result.rst
 
                 if node.succ and self.procs[node.pred.proc_idx].post_yield():
                     return self.result.rst

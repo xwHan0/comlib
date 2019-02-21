@@ -11,12 +11,11 @@ class Proc:
 
     * stack: 当前遍历堆栈。其每一个节点内容包含：
         -- datum: datum的影子；
-        -- sta: 节点遍历状态。PRE和POST
+        -- sta: 节点遍历状态<PRE|POST|DONE>。赋值DONE状态将导致迭代终止。
         -- pred_idx: 节点对应的Pred序号
         -- children: 子元素迭代器。该域为None表示当前节点为叶子节点
         -- pred: 匹配条件对象
       stack中最后一个元素为当前遍历的元素；倒数第二个元素为当前节点的父元素; ...; 第一个节点为根节点。
-      清空该stack将导致迭代终止。
     """
     
     def pre(self, result, *datum, stack=[]): 
