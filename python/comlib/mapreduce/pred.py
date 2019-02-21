@@ -143,7 +143,7 @@ class PredSelect(Pred):
 
     def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', proc_idx=None, flags=''):
        
-        super().__init__()
+        # super().__init__() Because super Just initial proc_idx
        
         if cls_name1:
             if cls_name1=='*':
@@ -163,10 +163,7 @@ class PredSelect(Pred):
 
                
         # 无论匹配成功与否，默认总是继续其余匹配
-        self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst = -1,-1,1
-
-        # Searh and process prox_idx
-        self.proc_idx = int(proc_idx) if proc_idx else 0
+        self.obj_fail_rst, self.pred_fail_rst, self.match_succ_rst,  self.proc_idx = -1,-1,1,  int(proc_idx) if proc_idx else 0
 
         for f in (flags if flags else ''): # 
             if f == 'o': self.obj_fail_rst = -2 # 匹配失败后，跳过该节点的子节点
