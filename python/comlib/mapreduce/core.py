@@ -66,7 +66,7 @@ class Query:
     
         # New architecture fields
         #self.stack = []       declare when used
-        self.datum, self.result, self.cfg, self.procs = datum, Result(), cfg, procs if procs else [ProcIter()]
+        self.step, self.datum, self.result, self.cfg, self.procs = 1, datum, Result(), cfg, procs if procs else [ProcIter()]
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         # Skip first sequence process
@@ -154,6 +154,7 @@ class Query:
                 return self._next_new()
             return delay_query
         else:
+            
             return self._next_new()
         
     def r(self):
@@ -184,8 +185,6 @@ class Query:
                 node.children = None
                 break
 
-        self.stack[-1].sta = PRE    # 栈顶设置为PRE，开始迭代
-
         return self
 
     def _get_children_iter(self, *node):
@@ -198,12 +197,27 @@ class Query:
         if self.min_node_num > len(self.datum):
             raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
         
+        self.stack[-1].sta = PRE
         return self
 
     def __next__(self):
         return self._next_new()
         
     def _next_new( self ):
+        
+        #if self.step < 3: # Step3 is normal work
+       #     if self.step < 2: # Step2 need append proc
+              #  if self.step < 1: # Step1 need re-calculate proc
+                    # Step0:
+         #           pass
+            # Srep1:
+   #         for pred in self.preds:
+           #     pred.bind_proc(self.procs)
+                    
+         # Step2:
+     #    for pred in self.preds:
+  #          if pred.proc == None:
+           #     pred.bind_proc(self.procs)
         
         for ite_cnt in range(Query.MAX_IT_NUM):
             # Finish judgement
@@ -281,6 +295,7 @@ class Query:
                     pass
 
                 except (IndexError):    # node is TOP element
+                
                     if self.procs[0].is_yield():
                         self.stack.append(NodeInfo(node, sta=DONE))
                     else:
@@ -291,6 +306,7 @@ class Query:
 
             elif node.sta == DONE:
                 
+                node.sta = PRE  # For next
                 if self.procs[0].is_yield():
                     raise StopIteration()
                 else:

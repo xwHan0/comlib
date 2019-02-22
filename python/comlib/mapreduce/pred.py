@@ -113,7 +113,9 @@ class Pred:
         self.proc_idx = 0
         
     # Always success match function
-    def match(self, *datum): return 1
+    def match(self, *datum): 
+        """Match and return result: (is_pre, is_post)"""
+        return (True, False)
 
     # Return weather or not stop all other nodes iteration
     def is_stop(self, result): return (result==3) or (result==-3)
@@ -131,6 +133,15 @@ class Pred:
     def set_match(self,pred): 
         self.match = pred
         return self
+        
+    def bind_proc(self, procs):
+        """Set proc attribute via proc_idx and procs"""
+        if self.proc_idx < len(procs):
+            self.proc = procs[self.proc_idx]
+            if hasattr(self.proc, 'pre'):
+                self.is_pre = True
+            if hasattr(self.proc, 'post'):
+                self.is_post = True
         
 
 
