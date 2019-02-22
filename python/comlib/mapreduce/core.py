@@ -148,7 +148,13 @@ class Query:
         
     def run(self): 
         """执行迭代并返回结果。"""
-        return self._next_new()
+        if len(self.datum) == 0:
+            def delay_query(*datum, children={}):
+                self.assist(*datum, children=children)
+                return self._next_new()
+            return delay_query
+        else:
+            return self._next_new()
         
     def r(self):
         """返回当前求值结果为内容的query"""
