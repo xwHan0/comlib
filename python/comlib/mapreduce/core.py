@@ -1,6 +1,6 @@
 import re
 import types
-from comlib.mapreduce.pred import Pred, PredSelect, PredSkip, gen_preds
+from comlib.mapreduce.pred import Pred, PredString,  gen_preds
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo
@@ -10,6 +10,8 @@ from comlib.mapreduce.result import Result
 PRE = 1
 POST = 3
 DONE = 4
+SKIP = 5
+
 
 class Query:
     """
@@ -57,7 +59,7 @@ class Query:
         
         # 保存并解析选择字符串
         self.preds = gen_preds(query)
-        self.min_node_num = max(map(int, Query.CRITERIA_NODE_PATT.findall(query)), default=1)
+        # self.min_node_num = max(map(int, Query.CRITERIA_NODE_PATT.findall(query)), default=1)
             
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
@@ -65,15 +67,14 @@ class Query:
         append_children_relationship(self.children_relationship, children)
     
         # New architecture fields
-        #self.stack = []       declare when used
         self.step, self.datum, self.result, self.cfg, self.procs = 1, datum, Result(), cfg, procs if procs else [ProcIter()]
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         # Skip first sequence process
-        skip_first_seq = self.cfg.get('skip_first_seq', True)
-        if skip_first_seq and isinstance(self.datum[0], (list,tuple,LinkList)):
-            # self.preds.append(PredSkip())
-            self.skip()
+        # skip_first_seq = self.cfg.get('skip_first_seq', True)
+        # if skip_first_seq and isinstance(self.datum[0], (list,tuple,LinkList)):
+        #     # self.preds.append(PredSkip())
+        #     self.skip()
 
         # self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
         
@@ -138,9 +139,6 @@ class Query:
     def reduce(self, reduce_proc, initial=None, post=None):
         """归并"""
 
-        if self.min_node_num > len(self.datum):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
-        
         self.procs = [ProcReduce(reduce_proc)]
         self.result.rst = initial
 
@@ -154,7 +152,6 @@ class Query:
                 return self._next_new()
             return delay_query
         else:
-            
             return self._next_new()
         
     def r(self):
@@ -168,7 +165,7 @@ class Query:
             # Get stack tail information for process
             node = self.stack[-1]
             
-            node.sta, node.succ = DONE, False   # 不需要迭代
+            node.sta, node.succ = SKIP, False   # 不需要迭代
             
             # Next prepare
             try:
@@ -194,10 +191,10 @@ class Query:
         return nxt.sub(*node)  # 调用类函数处理
     
     def __iter__(self):
-        if self.min_node_num > len(self.datum):
-            raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
+        # if self.min_node_num > len(self.datum):
+        #     raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
         
-        self.stack[-1].sta = PRE
+        # self.stack[-1].sta = PRE
         return self
 
     def __next__(self):
@@ -220,12 +217,6 @@ class Query:
            #     pred.bind_proc(self.procs)
         
         for ite_cnt in range(Query.MAX_IT_NUM):
-            # Finish judgement
-            # if len(self.stack) == 0:
-            #     if self.procs[0].is_yield():
-            #         raise StopIteration()
-            #     else:
-            #         return self.result.rst
             
             # Get stack tail information for process
             node = self.stack[-1]
@@ -236,9 +227,11 @@ class Query:
                 # Filter
                 pred = self.preds[node.pred_idx]
                 result = pred.match(*node.datum)
+                # is_pre, is_pre_yield, is_post, is_post_yield = self.procs[pred.proc_idx].actions(result)
             
                 # Record filter result
                 node.succ, node.proc_idx, node.pred = pred.is_succ(result), pred.proc_idx, pred
+
                 
                 # Next prepare
                 try:
@@ -285,28 +278,33 @@ class Query:
                     self.procs[node.pred.proc_idx].post(self.result, *node.datum, stack=self.stack)
                     
                 try:
-                    # Pop stack
-                    self.stack.pop()
-                    # Parent element forward
-                    nxt_datum = [next(i) for i in self.stack[-1].children]
-                    self.stack.append(NodeInfo(nxt_datum))
+
+                    # 判断是否到根节点
+                    if len(self.stack) == 1:
+                        node.sta = DONE
+                    else: # 非根节点
+                        # Pop stack
+                        self.stack.pop()
+                        # Parent element forward
+                        nxt_datum = [next(i) for i in self.stack[-1].children]
+                        self.stack.append(NodeInfo(nxt_datum))
 
                 except StopIteration: # IndexError for empty-stack
                     pass
-
-                except (IndexError):    # node is TOP element
-                
-                    if self.procs[0].is_yield():
-                        self.stack.append(NodeInfo(node, sta=DONE))
-                    else:
-                        return self.result.rst
 
                 if node.succ and self.procs[node.pred.proc_idx].post_yield():
                     return self.result.rst
 
             elif node.sta == DONE:
                 
-                node.sta = PRE  # For next
+                node.sta = PRE  # 为下一次迭代做准备
+                if self.procs[0].is_yield():
+                    raise StopIteration()
+                else:
+                    return self.result.rst
+
+            elif node.sta == SKIP:  # SKIP 状态继续保持
+
                 if self.procs[0].is_yield():
                     raise StopIteration()
                 else:

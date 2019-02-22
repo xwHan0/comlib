@@ -35,6 +35,10 @@ class Proc:
         return False
 
     def is_yield(self): return self.pre_yield() or self.post_yield()
+
+    def actions(self,result):
+        """按照result的结果返回处理动作：(is_pre, is_pre_yield, is_post, is_post_yield)"""
+        return (False, False, False, False)
         
 
 class ProcIter(Proc):

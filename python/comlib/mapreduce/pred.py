@@ -8,10 +8,6 @@ import types
 
 #########################################  Local variable definition
 
-PRE_YIELD = 1
-POST_YIELD = 2
-NONE_YIELD = 0
-
 PATT_CONDITION_BASE1 = r'[^[\]]'
 PATT_CONDITION_1 = r'(?:{0})+'.format(PATT_CONDITION_BASE1)
 PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
@@ -114,8 +110,8 @@ class Pred:
         
     # Always success match function
     def match(self, *datum): 
-        """Match and return result: (is_pre, is_post)"""
-        return (True, False)
+        """Return match result: True or False"""
+        return 1
 
     # Return weather or not stop all other nodes iteration
     def is_stop(self, result): return (result==3) or (result==-3)
@@ -133,24 +129,20 @@ class Pred:
     def set_match(self,pred): 
         self.match = pred
         return self
-        
-    def bind_proc(self, procs):
-        """Set proc attribute via proc_idx and procs"""
-        if self.proc_idx < len(procs):
-            self.proc = procs[self.proc_idx]
-            if hasattr(self.proc, 'pre'):
-                self.is_pre = True
-            if hasattr(self.proc, 'post'):
-                self.is_post = True
+    # Return weather or not stop sub nodes iteration
+    # def is_sub(self, result):  return not ((result==-2) or (result==2))
+    # # 设置自定义过滤函数
+    # def set_match(self,pred): 
+    #     self.match = pred
+    #     return self
         
 
+# class PredSkip(Pred):
+#     def is_succ(self,result): return False
+#     def is_done(self,result): return True
 
-class PredSkip(Pred):
-    def is_succ(self,result): return False
-    def is_done(self,result): return True
 
-
-class PredSelect(Pred):        
+class PredString(Pred):        
 
     def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', proc_idx=None, flags=''):
        
@@ -251,7 +243,7 @@ def gen_preds(sSelect):
     if isinstance(sSelect, str):
         r = PATT_SELECT.split(sSelect)
         r = [deq(iter(r), 7) for i in range(int(len(r)/7))]
-        r = [PredSelect(n,o1,c1,o2,c2,a,f) for [n,o1,c1,o2,c2,a,f] in r]
+        r = [PredString(n,o1,c1,o2,c2,a,f) for [n,o1,c1,o2,c2,a,f] in r]
         r.reverse()
         return r
     if isinstance(sSelect, types.FunctionType):

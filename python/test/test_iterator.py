@@ -18,19 +18,28 @@ class TestIterator:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        r = [x for x in Query(a)]
+        r = [x for x in Query(a).skip()]
         assert r == [10,20,30,40]
 
+    def test_multi_time_iteration(self):
+        """测试一个Query对象支持多次迭代特性：最终回到PRE状态。"""
+        a = [10,20,30,40]
+        que = Query(a).skip()
+        r = [x for x in que]
+        assert r == [10,20,30,40]
+        r = [x for x in que]
+        assert r == [10,20,30,40]
+        
     def test_1d_array_index(self):
         """简单数组+Index测试"""
         a = [10,20,30,40]
-        r = [(idx.idx(), x) for x,idx in Query(a, Index())]
+        r = [(idx.idx(), x) for x,idx in Query(a, Index()).skip()]
         assert r == [([0],10),([1],20),([2],30),([3],40)]
 
     def test_3d_array_index(self):
         """多维数组+Index+简单Filter测试"""
         a = [10, [20, 30], [40, [[50,60], 70, 80], 90]]
-        r = [(idx.idx(), x) for x,idx in Query(a, Index(), query='int')]
+        r = [(idx.idx(), x) for x,idx in Query(a, Index(), query='int').skip()]
         assert r == [([0], 10), ([1,0], 20), ([1,1], 30), ([2,0], 40), ([2,1,0,0], 50), 
             ([2,1,0,1], 60), ([2,1,1], 70), ([2,1,2], 80), ([2,2], 90)]
 
@@ -72,7 +81,7 @@ class TestIterator:
 
 class TestMap:
     def test_map_commom(self):
-        rst = [x for x in Query([1,2,3,4]).map(lambda x:x+10)]
+        rst = [x for x in Query([1,2,3,4]).map(lambda x:x+10).skip()]
         assert rst == [11,12,13,14]
 
 
