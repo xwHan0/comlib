@@ -33,7 +33,7 @@ class TestIterator:
         r = []
         for i in range(3):
             r += [(idx.idx(), x) for x,idx in que]
-        assert r == [([0],10),([1],20),([2],30),([3],40)]*5
+        assert r == [([0],10),([1],20),([2],30),([3],40)]*3
 
     def test_3d_array_index(self):
         """多维数组+Index+简单Filter测试"""
@@ -47,8 +47,11 @@ class TestIterator:
         n1 = node(1000)
         n2 = node(2000)
         n0 = node(100, [n1, n2])
-        r = [x.val for x in Query(n0, children={node : ChildAttr('sub')})]
-        assert r == [100, 1000, 2000]
+        que = Query(n0, children={node : ChildAttr('sub')})
+        r =[]
+        for i in range(3):
+            r += [x.val for x in que]
+        assert r == [100, 1000, 2000]*3
 
     def test_hybrid(self):
         """数组+树复合数据 + Index"""
