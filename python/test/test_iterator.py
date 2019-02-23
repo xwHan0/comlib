@@ -18,23 +18,22 @@ class TestIterator:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        r = [x for x in Query(a).skip()]
-        assert r == [10,20,30,40]
-
-    def test_multi_time_iteration(self):
-        """测试一个Query对象支持多次迭代特性：最终回到PRE状态。"""
-        a = [10,20,30,40]
         que = Query(a).skip()
-        r = [x for x in que]
-        assert r == [10,20,30,40]
-        r = [x for x in que]
-        assert r == [10,20,30,40]
+        r =[]
+        for i in range(5):
+            r += [x for x in que]
+        assert r == [10,20,30,40]*5
+
+    
         
     def test_1d_array_index(self):
         """简单数组+Index测试"""
         a = [10,20,30,40]
-        r = [(idx.idx(), x) for x,idx in Query(a, Index()).skip()]
-        assert r == [([0],10),([1],20),([2],30),([3],40)]
+        que = Query(a, Index()).skip()
+        r = []
+        for i in range(3):
+            r += [(idx.idx(), x) for x,idx in que]
+        assert r == [([0],10),([1],20),([2],30),([3],40)]*5
 
     def test_3d_array_index(self):
         """多维数组+Index+简单Filter测试"""
