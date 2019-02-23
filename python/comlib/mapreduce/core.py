@@ -186,7 +186,7 @@ class Query:
                 node.children = None
                 break
                 
-        self.skip_node = self.stack[-1] # 保存遍历开始节点，为遍历结束后恢复现场准备
+        # self.skip_node = self.stack[-1] # 保存遍历开始节点，为遍历结束后恢复现场准备
 
         return self
 
@@ -254,28 +254,48 @@ class Query:
                         self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
 
                     # Push next elements into stack
-                    if is_sub and len(self.stack) > 0: 
+                    if is_sub: 
                         pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
                         self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
                     
+                    node.sta = POST
+              
+                    # Return
+                    if node.succ and self.procs[node.proc_idx].pre_yield():
+                        return self.result.rst
+                    
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError): 
-                    node.children = None
                     # Process
                     if node.succ:
+                        node.children = None
                         self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
-                
+                        self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
+                    
+                    if len(self.stack) == 1: # Just ONE element in tree
+                        node.sta = DONE
+                    else: # 非根节点
+                        # Parent element forward
+                        try:
+                            self.stack.pop()
+                            nxt_datum = [next(i) for i in self.stack[-1].children]
+                            self.stack.append(NodeInfo(nxt_datum))
+                        except StopIteration:
+                            pass
+                            
+                    if node.succ and self.procs[node.pred.proc_idx].is_yield():
+                        return self.result.rst
                     
                 # Modify top element status of stack
-                node.sta = POST
+                # node.sta = POST
                 
                 # Stop judgement: implement in Proc via clear stack
                 # if pred.is_stop(result): self.stack.clear()
                     
 
                 # Return
-                if node.succ and self.procs[node.proc_idx].pre_yield():
-                    return self.result.rst
+                #if node.succ and self.procs[node.proc_idx].pre_yield():
+               #     return self.result.rst
                     
             elif node.sta == POST:
 
@@ -289,6 +309,7 @@ class Query:
                     if len(self.stack) == 1:
                         node.sta = DONE
                     else: # 非根节点
+                        node.sta = PRE  # For next status
                         # Pop stack
                         self.stack.pop()
                         # Parent element forward
@@ -311,7 +332,8 @@ class Query:
 
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
-                self.stack.append(self.skip_node) #恢复现场，为下次遍历做准备
+                # self.stack.append(self.skip_node) 
+                self.skip()  #恢复现场，为下次遍历做准备
                 if self.procs[0].is_yield():
                     raise StopIteration()
                 else:
