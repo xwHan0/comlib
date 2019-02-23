@@ -17,6 +17,7 @@ class Query:
     """
     在给定的树中，按给定顺序迭代-匹配过滤-执行动作。
 
+    Query遍历树时，对于每个节点，都会遍历2遍。pre过程指从父节点第一次迭代到当前节点的遍历；post过程指子节点迭代完成返回到当前节点的遍历。
 
     # 基本概念
 
@@ -159,6 +160,9 @@ class Query:
         return Query(list(iter(self)))
         
     def skip( self, n=1 ):
+        """跳过前n个节点后开始遍历。
+         skip并不会破坏数据的树结构，仅仅是在遍历迭代是略过前几个节点。这里的略过不仅仅指pre过程，也包括post过程。
+"""
         
         for ite_cnt in range(n):
             
@@ -181,6 +185,8 @@ class Query:
             except (StopIteration,TypeError): 
                 node.children = None
                 break
+                
+        self.skip_node = self.stack[-1] # 保存遍历开始节点，为遍历结束后恢复现场准备
 
         return self
 
@@ -305,6 +311,7 @@ class Query:
 
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
+                self.stack.append(self.skip_node) #恢复现场，为下次遍历做准备
                 if self.procs[0].is_yield():
                     raise StopIteration()
                 else:
