@@ -265,7 +265,7 @@ class Query:
                         return self.result.rst
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
-                except (StopIteration,TypeError): 
+                except (StopIteration,TypeError):   Leaf node
                     # Process
                     if node.succ:
                         node.children = None

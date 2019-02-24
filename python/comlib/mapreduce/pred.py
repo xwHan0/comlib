@@ -141,6 +141,11 @@ class Pred:
 #     def is_succ(self,result): return False
 #     def is_done(self,result): return True
 
+class PredFunction(Pred):
+    def __init__(self, func, iproc=0):
+        self.match = func
+        self.proc_idx = iproc
+
 
 class PredString(Pred):        
 
@@ -247,6 +252,6 @@ def gen_preds(sSelect):
         r.reverse()
         return r
     if isinstance(sSelect, types.FunctionType):
-        return Pred().set_match(sSelect)
+        return [PredFunction(sSelect)]
     return [Pred()]
 
