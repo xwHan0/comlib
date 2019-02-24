@@ -265,37 +265,33 @@ class Query:
                         return self.result.rst
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
-                except (StopIteration,TypeError):   Leaf node
+                except (StopIteration,TypeError):   #Leaf node
                     # Process
                     if node.succ:
                         node.children = None
                         self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
-                        self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
+                    #     self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
                     
-                    if len(self.stack) == 1: # Just ONE element in tree
-                        node.sta = DONE
-                    else: # 非根节点
-                        # Parent element forward
-                        try:
-                            self.stack.pop()
-                            nxt_datum = [next(i) for i in self.stack[-1].children]
-                            self.stack.append(NodeInfo(nxt_datum))
-                        except StopIteration:
-                            pass
+                    # if len(self.stack) == 1: # Just ONE element in tree
+                    #     node.sta = DONE
+                    # else: # 非根节点
+                    #     # Parent element forward
+                    #     try:
+                    #         self.stack.pop()
+                    #         nxt_datum = [next(i) for i in self.stack[-1].children]
+                    #         self.stack.append(NodeInfo(nxt_datum))
+                    #     except StopIteration:
+                    #         pass
                             
-                    if node.succ and self.procs[node.pred.proc_idx].is_yield():
-                        return self.result.rst
+                    # if node.succ and self.procs[node.pred.proc_idx].is_yield():
+                    #     return self.result.rst
                     
                 # Modify top element status of stack
-                # node.sta = POST
+                node.sta = POST
                 
-                # Stop judgement: implement in Proc via clear stack
-                # if pred.is_stop(result): self.stack.clear()
-                    
-
                 # Return
-                #if node.succ and self.procs[node.proc_idx].pre_yield():
-               #     return self.result.rst
+                if node.succ and self.procs[node.proc_idx].pre_yield():
+                   return self.result.rst
                     
             elif node.sta == POST:
 
