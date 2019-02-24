@@ -24,7 +24,14 @@ class TestIterator:
             r += [x for x in que]
         assert r == [10,20,30,40]*5
 
-    
+    def test_func_pred(self):
+        """Test """
+        a = [1,2,3,4,5,6,7]
+        que = Query(a, query=lambda x:x%2==0).skip()
+        r = []
+        for i in range(3):
+            r += [x for x in que]
+        assert r == [2,4,6]*3
         
     def test_1d_array_index(self):
         """简单数组+Index测试"""
