@@ -69,6 +69,10 @@ class Query:
     
         # New architecture fields
         self.step, self.datum, self.result, self.cfg, self.procs = 1, datum, Result(), cfg, procs if procs else [ProcIter()]
+        
+        for pred in self.preds:
+            pred.proc = self.procs[pred.proc_idx]
+        
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
         # Skip first sequence process
@@ -232,7 +236,7 @@ class Query:
                 
                 # Filter
                 pred = self.preds[node.pred_idx]
-                result = pred.match(*node.datum)
+                result, proc = pred.match(*node.datum)
                 # is_pre, is_pre_yield, is_post, is_post_yield = self.procs[pred.proc_idx].actions(result)
             
                 # Record filter result
