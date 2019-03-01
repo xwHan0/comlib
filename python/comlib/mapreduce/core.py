@@ -194,6 +194,13 @@ class Query:
 
         return self
 
+    def _match(self, preds, datum):
+        for pred in preds:
+            rst, proc = pred.match(*datum)
+            if rst > 0: # Succcess
+                return rst, proc
+        return 0, Proc()
+
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
             type(node[0]),
