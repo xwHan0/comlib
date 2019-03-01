@@ -240,7 +240,7 @@ class Query:
                 # is_pre, is_pre_yield, is_post, is_post_yield = self.procs[pred.proc_idx].actions(result)
             
                 # Record filter result
-                node.succ, node.proc_idx, node.pred = pred.is_succ(result), pred.proc_idx, pred
+                node.succ, node.proc_idx, node.pred, node.proc = pred.is_succ(result), pred.proc_idx, pred, proc
 
                 
                 # Next prepare
@@ -255,7 +255,8 @@ class Query:
 
                     # Process
                     if node.succ:
-                        self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
+                        #self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
+                        proc.pre(self.result, *node.datum, stack=self.stack)
 
                     # Push next elements into stack
                     if is_sub: 
@@ -265,7 +266,8 @@ class Query:
                     node.sta = POST
               
                     # Return
-                    if node.succ and self.procs[node.proc_idx].pre_yield():
+                    if node.succ and proc.pre_yield():
+                    #if node.succ and self.procs[node.proc_idx].pre_yield():
                         return self.result.rst
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
@@ -273,7 +275,9 @@ class Query:
                     # Process
                     if node.succ:
                         node.children = None
-                        self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
+                        #self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
+                        proc.pre(self.result, *node.datum, stack=self.stack)
+                    
                     #     self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
                     
                     # if len(self.stack) == 1: # Just ONE element in tree
@@ -294,14 +298,16 @@ class Query:
                 node.sta = POST
                 
                 # Return
-                if node.succ and self.procs[node.proc_idx].pre_yield():
+                if node.succ and proc.pre_yield():
+                #if node.succ and self.procs[node.proc_idx].pre_yield():
                    return self.result.rst
                     
             elif node.sta == POST:
 
                 # Process
                 if node.succ:
-                    self.procs[node.pred.proc_idx].post(self.result, *node.datum, stack=self.stack)
+                    #self.procs[node.pred.proc_idx].post(self.result, *node.datum, stack=self.stack)
+                    node.proc.post(self.result, *node.datum, stack=self.stack)
                     
                 try:
 
@@ -319,8 +325,9 @@ class Query:
                 except StopIteration: # IndexError for empty-stack
                     pass
 
-                if node.succ and self.procs[node.pred.proc_idx].post_yield():
-                    return self.result.rst
+                if node.succ and node.proc.post_yield():
+                #if node.succ and self.procs[node.pred.proc_idx].post_yield():
+                   return self.result.rst
 
             elif node.sta == DONE:
                 
