@@ -112,7 +112,7 @@ class Pred:
     # Always success match function
     def match(self, *datum): 
         """Return match result: True or False"""
-        return 1, self.proc
+        return 1
 
     # Return weather or not stop all other nodes iteration
     def is_stop(self, result): return (result==3) or (result==-3)
@@ -191,7 +191,7 @@ class PredString(Pred):
     def match_obj_condition( self, *datum ):
         # 对象匹配
         if datum[0].__class__.__name__ != self.cls_name:
-            return self.obj_fail_rst, self.proc
+            return self.obj_fail_rst
             
         # 条件匹配
         try:
@@ -209,7 +209,7 @@ class PredString(Pred):
     def match_obj( self, *datum ):
         if datum[0].__class__.__name__ != self.cls_name:
             return self.obj_fail_rst
-        return self.match_succ_rst, self.proc
+        return self.match_succ_rst
 
     def match_condition( self, *datum ):
         try:
@@ -221,7 +221,7 @@ class PredString(Pred):
             else: raise Exception('Cannot cast the result<{1}> of CMD<{0}> to Boolean'.format(self.pred, rst))
         except Exception:
             raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
-        return self.match_succ_rst, self.proc
+        return self.match_succ_rst
 
     def match_full( self, *datum ):
         # 对象匹配
@@ -240,7 +240,7 @@ class PredString(Pred):
             except Exception:
                 raise Exception('Invalid condition statement. CONDITION<{0}>'.format(self.pred))
                       
-        return self.match_succ_rst, self.proc
+        return self.match_succ_rst
     
 
 def gen_preds(sSelect):

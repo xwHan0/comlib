@@ -70,8 +70,9 @@ class Query:
         # New architecture fields
         self.step, self.datum, self.result, self.cfg, self.procs = 1, datum, Result(), cfg, procs if procs else [ProcIter()]
         
-        for pred in self.preds:
-            pred.proc = self.procs[pred.proc_idx]
+        for preds in self.preds:
+            for pred in preds:
+                pred.proc = self.procs[pred.proc_idx]
         
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
@@ -196,10 +197,10 @@ class Query:
 
     def _match(self, preds, datum):
         for pred in preds:
-            rst, proc = pred.match(*datum)
+            rst = pred.match(*datum)
             if rst > 0: # Succcess
-                return rst, proc
-        return 0, Proc()
+                return rst, pred.proc, pred
+        return 0, Proc(), Pred()
 
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
@@ -242,9 +243,9 @@ class Query:
             if node.sta == PRE:
                 
                 # Filter
-                pred = self.preds[node.pred_idx]
+                preds = self.preds[node.pred_idx]
                 #result, proc = pred.match(*node.datum)
-                result, proc = self._match(*node.datum)
+                result, proc, pred = self._match(preds, node.datum)
                 
                 # is_pre, is_pre_yield, is_post, is_post_yield = self.procs[pred.proc_idx].actions(result)
             
