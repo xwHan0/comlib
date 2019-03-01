@@ -245,14 +245,14 @@ class PredString(Pred):
 
 def gen_preds(sSelect):
     if sSelect == '*':
-        return [Pred()]
+        return [[Pred()]]
     if isinstance(sSelect, str):
         r = PATT_SELECT.split(sSelect)
         r = [deq(iter(r), 7) for i in range(int(len(r)/7))]
         r = [PredString(n,o1,c1,o2,c2,a,f) for [n,o1,c1,o2,c2,a,f] in r]
         r.reverse()
-        return r
+        return [r]
     if isinstance(sSelect, types.FunctionType):
-        return [PredFunction(sSelect)]
-    return [Pred()]
+        return [[PredFunction(sSelect)]]
+    return [[Pred()]]
 

@@ -243,7 +243,9 @@ class Query:
                 
                 # Filter
                 pred = self.preds[node.pred_idx]
-                result, proc = pred.match(*node.datum)
+                #result, proc = pred.match(*node.datum)
+                result, proc = self._match(*node.datum)
+                
                 # is_pre, is_pre_yield, is_post, is_post_yield = self.procs[pred.proc_idx].actions(result)
             
                 # Record filter result
