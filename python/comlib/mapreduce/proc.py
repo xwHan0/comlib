@@ -41,6 +41,14 @@ class Proc:
         return (False, False, False, False)
         
 
+class ProcQMar(Proc):
+    def pre(self, result, *datum, stack=[]): 
+        return datum[0].pre(result, *datum, stack=stack)
+
+    def post(self, result, *datum, stack=[]): 
+        return datum[0].post(result, *datum, stack=stack)
+
+
 class ProcIter(Proc):
     
     #def __init__(self):

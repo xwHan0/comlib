@@ -70,9 +70,7 @@ class Query:
         # New architecture fields
         self.step, self.datum, self.result, self.cfg, self.procs = 1, datum, Result(), cfg, procs if procs else [ProcIter()]
         
-        for preds in self.preds:
-            for pred in preds:
-                pred.proc = self.procs[pred.proc_idx]
+        self._bind_proc()
         
         self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
 
@@ -109,6 +107,17 @@ class Query:
         """追加匹配成功动作处理Proc类实例proc"""
         self.procs.append(proc)
         return self
+        
+    def append_qmar(self, *qmars):
+        for qmar in qmars:
+            if issunclass(qmar, ChildRelation):
+                self.children_relationship += {qmar, ChildBypass()}
+            if issunclass(qmar, Pred):
+                self.preds[0].append(PredQMar())
+                if issunclass(qmar, Proc):
+                    self.preds[0][-1].proc = ProcQMar()
+                
+        return self
        
     def set_proc(self,proc):
         """修改处理动作为proc"""
@@ -140,6 +149,7 @@ class Query:
             self.procs = [ProcMap(proc)]
         else:
             self.procs = [proc]
+        self._bind_proc()
         return self
         
     def reduce(self, reduce_proc, initial=None, post=None):
@@ -147,6 +157,7 @@ class Query:
 
         self.procs = [ProcReduce(reduce_proc)]
         self.result.rst = initial
+        self._bind_proc()
 
         return self._next_new( )
         
@@ -194,6 +205,11 @@ class Query:
         # self.skip_node = self.stack[-1] # 保存遍历开始节点，为遍历结束后恢复现场准备
 
         return self
+        
+    def _bind_proc(self):
+        for preds in self.preds:
+            for pred in preds:
+                pred.proc = self.procs[pred.proc_idx]
 
     def _match(self, preds, datum):
         for pred in preds:

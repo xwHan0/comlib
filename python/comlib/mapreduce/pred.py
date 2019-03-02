@@ -148,6 +148,14 @@ class PredFunction(Pred):
         self.proc_idx = iproc
 
 
+class PredQMar(Pred):
+    def match(self, *datum):
+        if isinstance(datum[0], self.__class__):
+            return datum[0].match(*datum)
+        else:
+            return -1
+
+
 class PredString(Pred):        
 
     def __init__(self, nflag='', cls_name2='*', pred2='', pred1='', cls_name1='*', proc_idx=None, flags=''):
