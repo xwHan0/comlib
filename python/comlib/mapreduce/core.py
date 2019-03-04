@@ -26,10 +26,17 @@ class Query:
 
     * 匹配处理动作(procs)：查询匹配成功后的处理动作。参见Proc类说明
       Query中使用一个Proc列表来保存可能的多个动作对象。然后使用Pred类的动作序号中查找调用
+      pre过程调用Proc.pre处理函数，post过程调用post处理函数
+      
 
     * 子迭代器(children)：孩子节点迭代器获取类。参见ChildRelation类说明
       Query中以一个格式为：{objType:ChildRelationObj}的Dict保存子迭代器队形。
-      Query按节点类型查找对应的子迭代器对象，然后获取节点的子节点迭代器。
+      Query按节点类型查找对应的子迭代器对象，然后获取节点的子节点Pred.match
+
+    对于任何一个树节点，Query会依次执行如下动作:
+    -- 执行Pred.match函数进行匹配
+    -- 遍历子节点前执行match返回的Proc.pre处理函数
+    -- 执行
 
     Query按照children定义的树结构的父-子节点关系遍历整个树，然后使用query定义的条件筛选满足条件的
     节点，筛选成功后使用procs定义的动作处理，然会返回。
