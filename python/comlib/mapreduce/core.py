@@ -1,10 +1,10 @@
 import re
 import types
-from comlib.mapreduce.pred import Pred, PredString,  gen_preds
-from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship
+from comlib.mapreduce.pred import Pred, PredString,  gen_preds, PredQMar
+from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, DEFAULT_CHILDREN_RELATIONSHIP, append_children_relationship, ChildRelation, ChildBypass
 from comlib.iterators import LinkList
 from comlib.mapreduce.stack import NodeInfo
-from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
+from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter, ProcQMar
 from comlib.mapreduce.result import Result
 
 PRE = 1
@@ -114,22 +114,27 @@ class Query:
         """追加匹配成功动作处理Proc类实例proc"""
         self.procs.append(proc)
         return self
-        
-    def append_qmar(self, *qmars):
-        for qmar in qmars:
-            if issunclass(qmar, ChildRelation):
-                self.children_relationship += {qmar, ChildBypass()}
-            if issunclass(qmar, Pred):
-                self.preds[0].append(PredQMar())
-                if issunclass(qmar, Proc):
-                    self.preds[0][-1].proc = ProcQMar()
-                
-        return self
-       
+
     def set_proc(self,proc):
         """修改处理动作为proc"""
         self.procs = [proc]
         return self
+        
+    def append_qmar(self, *qmars):
+        """依次添加QMar类qmars到当前Query"""
+        for qmar in qmars:
+            if issubclass(qmar, ChildRelation):
+                self.children_relationship += {qmar, ChildBypass()}
+            if issubclass(qmar, Pred):
+                self.preds[0].append(PredQMar())
+                if issubclass(qmar, Proc):
+                    self.preds[0][-1].proc = ProcQMar()
+                
+        return self
+       
+    def clear_pred(self):
+        """清空当前Query的Pred条件"""
+        self.preds = [[]]
        
     def initial(self, init=None):
         self.result.rst = init
