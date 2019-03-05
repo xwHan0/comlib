@@ -2,6 +2,8 @@ import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))) )
 
 from comlib import Index, ChildSub, ChildAttr, Query
+from comlib import Pred, Proc
+
 
 class node:
     def __init__(self, v, sub=[]):
@@ -100,9 +102,32 @@ def reduce_proc(last, next):
     else:
         return next.val
 
+
 class TestReduce:
     def test_reduce_common(self):
         n1, n2 = (node(1000), node(2000))
         n0 = node(3000, [n1, n2])
         r = Query(n0, children='sub').reduce(reduce_proc, None)
         assert r == 6000
+
+
+#########################################################################################
+class MyQMar(Pred, Proc):
+    def __init__(self, v, sub=[]):
+        self.v = v
+        self.sub = sub
+
+    def match(self,*datum):
+        return 1 if datum[0].v % 2 == 0 else 0
+
+    def pre(self, result, *datum, stack=[]):
+        result.rst = datum[0].v + 100
+
+    def pre_yield(self): return True
+
+
+# class TestQMar:
+#     def test_common_qmar(self):
+#         node = MyQMar(0, sub=[MyQMar(i) for i in range(1,5)])
+#         r = [x for x in Query(node, children='sub').clear_pred().append_qmar(MyQMar)]
+#         assert r == [100,102,104]

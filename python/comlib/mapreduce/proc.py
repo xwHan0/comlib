@@ -48,6 +48,10 @@ class ProcQMar(Proc):
     def post(self, result, *datum, stack=[]): 
         return datum[0].post(result, *datum, stack=stack)
 
+    def pre_yield(self): return datum[0].pre_yield()
+
+    def post_yield(self): return datum[0].post_yield()
+
 
 class ProcIter(Proc):
     

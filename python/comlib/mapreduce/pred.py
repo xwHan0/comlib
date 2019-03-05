@@ -123,9 +123,9 @@ class Pred:
     # 返回当前Pred是否已经匹配完成
     def is_done(self, result): return result > 0
     # 返回是否子迭代前处理
-    def is_pre_yield(self): return True
+    # def is_pre_yield(self): return True
     # 返回是否子迭代后处理
-    def is_post_yield(self): return False
+    # def is_post_yield(self): return False
     # 设置自定义过滤函数
     def set_match(self,pred): 
         self.match = pred
@@ -149,8 +149,11 @@ class PredFunction(Pred):
 
 
 class PredQMar(Pred):
+    def __init__(self, qmar):
+        self.qmar = qmar
+
     def match(self, *datum):
-        if isinstance(datum[0], self.__class__):
+        if isinstance(datum[0], self.qmar):
             return datum[0].match(*datum)
         else:
             return -1

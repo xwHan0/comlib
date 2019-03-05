@@ -126,15 +126,15 @@ class Query:
             if issubclass(qmar, ChildRelation):
                 self.children_relationship += {qmar, ChildBypass()}
             if issubclass(qmar, Pred):
-                self.preds[0].append(PredQMar())
+                self.preds[0].append(PredQMar(qmar))
                 if issubclass(qmar, Proc):
                     self.preds[0][-1].proc = ProcQMar()
-                
         return self
        
     def clear_pred(self):
         """清空当前Query的Pred条件"""
         self.preds = [[]]
+        return self
        
     def initial(self, init=None):
         self.result.rst = init
@@ -272,15 +272,11 @@ class Query:
                 
                 # Filter
                 preds = self.preds[node.pred_idx]
-                #result, proc = pred.match(*node.datum)
                 result, proc, pred = self._match(preds, node.datum)
-                
-                # is_pre, is_pre_yield, is_post, is_post_yield = self.procs[pred.proc_idx].actions(result)
             
                 # Record filter result
-                node.succ, node.proc_idx, node.pred, node.proc = pred.is_succ(result), pred.proc_idx, pred, proc
+                node.succ, node.pred = result>0, pred
 
-                
                 # Next prepare
                 try:
                     
@@ -293,7 +289,6 @@ class Query:
 
                     # Process
                     if node.succ:
-                        #self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
                         proc.pre(self.result, *node.datum, stack=self.stack)
 
                     # Push next elements into stack
@@ -301,22 +296,19 @@ class Query:
                         pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
                         self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
                     
-                    node.sta = POST
+                    # node.sta = POST
               
                     # Return
-                    if node.succ and proc.pre_yield():
-                    #if node.succ and self.procs[node.proc_idx].pre_yield():
-                        return self.result.rst
+                    # if node.succ and proc.pre_yield():
+                    # #if node.succ and self.procs[node.proc_idx].pre_yield():
+                    #     return self.result.rst
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError):   #Leaf node
                     # Process
                     if node.succ:
                         node.children = None
-                        #self.procs[node.proc_idx].pre(self.result, *node.datum, stack=self.stack)
                         proc.pre(self.result, *node.datum, stack=self.stack)
-                    
-                    #     self.procs[node.proc_idx].post(self.result, *node.datum, stack=self.stack)
                     
                     # if len(self.stack) == 1: # Just ONE element in tree
                     #     node.sta = DONE
@@ -337,15 +329,13 @@ class Query:
                 
                 # Return
                 if node.succ and proc.pre_yield():
-                #if node.succ and self.procs[node.proc_idx].pre_yield():
                    return self.result.rst
                     
             elif node.sta == POST:
 
                 # Process
                 if node.succ:
-                    #self.procs[node.pred.proc_idx].post(self.result, *node.datum, stack=self.stack)
-                    node.proc.post(self.result, *node.datum, stack=self.stack)
+                    node.pred.proc.post(self.result, *node.datum, stack=self.stack)
                     
                 try:
 
@@ -363,8 +353,7 @@ class Query:
                 except StopIteration: # IndexError for empty-stack
                     pass
 
-                if node.succ and node.proc.post_yield():
-                #if node.succ and self.procs[node.pred.proc_idx].post_yield():
+                if node.succ and node.pred.proc.post_yield():
                    return self.result.rst
 
             elif node.sta == DONE:
@@ -377,7 +366,6 @@ class Query:
 
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
-                # self.stack.append(self.skip_node) 
                 self.skip()  #恢复现场，为下次遍历做准备
                 if self.procs[0].is_yield():
                     raise StopIteration()
