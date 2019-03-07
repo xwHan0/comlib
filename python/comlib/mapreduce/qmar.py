@@ -7,6 +7,8 @@ from comlib.mapreduce.stack import NodeInfo
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter, ProcQMar
 from comlib.mapreduce.result import Result
 
+from comlib.mapreduce.match import Match, MatchIter, MatchPredIter
+
 PRE = 1
 POST = 3
 DONE = 4
@@ -46,50 +48,45 @@ class QMar:
     MAX_IT_NUM = 999999
     CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
 
+    #===================  内部默认定义变量  ====================
+    _matchIter_ = MatchIter()
+
     @staticmethod
     def configure(**cfg):
         for k,v in cfg.items():
             if k=='prefix':
-                Query.CRITERIA_PATT = [
+                QMar.CRITERIA_PATT = [
                     (re.compile(r'{0}(\d+)'.format(v)), r'node[\g<1>]'),
                     (re.compile(r'{0}{0}'.format(v)), r'node'),
                     (re.compile(r'{0}\.'.format(v)), r'node[0].'),
                 ]
-                Query.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
+                QMar.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
             elif k=='max_it_num':
-                Query.MAX_IT_NUM = v
+                QMar.MAX_IT_NUM = v
     
 
-    def __init__(self, *datum, query='*', children={}, procs=None, **cfg):
-        """cfg argument:
-            * skip_first_seq{Boolean}:
+    def __init__(self, *datum, **cfg):
+        """
         """
         
-        # 保存并解析选择字符串
-        self.preds = gen_preds(query)
-        # self.min_node_num = max(map(int, Query.CRITERIA_NODE_PATT.findall(query)), default=1)
-            
         # Set initial children relationship map table
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
-        # Append new children relationship map table
-        append_children_relationship(self.children_relationship, children)
     
         # New architecture fields
-        self.step, self.datum, self.result, self.cfg, self.procs = 1, datum, Result(), cfg, procs if procs else [ProcIter()]
-        
-        self._bind_proc()
-        
-        self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        self.step, self.result, self.cfg, self.matches = 1, Result(), cfg, []
 
-        # Skip first sequence process
-        # skip_first_seq = self.cfg.get('skip_first_seq', True)
-        # if skip_first_seq and isinstance(self.datum[0], (list,tuple,LinkList)):
-        #     # self.preds.append(PredSkip())
-        #     self.skip()
-
-        # self.stack = [NodeInfo(self.datum, pred_idx=len(self.preds)-1)]
+        # self.pre_return/self.post_return
         
+        self.stack = [NodeInfo(datum)]
 
+    def query(self, pred):
+        """设置pred匹配条件。
+        pred: (*datum) => Boolean
+        """
+        self.matches.append( MatchPredIter(pred) )
+        self.pre_return, self.post_return = True, False
+        self.step = 10
+        return self
 
     # 设置children获取表
     def append_children_relationship(self, children):
@@ -144,9 +141,8 @@ class QMar:
         """
         Append assist collection 'node' which children is children for iterator.
         """
-        self.datum += datum
         self.append_children_relationship(children)
-        self.stack[-1].datum = self.datum
+        self.stack[-1].datum += datum
         return self
    
     def filter(self, query='*'):
@@ -175,17 +171,18 @@ class QMar:
         
     def run(self): 
         """执行迭代并返回结果。"""
-        if len(self.datum) == 0:
+        if len(self.stack[0].datum) == 0:
             def delay_query(*datum, children={}):
                 self.assist(*datum, children=children)
                 return self._next_new()
             return delay_query
         else:
+            self._initial_()
             return self._next_new()
         
     def r(self):
         """返回当前求值结果为内容的query"""
-        return Query(list(iter(self)))
+        return QMar(list(iter(self)))
         
     def skip( self, n=1 ):
         """跳过前n个节点后开始遍历。
@@ -197,7 +194,7 @@ class QMar:
             # Get stack tail information for process
             node = self.stack[-1]
             
-            node.sta, node.succ = SKIP, False   # 不需要迭代
+            node.sta, node.action = SKIP, None   # 不需要迭代
             
             # Next prepare
             try:
@@ -218,17 +215,17 @@ class QMar:
 
         return self
         
-    def _bind_proc(self):
-        for preds in self.preds:
-            for pred in preds:
-                pred.proc = self.procs[pred.proc_idx]
+    def _initial_(self):
+        if self.step < 10:      # Step-10: Normal Process
+            if self.step < 9:   # Step-9: Set matches
+                self.pre_return = True
+                self.post_return = False
+            # Process Step-9
+            self.matches = [QMar._matchIter_]
+            
+        self.step = 10
 
-    def _match(self, preds, datum):
-        for pred in preds:
-            rst = pred.match(*datum)
-            if rst > 0: # Succcess
-                return rst, pred.proc, pred
-        return 0, Proc(), Pred()
+ 
 
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
@@ -237,10 +234,7 @@ class QMar:
         return nxt.sub(*node)  # 调用类函数处理
     
     def __iter__(self):
-        # if self.min_node_num > len(self.datum):
-        #     raise Exception('The except node number(:{0}) in sSelection is larger than provieded node number(:{1}).'.format(self.min_node_num, len(self.datum)))
-        
-        # self.stack[-1].sta = PRE
+        self._initial_()
         return self
 
     def __next__(self):
@@ -248,94 +242,56 @@ class QMar:
         
     def _next_new( self ):
         
-        #if self.step < 3: # Step3 is normal work
-       #     if self.step < 2: # Step2 need append proc
-              #  if self.step < 1: # Step1 need re-calculate proc
-                    # Step0:
-         #           pass
-            # Srep1:
-   #         for pred in self.preds:
-           #     pred.bind_proc(self.procs)
-                    
-         # Step2:
-     #    for pred in self.preds:
-  #          if pred.proc == None:
-           #     pred.bind_proc(self.procs)
-        
-        for ite_cnt in range(Query.MAX_IT_NUM):
+        for ite_cnt in range(QMar.MAX_IT_NUM):
             
-            # Get stack tail information for process
+            # 获取当前处理的节点
             node = self.stack[-1]
             
-            # Process with sta
-            if node.sta == PRE:
+            if node.sta == PRE: # PRE处理过程
                 
-                # Filter
-                preds = self.preds[node.pred_idx]
-                result, proc, pred = self._match(preds, node.datum)
-            
-                # Record filter result
-                node.succ, node.pred = result>0, pred
+                #================  Match子过程  ===============
+                if isinstance(node.datum[0], Match):
+                    node.action = node.datum[0].match(*node.datum, result=self.result, stack=self.stack)
+                else:
+                    pred = self.matches[node.pred_idx]
+                    node.action = pred.match(*node.datum, result=self.result, stack=self.stack)
 
                 # Next prepare
                 try:
                     
-                    is_sub = pred.is_sub(result)
-                    if is_sub:
-                        # Get all datum iterators and assign to parent
-                        node.children = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
-                        # Get next elements of iterators
-                        nxt_datum = [next(i) for i in node.children]
+                    # 获取datum子节点迭代器集合
+                    node.children = [iter(self._get_children_iter(d, *node.datum)) for d in node.datum]
+                    # 获取下一个子节点
+                    nxt_datum = [next(i) for i in node.children]
 
-                    # Process
-                    if node.succ:
-                        proc.pre(self.result, *node.datum, stack=self.stack)
+                    # PRE处理
+                    if node.action:
+                        rst = node.action.pre(*node.datum, stack=self.stack, result=self.result)
 
                     # Push next elements into stack
-                    if is_sub: 
-                        pred_idx = max(0, node.pred_idx - 1) if pred.is_done(result) else node.pred_idx
-                        self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
-                    
-                    # node.sta = POST
-              
-                    # Return
-                    # if node.succ and proc.pre_yield():
-                    # #if node.succ and self.procs[node.proc_idx].pre_yield():
-                    #     return self.result.rst
+                    pred_idx = max(0, node.pred_idx - 1) if node.action else node.pred_idx
+                    self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError):   #Leaf node
                     # Process
-                    if node.succ:
+                    if node.action:
                         node.children = None
-                        proc.pre(self.result, *node.datum, stack=self.stack)
+                        rst = node.action.pre(*node.datum, result=self.result, stack=self.stack)
                     
-                    # if len(self.stack) == 1: # Just ONE element in tree
-                    #     node.sta = DONE
-                    # else: # 非根节点
-                    #     # Parent element forward
-                    #     try:
-                    #         self.stack.pop()
-                    #         nxt_datum = [next(i) for i in self.stack[-1].children]
-                    #         self.stack.append(NodeInfo(nxt_datum))
-                    #     except StopIteration:
-                    #         pass
-                            
-                    # if node.succ and self.procs[node.pred.proc_idx].is_yield():
-                    #     return self.result.rst
-                    
+
                 # Modify top element status of stack
                 node.sta = POST
                 
                 # Return
-                if node.succ and proc.pre_yield():
-                   return self.result.rst
+                if node.action and self.pre_return:
+                   return rst
                     
             elif node.sta == POST:
 
                 # Process
-                if node.succ:
-                    node.pred.proc.post(self.result, *node.datum, stack=self.stack)
+                if node.action:
+                    rst = node.action.post(*node.datum, stack=self.stack, result=self.result)
                     
                 try:
 
@@ -346,6 +302,11 @@ class QMar:
                         node.sta = PRE  # For next status
                         # Pop stack
                         self.stack.pop()
+
+                        # 执行Reduce子过程
+                        if self.stack[-1].action:
+                            self.stack[-1].action.reduce(*node.datum, stack=self.stack, result=self.result)
+
                         # Parent element forward
                         nxt_datum = [next(i) for i in self.stack[-1].children]
                         self.stack.append(NodeInfo(nxt_datum))
@@ -353,13 +314,13 @@ class QMar:
                 except StopIteration: # IndexError for empty-stack
                     pass
 
-                if node.succ and node.pred.proc.post_yield():
-                   return self.result.rst
+                if node.action and self.post_return:
+                   return rst
 
             elif node.sta == DONE:
                 
                 node.sta = PRE  # 为下一次迭代做准备
-                if self.procs[0].is_yield():
+                if self.pre_return or self.post_return:
                     raise StopIteration()
                 else:
                     return self.result.rst
@@ -367,7 +328,7 @@ class QMar:
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
                 self.skip()  #恢复现场，为下次遍历做准备
-                if self.procs[0].is_yield():
+                if self.pre_return or self.post_return:
                     raise StopIteration()
                 else:
                     return self.result.rst

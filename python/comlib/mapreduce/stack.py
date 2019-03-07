@@ -6,6 +6,7 @@ class NodeInfo:
         # self.children  define when used
         # self.succ = False  define when used
         # self.proc_idx = 0    define when used
+        # self.action = 0    define when used
         
         
         

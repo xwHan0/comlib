@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))) )
 
-from comlib import Index, ChildSub, ChildAttr, Query
+from comlib import Index, ChildSub, ChildAttr, Query, QMar
 from comlib import Pred, Proc
 
 
@@ -20,16 +20,16 @@ class TestIterator:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        que = Query(a).skip()
+        que = QMar(a).skip()
         r =[]
         for i in range(5):
             r += [x for x in que]
         assert r == [10,20,30,40]*5
 
     def test_func_pred(self):
-        """Test """
+        """简单条件匹配测试"""
         a = [1,2,3,4,5,6,7]
-        que = Query(a, query=lambda x:x%2==0).skip()
+        que = QMar(a).query(lambda x:x%2==0).skip()
         r = []
         for i in range(3):
             r += [x for x in que]
@@ -131,3 +131,13 @@ class MyQMar(Pred, Proc):
 #         node = MyQMar(0, sub=[MyQMar(i) for i in range(1,5)])
 #         r = [x for x in Query(node, children='sub').clear_pred().append_qmar(MyQMar)]
 #         assert r == [100,102,104]
+
+
+class TestPerformance:
+    def test_1d_array(self):
+        """简单数组测试"""
+        a = [10,20,30,40]
+        que = QMar(a).skip()
+        for i in range(100000):
+            r = [x for x in que]
+            assert r == [10,20,30,40]
