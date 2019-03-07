@@ -11,4 +11,7 @@ from comlib.mapreduce.child_relationship import *
 from comlib.mapreduce.pred import Pred
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
 
-from comlib.mapreduce.qmar import QMar
+from comlib.mapreduce.qmar import Qmar
+from comlib.mapreduce.match import Match
+from comlib.mapreduce.child import Child
+from comlib.mapreduce.action import Action

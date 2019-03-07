@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))) )
 
-from comlib import Index, ChildSub, ChildAttr, Query, QMar
+from comlib import Index, ChildSub, ChildAttr, Query, Qmar, Match, Child, Action
 from comlib import Pred, Proc
 
 
@@ -20,7 +20,7 @@ class TestIterator:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        que = QMar(a).skip()
+        que = Qmar(a).skip()
         r =[]
         for i in range(5):
             r += [x for x in que]
@@ -29,7 +29,7 @@ class TestIterator:
     def test_func_pred(self):
         """简单条件匹配测试"""
         a = [1,2,3,4,5,6,7]
-        que = QMar(a).query(lambda x:x%2==0).skip()
+        que = Qmar(a).query(lambda x:x%2==0).skip()
         r = []
         for i in range(3):
             r += [x for x in que]
@@ -38,7 +38,7 @@ class TestIterator:
     def test_1d_array_index(self):
         """简单数组+Index测试"""
         a = [10,20,30,40]
-        que = Query(a, Index()).skip()
+        que = Qmar(a, Index()).skip()
         r = []
         for i in range(3):
             r += [(idx.idx(), x) for x,idx in que]
@@ -47,7 +47,7 @@ class TestIterator:
     def test_3d_array_index(self):
         """多维数组+Index+简单Filter测试"""
         a = [10, [20, 30], [40, [[50,60], 70, 80], 90]]
-        r = [(idx.idx(), x) for x,idx in Query(a, Index(), query='int').skip()]
+        r = [(idx.idx(), x) for x,idx in Qmar(a, Index()).match(int).skip()]
         assert r == [([0], 10), ([1,0], 20), ([1,1], 30), ([2,0], 40), ([2,1,0,0], 50), 
             ([2,1,0,1], 60), ([2,1,1], 70), ([2,1,2], 80), ([2,2], 90)]
 
@@ -56,7 +56,8 @@ class TestIterator:
         n1 = node(1000)
         n2 = node(2000)
         n0 = node(100, [n1, n2])
-        que = Query(n0, children={node : ChildAttr('sub')})
+        # que = Query(n0, children={node : ChildAttr('sub')})
+        que = Qmar(n0).child(node,'sub')
         r =[]
         for i in range(3):
             r += [x.val for x in que]
@@ -112,32 +113,36 @@ class TestReduce:
 
 
 #########################################################################################
-class MyQMar(Pred, Proc):
+class MyQMar(Match, Child, Action):
     def __init__(self, v, sub=[]):
         self.v = v
-        self.sub = sub
+        self.subs = sub
 
-    def match(self,*datum):
-        return 1 if datum[0].v % 2 == 0 else 0
+    def sub(self, *datum):
+        return self.subs
 
-    def pre(self, result, *datum, stack=[]):
-        result.rst = datum[0].v + 100
+    def match(self,*datum, stack=[], result=None):
+        if datum[0].v % 2 == 0:
+            return self
+        else:
+            return None
 
-    def pre_yield(self): return True
+    def pre(self, *datum, stack=[], result=None):
+        return datum[0].v + 100
 
 
-# class TestQMar:
-#     def test_common_qmar(self):
-#         node = MyQMar(0, sub=[MyQMar(i) for i in range(1,5)])
-#         r = [x for x in Query(node, children='sub').clear_pred().append_qmar(MyQMar)]
-#         assert r == [100,102,104]
+class TestQMar:
+    def test_common_qmar(self):
+        node = MyQMar(0, [MyQMar(i) for i in range(1,5)])
+        r = [x for x in Qmar(node)]
+        assert r == [100,102,104]
 
 
 class TestPerformance:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        que = QMar(a).skip()
+        que = Qmar(a).skip()
         for i in range(100000):
             r = [x for x in que]
             assert r == [10,20,30,40]

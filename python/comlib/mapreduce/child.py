@@ -4,7 +4,15 @@ class Child:
 
     默认使用Python规定的iter获取子节点迭代器
     """
-    pass
+    @staticmethod
+    def _gen_child_(args):
+        if isinstance(args, str): return ChildAttr(args)
+        if args == None: return ChildNone()
+        return Child()
+
+    def sub(self, *node): 
+        """子节点获取协议函数：获取node[0]节点的子节点迭代器。"""
+        return []
 
 
 
