@@ -97,13 +97,11 @@ class Qmar:
         pred: (*datum) => Boolean
         """
         self.matches.append( MatchPredIter(pred) )
-        self.pre_return, self.post_return = True, False
         self.step = 10
         return self
 
     def match(self, pred, pre=None, reduce=None, post=None):
         self.matches.append( Match._gen_match_(pred, pre=pre, reduce=reduce, post=post) )
-        self.pre_return, self.post_return = True, False
         self.step = 10
         return self
 
@@ -119,20 +117,17 @@ class Qmar:
         self.stack[-1].datum += datum
         return self
        
-    def run(self): 
+    def run(self, enumrate=True): 
         """执行迭代并返回结果。"""
+        self._enumerate_ = enumerate
         if len(self.stack[0].datum) == 0:
             def delay_query(*datum, children={}):
                 self.assist(*datum, children=children)
-                return self._next_new()
+                return self.__next__()
             return delay_query
         else:
             self._initial_()
-            return self._next_new()
-        
-    def r(self):
-        """返回当前求值结果为内容的query"""
-        return Qmar(list(iter(self)))
+            return self.__next__()
         
     def skip( self, n=1 ):
         """跳过前n个节点后开始遍历。
@@ -166,9 +161,7 @@ class Qmar:
         
     def _initial_(self):
         if self.step < 10:      # Step-10: Normal Process
-            if self.step < 9:   # Step-9: Set matches
-                self.pre_return = True
-                self.post_return = False
+         
             # Process Step-9
             self.matches = [Qmar._matchIter_]
             
@@ -192,12 +185,10 @@ class Qmar:
     
     def __iter__(self):
         self._initial_()
+        self._enumerate_ = True
         return self
-
-    def __next__(self):
-        return self._next_new()
         
-    def _next_new( self ):
+    def __next__( self ):
         
         for ite_cnt in range(Qmar.MAX_IT_NUM):
             
@@ -241,10 +232,13 @@ class Qmar:
                 node.sta = POST
                 
                 # Return
-                if node.action and self.pre_return:
+                if node.action and rst!=None:
                    return rst
                     
             elif node.sta == POST:
+
+                if hasattr(node.datum[0], 'matchp'):
+                    node.action = node.datum[0].matchp(*node.datum, stack=self.stack, result=self.result)
 
                 # Process
                 if node.action:
@@ -261,7 +255,7 @@ class Qmar:
                         self.stack.pop()
 
                         # 执行Reduce子过程
-                        if self.stack[-1].action:
+                        if hasattr(self.stack[-1].datum[0], 'matchp') and node.action and self.stack[-1].action:
                             self.stack[-1].action.reduce(*node.datum, stack=self.stack, result=self.result)
 
                         # Parent element forward
@@ -271,13 +265,13 @@ class Qmar:
                 except StopIteration: # IndexError for empty-stack
                     pass
 
-                if node.action and self.post_return:
+                if node.action and rst!=None:
                    return rst
 
             elif node.sta == DONE:
                 
                 node.sta = PRE  # 为下一次迭代做准备
-                if self.pre_return or self.post_return:
+                if self._enumerate_:
                     raise StopIteration()
                 else:
                     return self.result.rst
@@ -285,7 +279,7 @@ class Qmar:
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
                 self.skip()  #恢复现场，为下次遍历做准备
-                if self.pre_return or self.post_return:
+                if self._enumerate_:
                     raise StopIteration()
                 else:
                     return self.result.rst

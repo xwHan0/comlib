@@ -6,6 +6,7 @@ class Match:
     """条件匹配类。
 
     通过match函数来匹配返回对应的Action动作。
+    Match类可以包含一个matchp函数。该函数用于调用Action类的reduce过程。matchp函数定义格式和match保持一致。matchp函数可以修改POST过程中的post动作内容，并执行reduce过程。
     """
     @staticmethod
     def _gen_match_(args, pre=None, reduce=None, post=None):
@@ -16,7 +17,7 @@ class Match:
 
     def match(self, *datum, stack=[], result=None):
         """根据当前节点数据datum，结合当前计算结果result和当前堆栈stack的状况返回匹配Action。
-        返回None表示匹配失败。
+        返回None表示匹配失败，无Action可执行。
         """
         return None
 
