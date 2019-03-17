@@ -1,0 +1,9 @@
+body {
+    font-size: 12px;
+}
+
+.column {
+    border: 1px solid black;
+    width: 500px;
+    height: 1000px;
+}
