@@ -15,11 +15,24 @@ class Match:
         if isinstance(args, type): return MatchType(args, pre=pre, reduce=reduce, post=post)
         return Match()
 
+    def __init__(self, next=None, brother=None):
+        self.next = next
+        self.brother = brother
+
     def match(self, *datum, stack=[], result=None):
         """根据当前节点数据datum，结合当前计算结果result和当前堆栈stack的状况返回匹配Action。
         返回None表示匹配失败，无Action可执行。
         """
         return None
+        
+
+def get_action(match, *datum, stack=[], result=None):
+    while match:
+        if act = match.match(*datum, stack=stack, result=result):
+            return act
+        else:
+            match = match.brother
+    return None
 
 
 class MatchIter(Match):
