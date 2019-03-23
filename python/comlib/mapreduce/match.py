@@ -29,10 +29,10 @@ class Match:
 def get_action(match, *datum, stack=[], result=None):
     while match:
         if act = match.match(*datum, stack=stack, result=result):
-            return act
+            return match, act
         else:
             match = match.brother
-    return None
+    return None, None
 
 
 class MatchIter(Match):
