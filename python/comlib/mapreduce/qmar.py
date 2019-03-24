@@ -1,6 +1,38 @@
 """
-Query-Match-Action-Return
-第一个遍历引起
+# 匹配执行
+  Qmar使用Match对象来对数据进行过滤匹配和动作执行。Qmar使用Match.match函数进行匹配，若匹配成功则在PRE过程中
+  执行Match.pre函数，在POST过程中执行Match.post函数。Match的详细定义参考：comlib.Match.
+  User可以通过实例化或者扩展Match类来实现自定义的匹配和定义相对应的执行动作。
+
+# Match匹配树
+  Qmar通过Match定义的指向两一个Match实例的brother和next指针维护了一个Match匹配树。其结构类似于：
+
+  match0 ----------(brother)---------- match1 ---(brother)--- match2
+     |                                   |
+   (next)                              (next)
+     |                                   |
+  match00 --(brother)-- match01        match10 --(brother)-- match11
+ 
+  由brother指针串起来的一条match对象序列被称为一个匹配链。Qmar使用相同的datum节点数据按照brother
+  指定的顺序在一条匹配链上依次匹配，直到找到第一个匹配的match对象。这一过程类似于'case'语句：使用
+  同一个数据在多个条件中依次寻找第一个满足的条件。
+
+  Qmar成功匹配到一个match后，数据节点的子节点就需要使用匹配match.next指向的match进行匹配。这一过程
+  被称为条件顺次匹配。
+
+  Qmar在PRE过程中的匹配过程为：
+  1. 使用Datum树的头节点数据在和Match树的头节点对应的匹配链中进行匹配；
+  2. 若匹配到一个match(matchX)，则记录下一次需要匹配的match链为matchX.next指向的匹配链；
+  3. 若找不到，则判断为匹配失败。跳过当前树节点的子节点继续迭代；
+
+  使用brother并行匹配的例子为：
+  ```
+  l = [1, 'Hello', 2, 'World', 3, (4.5, 6,7)]   # 待迭代的数据结构
+  mt0 = Match(lambda x: type(x)==int, lambda (*d, result=None, stack=[]): return d[0]+1)   # 定义整型数匹配
+  mt1 = Match(lambda x: type(x)==str, lambda (*d, result=None, stack=[]): return d[0]+',')   # 定义字符串匹配
+  mt0.brother = mt1 # 定义Match关系
+  rst = [for x in Qmar(l).match(mt0)]
+  ```
 """
 import re
 import types
@@ -8,12 +40,10 @@ import types
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.mapreduce.stack import NodeInfo
 from comlib.mapreduce.result import Result
-from comlib.mapreduce.match import Match, MatchIter, MatchPredIter, get_match
+from comlib.mapreduce.match import Match  #, MatchIter, MatchPredIter, get_match
 from comlib.mapreduce.child import Child
 
-PRE = 1 POST = 3
-DONE = 4
-SKIP = 5
+PRE, POST, DONE, SKIP = 1,3,4,5 
 
 
 class Qmar:
@@ -30,17 +60,6 @@ class Qmar:
       - Qmar的子节点迭代器规则由Child类来承载。详细定义参见Child类说明。
       - Qmar使用一个格式为{objType:ChildObj}的Dict来保存各个类型节点的子节点迭代器获取Child类。 除了使用Child实例来获取子节点迭代器外，若节点是Child的派生子类，Qmar也会使用该类(Child)定义的sub函数来获取
         子节点迭代器；或者若树节点定义了__iter__函数，则使用该函数来获取子节点迭代器。
-# 匹配过滤(Match)
-      Qmar使用Match对每个树节点进行过滤匹配，匹配成功则执行相关动作，否则跳过该节点。
-      - Qmar的匹配由Match类定义。详细定义参见Match类说明。
-      - Qmar使用一个[Match]的列表来存储定义的各个匹配动作。Qmar从该列表的头到尾依次匹配各个树节点。最终匹配成功的节点
-        执行规定的相关动作
-
-    # 执行动作(Action)
-      Qmar匹配成功一个树节点后，执行预定义的动作。
-      - 预定义动作由Action类定义。详细定义参见Action类说明。
-      - Action包含了PRE、REDUCE和POST过程。
-      - 每个Match的match函数若匹配成功，都会返回一个事先定义个Action实例。
 
     # 返回结果(Return)
       Qmar返回动作Action执行后的结果。
@@ -53,7 +72,7 @@ class Qmar:
     MAX_IT_NUM = 999999
     CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
 #===================  内部默认定义变量  ====================
-    _matchIter_ = MatchIter()
+    # _matchIter_ = MatchIter()
 
     @staticmethod
     def configure(**cfg):
@@ -77,7 +96,8 @@ class Qmar:
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
     
         # New architecture fields
-        self.step, self.result, self.cfg, self.matches = 1, Result(), cfg, []
+        # self.step, self.result, self.cfg, self.matches = 1, Result(), cfg, []
+        self.step, self.result, self.cfg = 1, Result(), cfg
 
         # self.pre_return/self.post_return
         
@@ -88,21 +108,67 @@ class Qmar:
         self.children_relationship[typ] = Child._gen_child_(sub)
         return self
 
-    def query(self, pred):
-        """设置pred匹配条件。
-        pred: (*datum) => Boolean
-        """
-        self.matches.append( MatchPredIter(pred) )
-        self.step = 10
-        return self
+    # def query(self, pred):
+    #     """设置pred匹配条件。
+    #     pred: (*datum) => Boolean
+    #     """
+    #     self.matches.append( MatchPredIter(pred) )
+    #     self.step = 10
+    #     return self
 
-    def match(self, pred, pre=None, reduce=None, post=None):
-        self.matches.append( Match._gen_match_(pred, pre=pre, reduce=reduce, post=post) )
-        self.step = 10
-        return self
+    # def match(self, pred, pre=None, reduce=None, post=None):
+    #     self.matches.append( Match._gen_match_(pred, pre=pre, reduce=reduce, post=post) )
+    #     self.step = 10
+    #     return self
         
-    def match2(self, mt):
-        self.stack[-1].match = mt
+    def match(self, *match_context, pos=None):
+        """追加一个匹配链match_context到位置为pos的match中。若pos=None，表示为顶层match。
+        
+        match_context被拆分为多个如下的格式，每个格式构造一个Match对象，然后依次使用brother指针连起来。
+        - Match对象：占用一个match_context元素。该元素为独立的一个match对象。
+        - Tuple or List: 占用一个match_context元素。该元素作为Match初始化参数使用。
+        - Function: 占用1~3个match_context元素：
+          -- 占用1个：表示一个指定pred函数的match
+          -- 占用2个：表示一个指定pred和pre函数的match
+          -- 占用3个：表示一个指定pred、pre和post函数的match
+        """
+
+        i, match_result, match_last, params_num = 0, None, None, len(match_context)
+        while i < params_num:
+            if isinstance( match_context[i], types.FunctionType ):    # 直接函数格式
+
+                pred = match_context[i]
+                if i < params_num -1 and isinstance( match_context[i+1], types.FunctionType ):
+                    pre = match_context[i+1]
+                    if i < params_num -2 and isinstance( match_context[i+2], types.FrameType ):
+                        post, i = match_context[i+2], i+3
+                    else:
+                        post, i = None, i+2
+                else:
+                    pre, post, i = None, None, i+1
+                match_node = Match(pred, pre, post)
+
+            elif isinstance( match_context[i], Match ):   # 直接Match对象
+                match_node, i = match_context[i], i+1
+
+            elif isinstance( match_context[i], (tuple, list) ): # Tuple格式
+                match_node, i = Match(*match_context[i]), i+1
+
+            if match_result:
+                match_last.brother = match_node
+                match_last = match_last.brother
+            else:
+                match_result = match_last = match_node
+
+        # 加入当前Match树结构中
+        if pos == None:     # 头节点填充            
+            self.stack[-1].match = match_result
+        elif isinstance(pos, (tuple, list)):   # 默认父节点处理的next都指向当前头节点
+            node = self.stack[-1].match.get_match(pos)
+            while node:
+                node.next = match_result
+                node = node.brother
+
         self.step = 10
         return self
 
@@ -170,7 +236,8 @@ class Qmar:
         if self.step < 10:      # Step-10: Normal Process
          
             # Process Step-9
-            self.matches = [Qmar._matchIter_]
+            # self.matches = [Qmar._matchIter_]
+            pass
             
         self.step = 10
 
@@ -188,8 +255,6 @@ class Qmar:
         elif isinstance(node[0], Child):
             return node[0].sub(*node)
         
-
-    
     def __iter__(self):
         self._initial_()
         self._enumerate_ = True
@@ -210,7 +275,7 @@ class Qmar:
 
                 else:
                     # 匹配当前节点，并获取匹配match与action
-                    node.matched, node.action = get_match(node.match, *node.datum, stack=self.stack, result=self.result)
+                    node.matched, node.action = node.match._match_full( *node.datum, stack=self.stack, result=self.result)
                     #pred = self.matches[node.pred_idx]
                     #node.action = pred.match(*node.datum, result=self.result, stack=self.stack)
 
@@ -228,7 +293,7 @@ class Qmar:
 
                     # Push next elements into stack
                     # pred_idx = max(0, node.pred_idx - 1) if node.action else node.pred_idx
-                    self.stack.append(NodeInfo(nxt_datum, match=node.matched.next)
+                    # self.stack.append(NodeInfo(nxt_datum, match=node.matched.next)
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError):   #Leaf node
