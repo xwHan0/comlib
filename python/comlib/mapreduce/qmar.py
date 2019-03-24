@@ -8,11 +8,10 @@ import types
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.mapreduce.stack import NodeInfo
 from comlib.mapreduce.result import Result
-from comlib.mapreduce.match import Match, MatchIter, MatchPredIter
+from comlib.mapreduce.match import Match, MatchIter, MatchPredIter, get_match
 from comlib.mapreduce.child import Child
 
-PRE = 1
-POST = 3
+PRE = 1 POST = 3
 DONE = 4
 SKIP = 5
 
@@ -29,11 +28,9 @@ class Qmar:
     # 迭代遍历(Query)
       Qmar按照一定的规则寻找每个树节点的子节点迭代器，然后一一遍历之。
       - Qmar的子节点迭代器规则由Child类来承载。详细定义参见Child类说明。
-      - Qmar使用一个格式为{objType:ChildObj}的Dict来保存各个类型节点的子节点迭代器获取Child类。
-      - 除了使用Child实例来获取子节点迭代器外，若节点是Child的派生子类，Qmar也会使用该类(Child)定义的sub函数来获取
+      - Qmar使用一个格式为{objType:ChildObj}的Dict来保存各个类型节点的子节点迭代器获取Child类。 除了使用Child实例来获取子节点迭代器外，若节点是Child的派生子类，Qmar也会使用该类(Child)定义的sub函数来获取
         子节点迭代器；或者若树节点定义了__iter__函数，则使用该函数来获取子节点迭代器。
-
-    # 匹配过滤(Match)
+# 匹配过滤(Match)
       Qmar使用Match对每个树节点进行过滤匹配，匹配成功则执行相关动作，否则跳过该节点。
       - Qmar的匹配由Match类定义。详细定义参见Match类说明。
       - Qmar使用一个[Match]的列表来存储定义的各个匹配动作。Qmar从该列表的头到尾依次匹配各个树节点。最终匹配成功的节点
@@ -55,8 +52,7 @@ class Qmar:
     
     MAX_IT_NUM = 999999
     CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
-
-    #===================  内部默认定义变量  ====================
+#===================  内部默认定义变量  ====================
     _matchIter_ = MatchIter()
 
     @staticmethod
@@ -102,6 +98,11 @@ class Qmar:
 
     def match(self, pred, pre=None, reduce=None, post=None):
         self.matches.append( Match._gen_match_(pred, pre=pre, reduce=reduce, post=post) )
+        self.step = 10
+        return self
+        
+    def match2(self, mt):
+        self.stack[-1].match = mt
         self.step = 10
         return self
 
@@ -199,10 +200,13 @@ class Qmar:
                 
                 #================  Match子过程  ===============
                 if isinstance(node.datum[0], Match):
-                    node.action = node.datum[0].match(*node.datum, result=self.result, stack=self.stack)
+                    node.match, node.action = node.datum[0], node.datum[0].match(*node.datum, result=self.result, stack=self.stack)
+
                 else:
-                    pred = self.matches[node.pred_idx]
-                    node.action = pred.match(*node.datum, result=self.result, stack=self.stack)
+                    # 匹配当前节点，并获取匹配match与action
+                    node.matched, node.action = get_match(node.match, *node.datum, stack=self.stack, result=self.result)
+                    #pred = self.matches[node.pred_idx]
+                    #node.action = pred.match(*node.datum, result=self.result, stack=self.stack)
 
                 # Next prepare
                 try:
@@ -217,8 +221,8 @@ class Qmar:
                         rst = node.action.pre(*node.datum, stack=self.stack, result=self.result)
 
                     # Push next elements into stack
-                    pred_idx = max(0, node.pred_idx - 1) if node.action else node.pred_idx
-                    self.stack.append(NodeInfo(nxt_datum, pred_idx=pred_idx))
+                    # pred_idx = max(0, node.pred_idx - 1) if node.action else node.pred_idx
+                    self.stack.append(NodeInfo(nxt_datum, match=node.matched.next)
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError):   #Leaf node
