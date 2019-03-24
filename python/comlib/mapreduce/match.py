@@ -5,9 +5,11 @@ from comlib.mapreduce.action import ActionIter, Action
 class Match:
     """条件匹配类。
 
-    通过match函数来匹配返回对应的Action动作。
-    Match类可以包含一个matchp函数。该函数用于调用Action类的reduce过程。matchp函数定义格式和match保持一致。matchp函数可以修改POST过程中的post动作内容，并执行reduce过程。
+    Qmar在PRE过程开始判断当前树节点数据datum是否满足该类定义的match匹配条件。
+    若满足则在PRE过程中调用该类定义的pre函数，在POST过程中调用该类定义的post函数。
     """
+    MAX_CONCURRENT_PRED_NUM = 100000
+
     @staticmethod
     def _gen_match_(args, pre=None, reduce=None, post=None):
         if isinstance(args, Match): return args
@@ -20,19 +22,39 @@ class Match:
         self.brother = brother
 
     def match(self, *datum, stack=[], result=None):
-        """根据当前节点数据datum，结合当前计算结果result和当前堆栈stack的状况返回匹配Action。
-        返回None表示匹配失败，无Action可执行。
+        """根据当前节点数据datum，结合当前计算结果result和当前堆栈stack的状况判断匹配结果。
+        匹配成功返回True，失败返回False。
         """
+        return False
+
+    def pre(self, *datum, stack=[], result=None):
+        """PRE过程处理函数。当前节点匹配成功时执行。"""
         return None
+
+    def post(self, *datum, stack=[], result=None):
+        """POST过程处理函数。当前节点匹配成功时执行。
+注意：当前节点有matchp函数定义时，使用matchp返回的action执行。"""
+        return None
+
+    def set_loop(self):
+        match, cnt = self, 0
+        while match.next:
+            if cnt <= Match.MAX_CONCURRENT_PRED_NUM:
+                raise Exception('ERROR')
+            match = match.next
+        match.next = Match(True, next=self)
+        return self
         
 
-def get_action(match, *datum, stack=[], result=None):
-    while match:
-        if act = match.match(*datum, stack=stack, result=result):
-            return match, act
-        else:
-            match = match.brother
-    return None, None
+    def get_action(self, *datum, stack=[], result=None):
+        while match:
+            if cnt <= Match.MAX_CONCURRENT_PRED_NUM:
+                raise Exception('ERROR')
+            if act = match.match(*datum, stack=stack, result=result):
+                return match, act
+            else:
+                match = match.brother
+        return None
 
 
 class MatchIter(Match):

@@ -106,6 +106,12 @@ class Qmar:
         self.step = 10
         return self
 
+    def filter(self, pred, pre=None, post=None):
+        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。若pre为None, 则pre不进行处理；若post为None，则post不进行处理；若pre和post全部为None，则在PRE阶段返回节点数据。"""
+        self.stack[-1].match = Match(pre, pre, post)
+        self.step = 10
+        return self
+
     def initial(self, init=None):
         self.result.rst = init
         return self
