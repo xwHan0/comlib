@@ -1,39 +1,4 @@
-"""
-# 匹配执行
-  Qmar使用Match对象来对数据进行过滤匹配和动作执行。Qmar使用Match.match函数进行匹配，若匹配成功则在PRE过程中
-  执行Match.pre函数，在POST过程中执行Match.post函数。Match的详细定义参考：comlib.Match.
-  User可以通过实例化或者扩展Match类来实现自定义的匹配和定义相对应的执行动作。
 
-# Match匹配树
-  Qmar通过Match定义的指向两一个Match实例的brother和next指针维护了一个Match匹配树。其结构类似于：
-
-  match0 ----------(brother)---------- match1 ---(brother)--- match2
-     |                                   |
-   (next)                              (next)
-     |                                   |
-  match00 --(brother)-- match01        match10 --(brother)-- match11
- 
-  由brother指针串起来的一条match对象序列被称为一个匹配链。Qmar使用相同的datum节点数据按照brother
-  指定的顺序在一条匹配链上依次匹配，直到找到第一个匹配的match对象。这一过程类似于'case'语句：使用
-  同一个数据在多个条件中依次寻找第一个满足的条件。
-
-  Qmar成功匹配到一个match后，数据节点的子节点就需要使用匹配match.next指向的match进行匹配。这一过程
-  被称为条件顺次匹配。
-
-  Qmar在PRE过程中的匹配过程为：
-  1. 使用Datum树的头节点数据在和Match树的头节点对应的匹配链中进行匹配；
-  2. 若匹配到一个match(matchX)，则记录下一次需要匹配的match链为matchX.next指向的匹配链；
-  3. 若找不到，则判断为匹配失败。跳过当前树节点的子节点继续迭代；
-
-  使用brother并行匹配的例子为：
-  ```
-  l = [1, 'Hello', 2, 'World', 3, (4.5, 6,7)]   # 待迭代的数据结构
-  mt0 = Match(lambda x: type(x)==int, lambda (*d, result=None, stack=[]): return d[0]+1)   # 定义整型数匹配
-  mt1 = Match(lambda x: type(x)==str, lambda (*d, result=None, stack=[]): return d[0]+',')   # 定义字符串匹配
-  mt0.brother = mt1 # 定义Match关系
-  rst = [for x in Qmar(l).match(mt0)]
-  ```
-"""
 import re
 import types
 
@@ -45,10 +10,15 @@ from comlib.mapreduce.child import Child
 
 PRE, POST, DONE, SKIP = 1,3,4,5 
 
+import warnings
+warnings.filterwarnings("ignore")            
+
 
 class Qmar:
     """
     在给定的树结构中，按给定顺序执行迭代(Query)-匹配(Match)-执行(Action)-返回(Return)动作。
+
+    详细帮助参见'comblib.mapreduce'
 
     Qmar遍历树时，对于每个节点，都会经过3个小过程:
     - pre过程: 指从父节点第一次迭代到当前节点的遍历
@@ -97,7 +67,7 @@ class Qmar:
     
         # New architecture fields
         # self.step, self.result, self.cfg, self.matches = 1, Result(), cfg, []
-        self.step, self.result, self.cfg = 1, Result(), cfg
+        self.step, self.cfg = 1, cfg
 
         # self.pre_return/self.post_return
         
@@ -122,7 +92,7 @@ class Qmar:
     #     return self
         
     def match(self, *match_context, pos=None):
-        """追加一个匹配链match_context到位置为pos的match中。若pos=None，表示为顶层match。
+        """追加一个匹配链match_context到位置为pos的match中。若pos=None，表示为顶层match。顶层match放入当前stack[0]中
         
         match_context被拆分为多个如下的格式，每个格式构造一个Match对象，然后依次使用brother指针连起来。
         - Match对象：占用一个match_context元素。该元素为独立的一个match对象。
@@ -131,6 +101,7 @@ class Qmar:
           -- 占用1个：表示一个指定pred函数的match
           -- 占用2个：表示一个指定pred和pre函数的match
           -- 占用3个：表示一个指定pred、pre和post函数的match
+        - Match需要的参数定义参见'comlib.mapreduce.Match'
         """
 
         i, match_result, match_last, params_num = 0, None, None, len(match_context)
@@ -162,9 +133,9 @@ class Qmar:
 
         # 加入当前Match树结构中
         if pos == None:     # 头节点填充            
-            self.stack[-1].match = match_result
+            self.stack[0].match = self.stack[-1].match = match_result
         elif isinstance(pos, (tuple, list)):   # 默认父节点处理的next都指向当前头节点
-            node = self.stack[-1].match.get_match(pos)
+            node = self.stack[0].match.get_match(pos)
             while node:
                 node.next = match_result
                 node = node.brother
@@ -172,14 +143,19 @@ class Qmar:
         self.step = 10
         return self
 
+    def all(self):
+        """遍历所有元素"""
+        self.stack[0].match = self.stack[-1].match = Match()
+        return self
+
     def filter(self, pred, pre=None, post=None):
-        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。若pre为None, 则pre不进行处理；若post为None，则post不进行处理；若pre和post全部为None，则在PRE阶段返回节点数据。"""
-        self.stack[-1].match = Match(pre, pre, post)
+        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。filter本质上定义了一个Match，详细参数使用方法可以参考Match"""
+        self.stack[0].match = self.stack[-1].match = Match(pred, pre, post)
         self.step = 10
         return self
 
     def initial(self, init=None):
-        self.result.rst = init
+        self.stack[-1].result = init
         return self
    
     def assist(self, *datum, children={}):
@@ -204,7 +180,10 @@ class Qmar:
         
     def skip( self, n=1 ):
         """跳过前n个节点后开始遍历。
-         skip并不会破坏数据的树结构，仅仅是在遍历迭代是略过前几个节点。这里的略过不仅仅指pre过程，也包括post过程。"""
+         skip并不会破坏数据的树结构，仅仅是在遍历迭代是略过前几个节点。这里的略过不仅仅指pre过程，也包括post过程。
+         
+         注意：! Skip必须在Qmar定义后马上调用 !
+         """
         
         for ite_cnt in range(n):
             
@@ -221,14 +200,12 @@ class Qmar:
                 # Get next elements of iterators
                 nxt_datum = [next(i) for i in node.children]
 
-                self.stack.append(NodeInfo(nxt_datum, pred_idx=0))
+                self.stack.append(NodeInfo(nxt_datum))
                     
             # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
             except (StopIteration,TypeError): 
                 node.children = None
                 break
-                
-        # self.skip_node = self.stack[-1] # 保存遍历开始节点，为遍历结束后恢复现场准备
 
         return self
         
@@ -238,7 +215,6 @@ class Qmar:
             # Process Step-9
             # self.matches = [Qmar._matchIter_]
             pass
-            
         self.step = 10
 
  
@@ -271,11 +247,14 @@ class Qmar:
                 
                 #================  Match子过程  ===============
                 if isinstance(node.datum[0], Match):
-                    node.match, node.action = node.datum[0], node.datum[0].match(*node.datum, result=self.result, stack=self.stack)
-
+                    # node.match, node.action = node.datum[0], node.datum[0].match(*node.datum, stack=self.stack)
+                    if node.datum[0].match(*node.datum, stack=self.stack):
+                        node.matched = node.datum[0]
+                    else:
+                        node.matched = None
                 else:
                     # 匹配当前节点，并获取匹配match与action
-                    node.matched, node.action = node.match._match_full( *node.datum, stack=self.stack, result=self.result)
+                    node.matched = node.match._match_full( *node.datum, stack=self.stack)
                     #pred = self.matches[node.pred_idx]
                     #node.action = pred.match(*node.datum, result=self.result, stack=self.stack)
 
@@ -288,36 +267,37 @@ class Qmar:
                     nxt_datum = [next(i) for i in node.children]
 
                     # PRE处理
-                    if node.action:
-                        rst = node.action.pre(*node.datum, stack=self.stack, result=self.result)
+                    if node.matched:
+                        rst = node.matched.pre(*node.datum, stack=self.stack)
 
                     # Push next elements into stack
                     # pred_idx = max(0, node.pred_idx - 1) if node.action else node.pred_idx
-                    # self.stack.append(NodeInfo(nxt_datum, match=node.matched.next)
+                    self.stack.append(NodeInfo(nxt_datum))
+                    self.stack[-1].match = node.matched.next
                     
                 # Sub node is not iterable<TypeError>, iteration finish<StopIteration>
                 except (StopIteration,TypeError):   #Leaf node
                     # Process
-                    if node.action:
+                    if node.matched:
                         node.children = None
-                        rst = node.action.pre(*node.datum, result=self.result, stack=self.stack)
+                        rst = node.matched.pre(*node.datum, stack=self.stack)
                     
 
                 # Modify top element status of stack
                 node.sta = POST
                 
                 # Return
-                if node.action and rst!=None:
+                if node.matched and rst!=None:
                    return rst
                     
             elif node.sta == POST:
 
-                if hasattr(node.datum[0], 'matchp'):
-                    node.action = node.datum[0].matchp(*node.datum, stack=self.stack, result=self.result)
+                # if hasattr(node.datum[0], 'matchp'):
+                #     node.action = node.datum[0].matchp(*node.datum, stack=self.stack, result=self.result)
 
                 # Process
-                if node.action:
-                    rst = node.action.post(*node.datum, stack=self.stack, result=self.result)
+                if node.matched:
+                    rst = node.matched.post(*node.datum, stack=self.stack)
                     
                 try:
 
@@ -330,17 +310,18 @@ class Qmar:
                         self.stack.pop()
 
                         # 执行Reduce子过程
-                        if hasattr(self.stack[-1].datum[0], 'matchp') and node.action and self.stack[-1].action:
-                            self.stack[-1].action.reduce(*node.datum, stack=self.stack, result=self.result)
+                        # if hasattr(self.stack[-1].datum[0], 'matchp') and node.action and self.stack[-1].action:
+                        #     self.stack[-1].action.reduce(*node.datum, stack=self.stack, result=self.result)
 
                         # Parent element forward
                         nxt_datum = [next(i) for i in self.stack[-1].children]
                         self.stack.append(NodeInfo(nxt_datum))
+                        self.stack[-1].match = node.match
 
                 except StopIteration: # IndexError for empty-stack
                     pass
 
-                if node.action and rst!=None:
+                if node.matched and rst!=None:
                    return rst
 
             elif node.sta == DONE:
@@ -349,19 +330,19 @@ class Qmar:
                 if self._enumerate_:
                     raise StopIteration()
                 else:
-                    return self.result.rst
+                    return self.stack[-1].result
 
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
                 self.skip()  #恢复现场，为下次遍历做准备
+                self.stack[-1].match = self.stack[0].match
                 if self._enumerate_:
                     raise StopIteration()
                 else:
-                    return self.result.rst
+                    return self.stack[-1].result
 
             else:
                 raise Exception('Invalid status of FSM!')
         
 
-            
 

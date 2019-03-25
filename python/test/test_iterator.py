@@ -1,8 +1,9 @@
 import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))) )
 
-from comlib import Index, ChildSub, ChildAttr, Query, Qmar, Match, Child, Action
+from comlib import Index, ChildSub, ChildAttr, Query, Qmar, Child, Action
 from comlib import Pred, Proc
+from comlib.mapreduce import Match
 
 
 class node:
@@ -20,7 +21,7 @@ class TestIterator:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        que = Qmar(a).skip()
+        que = Qmar(a).skip().all()
         r =[]
         for i in range(5):
             r += [x for x in que]
@@ -29,7 +30,7 @@ class TestIterator:
     def test_func_pred(self):
         """简单条件匹配测试"""
         a = [1,2,3,4,5,6,7]
-        que = Qmar(a).query(lambda x:x%2==0).skip()
+        que = Qmar(a).skip().filter(lambda x:x%2==0)
         r = []
         for i in range(3):
             r += [x for x in que]
@@ -38,7 +39,7 @@ class TestIterator:
     def test_1d_array_index(self):
         """简单数组+Index测试"""
         a = [10,20,30,40]
-        que = Qmar(a, Index()).skip()
+        que = Qmar(a, Index()).skip().all()
         r = []
         for i in range(3):
             r += [(idx.idx(), x) for x,idx in que]
