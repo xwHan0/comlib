@@ -32,18 +32,24 @@ class Match:
         if pred:
             def match_i(self, *datum, stack=[], result=None): 
                 return pred(*datum, stack=stack, result=result)
-        else:
+        elif pred==False:
             def match_i(self, *datum, stack=[], result=None): 
                 return False
+        else:
+            def match_i(self, *datum, stack=[], result=None): 
+                return True
         self.match = types.MethodType(match_i, self)  # 动态修改对象(非类)成员函数
 
         # 重新定义pre处理函数
         if pre:
             def pre_i(self, *datum, stack=[], result=None): 
                 return pre(*datum, stack=stack, result=result)
-        else:
+        elif pre==False:
             def pre_i(self, *datum, stack=[], result=None): 
                 return None
+        else:
+            def pre_i(self, *datum, stack=[], result=None): 
+                return datum[0]
         self.pre = types.MethodType(pre_i, self)  # 动态修改对象(非类)成员函数
 
         # 重新定义post处理函数
