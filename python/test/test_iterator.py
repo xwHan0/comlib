@@ -48,7 +48,7 @@ class TestIterator:
     def test_3d_array_index(self):
         """多维数组+Index+简单Filter测试"""
         a = [10, [20, 30], [40, [[50,60], 70, 80], 90]]
-        r = [(idx.idx(), x) for x,idx in Qmar(a, Index()).match(int).skip()]
+        r = [(idx.idx(), x) for x,idx in Qmar(a, Index()).skip().filter(lambda x: type(x)==int)]
         assert r == [([0], 10), ([1,0], 20), ([1,1], 30), ([2,0], 40), ([2,1,0,0], 50), 
             ([2,1,0,1], 60), ([2,1,1], 70), ([2,1,2], 80), ([2,2], 90)]
 
@@ -58,7 +58,7 @@ class TestIterator:
         n2 = node(2000)
         n0 = node(100, [n1, n2])
         # que = Query(n0, children={node : ChildAttr('sub')})
-        que = Qmar(n0).child(node,'sub')
+        que = Qmar(n0).child(node,'sub').all()
         r =[]
         for i in range(3):
             r += [x.val for x in que]
@@ -71,7 +71,8 @@ class TestIterator:
         n1 = node(200)
         n1.sub = [1000,2000,3000]
         a = [n0, n1]
-        r = [(idx.idx(), x) for x,idx in Query(a, Index(), children={node:ChildAttr('sub')} ) if isinstance(x, int)]
+        # r = [(idx.idx(), x) for x,idx in Query(a, Index(), children={node:ChildAttr('sub')} ) if isinstance(x, int)]
+        r = [(idx.idx(), x) for x,idx in Qmar(a, Index()).child(node,'sub').all() if isinstance(x, int)]
         assert r == [([0,0], 100), ([0,1], 200), ([0,2], 300), ([1,0], 1000), ([1,1], 2000), ([1,2], 3000)]
 
     def test_select_object(self):
@@ -81,7 +82,8 @@ class TestIterator:
         n1 = node(200)
         n1.sub = [1000,2000,3000]
         a = [n0, n1]
-        r = [x.val for x in Query(a, children={node: ChildAttr('sub')}, query='node' )]
+        # r = [x.val for x in Query(a, children={node: ChildAttr('sub')}, query='node' )]
+        r = [x.val for x in Qmar(a).child(node,'sub').filter(lambda x : type(x)==node)]
         assert r == [100,200]
         
     def test_select_condition(self):

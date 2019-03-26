@@ -72,4 +72,4 @@
 
 """
 
-from comlib.mapreduce.match import Match, GAP
+from comlib.mapreduce.match import Match

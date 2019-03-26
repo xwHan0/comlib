@@ -5,7 +5,7 @@ import types
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.mapreduce.stack import NodeInfo
 from comlib.mapreduce.result import Result
-from comlib.mapreduce.match import Match, MatchGap  #, MatchIter, MatchPredIter, get_match
+from comlib.mapreduce.match import Match  #, MatchIter, MatchPredIter, get_match
 from comlib.mapreduce.child import Child
 
 PRE, POST, DONE, SKIP = 1,3,4,5 
@@ -92,22 +92,23 @@ class Qmar:
     #     return self
         
     def match(self, *match_context, pos=None):
-        """追加一个匹配链match_context到位置为pos的match中。若pos=None，表示为顶层match。顶层match放入当前stack[0]中
+        """追加一个匹配链match_context到位置为pos的match中。若pos=None，表示为顶层match。顶层match放入当前stack[-1]中
         
         match_context被拆分为多个如下的格式，每个格式构造一个Match对象，然后依次使用brother指针连起来。
-        - Match对象：占用一个match_context元素。该元素为独立的一个match对象。
-        - Tuple or List: 占用一个match_context元素。该元素作为Match初始化参数使用。
-        - Function: 占用1~3个match_context元素：
+        - <Match>：占用一个match_context元素。该元素为独立的一个match对象。
+        - <Tuple or List>: 占用一个match_context元素。该元素作为Match初始化参数使用。
+        - <Function>: 根据连续的<Function>个数占用1~3个match_context元素：
           -- 占用1个：表示一个指定pred函数的match
           -- 占用2个：表示一个指定pred和pre函数的match
           -- 占用3个：表示一个指定pred、pre和post函数的match
         - Match需要的参数定义参见'comlib.mapreduce.Match'
+        - 创建的匹配链中所有match节点的next都指向该匹配链的头match
         """
 
-        i, match_result, match_last, params_num = 0, None, None, len(match_context)
-        while i < params_num:
-            if isinstance( match_context[i], types.FunctionType ):    # 直接函数格式
+        i, match_result, match_last, params_num = 0, False, None, len(match_context)
+        while i < params_num: # 循环每个match_context元素
 
+            if isinstance( match_context[i], types.FunctionType ):    # 直接函数格式
                 pred = match_context[i]
                 if i < params_num -1 and isinstance( match_context[i+1], types.FunctionType ):
                     pre = match_context[i+1]
@@ -117,35 +118,27 @@ class Qmar:
                         post, i = None, i+2
                 else:
                     pre, post, i = None, None, i+1
-                match_node = Match(pred, pre, post)
+                match_node = Match(pred, pre, post, next=match_result)
 
             elif isinstance( match_context[i], Match ):   # 直接Match对象
                 match_node, i = match_context[i], i+1
+                match_node.next = match_node if match_result==False else match_result 
 
             elif isinstance( match_context[i], (tuple, list) ): # Tuple格式
-                match_node, i = Match(*match_context[i]), i+1
+                match_node, i = Match(*match_context[i], next=match_result), i+1
 
-            if match_result:
-                match_last.brother = match_node
-                match_last = match_last.brother
-            else:
+            if match_result:    # match_result保存该匹配链的头match。头match已经存在
+                match_last.brother = match_node # 串brother
+                match_last = match_last.brother # match_last为最后一个建立的match
+            else: # 建立第一个match
                 match_result = match_last = match_node
-
-        # 默认next指针指向当前匹配链
-        node = match_result  # 从第一个match开始调度
-        while node.brother:
-            node.next = match_result  # 指向当前匹配链
-            node = node.brother # 处理下一个brother
 
         # 加入当前Match树结构中
         if pos == None:     # 头节点填充            
             self.stack[0].match = self.stack[-1].match = match_result
         elif isinstance(pos, (tuple, list)):   # 默认父节点处理的next都指向当前头节点
             node = self.stack[0].match.get_match(pos)
-            while node:
-                if not isinstance(node, MatchGap):
-                    node.next = match_result
-                node = node.brother
+            node.next = match_result
 
         self.step = 10
         return self
@@ -156,8 +149,11 @@ class Qmar:
         return self
 
     def filter(self, pred, pre=None, post=None):
-        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。filter本质上定义了一个Match，详细参数使用方法可以参考Match"""
-        self.stack[0].match = self.stack[-1].match = Match(pred, pre, post)
+        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。
+        filter本质上定义了一个满足参数pred, pre和post的Match，和一个匹配常成功，next指向自身匹配链的Match.
+        详细参数使用方法可以参考Match
+        """
+        self.match( Match(pred=pred, pre=pre, post=post), Match(pre=False) )
         self.step = 10
         return self
 

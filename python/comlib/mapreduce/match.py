@@ -115,7 +115,7 @@ class Match:
         # 重新定义pre处理函数
         if pre == None:
             def pre_i(self, *datum, stack=[], result=None): 
-                return datum[0]
+                return datum[0] if len(datum)==1 else datum
         elif pre==False:
             def pre_i(self, *datum, stack=[], result=None): 
                 return None
@@ -217,13 +217,6 @@ class Match:
             node = node.brother
         return node
 
-
-class MatchGap(Match):
-    def __init__(self):
-        super().__init__(pre=None)
-
-
-GAP = MatchGap()
 
 # class MatchIter(Match):
 #     """在PRE过程中迭代返回每个树节点数据。"""
