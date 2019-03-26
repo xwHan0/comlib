@@ -218,6 +218,13 @@ class Match:
         return node
 
 
+class MatchGap(Match):
+    def __init__(self):
+        super().__init__(pre=None)
+
+
+GAP = MatchGap()
+
 # class MatchIter(Match):
 #     """在PRE过程中迭代返回每个树节点数据。"""
 #     action = ActionIter()

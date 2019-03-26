@@ -5,7 +5,7 @@ import types
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.mapreduce.stack import NodeInfo
 from comlib.mapreduce.result import Result
-from comlib.mapreduce.match import Match  #, MatchIter, MatchPredIter, get_match
+from comlib.mapreduce.match import Match, MatchGap  #, MatchIter, MatchPredIter, get_match
 from comlib.mapreduce.child import Child
 
 PRE, POST, DONE, SKIP = 1,3,4,5 
@@ -131,13 +131,20 @@ class Qmar:
             else:
                 match_result = match_last = match_node
 
+        # 默认next指针指向当前匹配链
+        node = match_result  # 从第一个match开始调度
+        while node.brother:
+            node.next = match_result  # 指向当前匹配链
+            node = node.brother # 处理下一个brother
+
         # 加入当前Match树结构中
         if pos == None:     # 头节点填充            
             self.stack[0].match = self.stack[-1].match = match_result
         elif isinstance(pos, (tuple, list)):   # 默认父节点处理的next都指向当前头节点
             node = self.stack[0].match.get_match(pos)
             while node:
-                node.next = match_result
+                if not isinstance(node, MatchGap):
+                    node.next = match_result
                 node = node.brother
 
         self.step = 10
