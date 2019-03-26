@@ -1,4 +1,21 @@
 """
+# Introduce
+  一次Qmar调用分为2个步骤：
+  1. 实例化Qmar对象
+    Qmar对象的构建包含：数据绑定、偏移设置、子迭代器设置和匹配设置几个步骤。
+    注意：!步骤之间的顺序不可以改写!
+    ```
+        a = [1,2,3,4]
+        qm = Qmar(a, Index())   # MUST. 绑定数据
+            .skip()  # Optional. 便宜设置
+            .child(list, ChildSub('sub'))  # Optional. 子迭代器设置
+            .match(lambda x: odd, lambda x: x+100)  # 匹配设置
+    ```
+  2. 迭代，并获取结果
+    ```
+        rst = [x for x in qm]
+    ```
+
 # 匹配执行
   Qmar使用Match对象来对数据进行过滤匹配和动作执行。Qmar使用Match.match函数进行匹配，若匹配成功则在PRE过程中
   执行Match.pre函数，在POST过程中执行Match.post函数。Match的详细定义参考：comlib.Match.
