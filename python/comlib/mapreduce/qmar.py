@@ -78,26 +78,13 @@ class Qmar:
         self.children_relationship[typ] = Child._gen_child_(sub)
         return self
 
-    # def query(self, pred):
-    #     """设置pred匹配条件。
-    #     pred: (*datum) => Boolean
-    #     """
-    #     self.matches.append( MatchPredIter(pred) )
-    #     self.step = 10
-    #     return self
-
-    # def match(self, pred, pre=None, reduce=None, post=None):
-    #     self.matches.append( Match._gen_match_(pred, pre=pre, reduce=reduce, post=post) )
-    #     self.step = 10
-    #     return self
-        
     def match(self, *match_context, pos=None):
         """追加一个匹配链match_context到位置为pos的match中。若pos=None，表示为顶层match。顶层match放入当前stack[-1]中
         
         match_context被拆分为多个如下的格式，每个格式构造一个Match对象，然后依次使用brother指针连起来。
         - <Match>：占用一个match_context元素。该元素为独立的一个match对象。
         - <Tuple or List>: 占用一个match_context元素。该元素作为Match初始化参数使用。
-        - <Function>: 根据连续的<Function>个数占用1~3个match_context元素：
+        - <Function or str>: 根据连续的<Function>个数占用1~3个match_context元素：
           -- 占用1个：表示一个指定pred函数的match
           -- 占用2个：表示一个指定pred和pre函数的match
           -- 占用3个：表示一个指定pred、pre和post函数的match
@@ -108,7 +95,7 @@ class Qmar:
         i, match_result, match_last, params_num = 0, False, None, len(match_context)
         while i < params_num: # 循环每个match_context元素
 
-            if isinstance( match_context[i], types.FunctionType ):    # 直接函数格式
+            if isinstance( match_context[i], (types.FunctionType,str) ):    # 直接函数格式
                 pred = match_context[i]
                 if i < params_num -1 and isinstance( match_context[i+1], types.FunctionType ):
                     pre = match_context[i+1]
@@ -148,12 +135,19 @@ class Qmar:
         self.stack[0].match = self.stack[-1].match = Match()
         return self
 
-    def filter(self, pred, pre=None, post=None):
+    def filter(self, pred, pre=Match.DEFAULT, post=Match.DEFAULT):
         """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。
         filter本质上定义了一个满足参数pred, pre和post的Match，和一个匹配常成功，next指向自身匹配链的Match.
         详细参数使用方法可以参考Match
         """
-        self.match( Match(pred=pred, pre=pre, post=post), Match(pre=False) )
+        self.match( Match(pred=pred, pre=pre, post=post), Match(pre=Match.PASS) )
+        self.step = 10
+        return self
+
+    def map(self, pre):
+        """对数据每一个数据datum使用函数pre，返回pre处理的的结果列表。
+        map本质上为设置一个pre的Match"""
+        self.match(Match(pre=pre))
         self.step = 10
         return self
 
@@ -188,7 +182,7 @@ class Qmar:
          注意：! Skip必须在Qmar定义后马上调用 !
          """
         
-        for ite_cnt in range(n):
+        for _ in range(n):
             
             # Get stack tail information for process
             node = self.stack[-1]
@@ -241,7 +235,7 @@ class Qmar:
         
     def __next__( self ):
         
-        for ite_cnt in range(Qmar.MAX_IT_NUM):
+        for _ in range(Qmar.MAX_IT_NUM):
             
             # 获取当前处理的节点
             node = self.stack[-1]

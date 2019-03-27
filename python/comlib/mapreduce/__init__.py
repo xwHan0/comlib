@@ -87,6 +87,14 @@
         assert r == [2,4,6]
   ```
 
+  ### 支持map映射
+  ```
+    def test_map_commom(self):
+        # rst = [x for x in Query([1,2,3,4]).map(lambda x:x+10).skip()]
+        rst = [x for x in Qmar([1,2,3,4]).skip().map(lambda x:x+10)]
+        assert rst == [11,12,13,14]
+  ```
+
 """
 
 from comlib.mapreduce.match import Match

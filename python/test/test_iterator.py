@@ -23,7 +23,7 @@ class TestIterator:
         a = [10,20,30,40]
         que = Qmar(a).skip().all()
         r =[]
-        for i in range(5):
+        for _ in range(5):
             r += [x for x in que]
         assert r == [10,20,30,40]*5
 
@@ -32,7 +32,7 @@ class TestIterator:
         a = [1,2,3,4,5,6,7]
         que = Qmar(a).skip().filter(lambda x:x%2==0)
         r = []
-        for i in range(3):
+        for _ in range(3):
             r += [x for x in que]
         assert r == [2,4,6]*3
         
@@ -41,7 +41,7 @@ class TestIterator:
         a = [10,20,30,40]
         que = Qmar(a, Index()).skip().all()
         r = []
-        for i in range(3):
+        for _ in range(3):
             r += [(idx.idx(), x) for x,idx in que]
         assert r == [([0],10),([1],20),([2],30),([3],40)]*3
 
@@ -60,7 +60,7 @@ class TestIterator:
         # que = Query(n0, children={node : ChildAttr('sub')})
         que = Qmar(n0).child(node,'sub').all()
         r =[]
-        for i in range(3):
+        for _ in range(3):
             r += [x.val for x in que]
         assert r == [100, 1000, 2000]*3
 
@@ -90,13 +90,15 @@ class TestIterator:
         """复杂数据 + 复杂Filter字符串 + 字符串下一跳"""
         n1, n2 = (node(200), node(300))
         n0 = node(100, [n1, n2])
-        r = [x.val for x,i in Query(n0, Index(), children={node:'sub'}, query='*[not (#0.val==300)]')]
+        # r = [x.val for x,i in Query(n0, Index(), children={node:'sub'}, query='*[not (#0.val==300)]')]
+        r = [x.val for x,i in Qmar(n0, Index()).child(node,'sub').filter('*[not (#0.val==300)]')]
         assert r == [100,200]
 
 
 class TestMap:
     def test_map_commom(self):
-        rst = [x for x in Query([1,2,3,4]).map(lambda x:x+10).skip()]
+        # rst = [x for x in Query([1,2,3,4]).map(lambda x:x+10).skip()]
+        rst = [x for x in Qmar([1,2,3,4]).skip().map(lambda x:x+10)]
         assert rst == [11,12,13,14]
 
 
@@ -107,37 +109,35 @@ def reduce_proc(last, next):
         return next.val
 
 
-class TestReduce:
-    def test_reduce_common(self):
-        n1, n2 = (node(1000), node(2000))
-        n0 = node(3000, [n1, n2])
-        r = Query(n0, children='sub').reduce(reduce_proc, None)
-        assert r == 6000
+# class TestReduce:
+#     def test_reduce_common(self):
+#         n1, n2 = (node(1000), node(2000))
+#         n0 = node(3000, [n1, n2])
+#         r = Query(n0, children='sub').reduce(reduce_proc, None)
+#         assert r == 6000
 
 
 #########################################################################################
-class MyQMar(Match, Child, Action):
+class MyQMar(Match, Child):
     def __init__(self, v, sub=[]):
+        super().__init__(pred=Match.NONE, pre=Match.NONE)
         self.v = v
         self.subs = sub
 
     def sub(self, *datum):
         return self.subs
 
-    def match(self,*datum, stack=[], result=None):
-        if datum[0].v % 2 == 0:
-            return self
-        else:
-            return None
+    def match(self,*datum, stack=[]):
+        return datum[0].v % 2 == 0
 
-    def pre(self, *datum, stack=[], result=None):
+    def pre(self, *datum, stack=[]):
         return datum[0].v + 100
 
 
 class TestQMar:
     def test_common_qmar(self):
         node = MyQMar(0, [MyQMar(i) for i in range(1,5)])
-        r = [x for x in Qmar(node)]
+        r = [x for x in Qmar(node).all()]
         assert r == [100,102,104]
 
 
@@ -145,7 +145,9 @@ class TestPerformance:
     def test_1d_array(self):
         """简单数组测试"""
         a = [10,20,30,40]
-        que = Qmar(a).skip()
-        for i in range(100000):
+        que = Qmar(a).skip().all()
+        for _ in range(100000):
             r = [x for x in que]
             assert r == [10,20,30,40]
+
+### Last 7.40 seconds
