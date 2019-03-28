@@ -13,6 +13,18 @@ PRE, POST, DONE, SKIP = 1,3,4,5
 import warnings
 warnings.filterwarnings("ignore")            
 
+PATT_CONDITION_BASE1 = r'[^[\]]'
+PATT_CONDITION_1 = r'(?:{0})+'.format(PATT_CONDITION_BASE1)
+PATT_CONDITION_BASE2 = r'{0}*\[{0}+\]{0}*'.format(PATT_CONDITION_BASE1)
+PATT_CONDITION_2 = r'(?:{0})+'.format(PATT_CONDITION_BASE2)
+PATT_CONDITION_BASE3 = r'(?:{0}|{1})*\[(?:{1})+\](?:{0}|{1})*'.format(PATT_CONDITION_BASE1, PATT_CONDITION_BASE2)
+PATT_CONDITION_3 = r'(?:{0})+'.format(PATT_CONDITION_BASE3)
+
+PATT_MATCH = re.compile(r'\s*({2}|{1}|{0})\s*'.format(
+    r'(?:\w+|\*)', 
+    r'\[(?:{2}|{1}|{0})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3), 
+    r'(?:\w+|\*)\[(?:{2}|{1}|{0})\]'.format(PATT_CONDITION_1, PATT_CONDITION_2, PATT_CONDITION_3),
+))
 
 class Qmar:
     """
@@ -92,27 +104,27 @@ class Qmar:
         - 创建的匹配链中所有match节点的next都指向该匹配链的头match
         """
 
-        i, match_result, match_last, params_num = 0, False, None, len(match_context)
+        i, match_result, match_last, params_num = 0, None, None, len(match_context)
         while i < params_num: # 循环每个match_context元素
 
             if isinstance( match_context[i], (types.FunctionType,str) ):    # 直接函数格式
                 pred = match_context[i]
                 if i < params_num -1 and isinstance( match_context[i+1], types.FunctionType ):
                     pre = match_context[i+1]
-                    if i < params_num -2 and isinstance( match_context[i+2], types.FrameType ):
+                    if i < params_num -2 and isinstance( match_context[i+2], types.FunctionType ):
                         post, i = match_context[i+2], i+3
                     else:
-                        post, i = None, i+2
+                        post, i = Match.DEFAULT, i+2
                 else:
-                    pre, post, i = None, None, i+1
-                match_node = Match(pred, pre, post, next=match_result)
+                    pre, post, i = Match.DEFAULT, Match.DEFAULT, i+1
+                match_node = Match(pred, pre, post, next=match_result if match_result else Match.DEFAULT)
 
             elif isinstance( match_context[i], Match ):   # 直接Match对象
                 match_node, i = match_context[i], i+1
-                match_node.next = match_node if match_result==False else match_result 
+                match_node.next = match_node if match_result==None else match_result 
 
             elif isinstance( match_context[i], (tuple, list) ): # Tuple格式
-                match_node, i = Match(*match_context[i], next=match_result), i+1
+                match_node, i = Match(*match_context[i], next=match_result if match_result else Match.DEFAULT), i+1
 
             if match_result:    # match_result保存该匹配链的头match。头match已经存在
                 match_last.brother = match_node # 串brother
@@ -129,6 +141,50 @@ class Qmar:
 
         self.step = 10
         return self
+
+    def matches(self, *args, pos=None):
+        """定义串行匹配链。"""
+
+        arg_num = len(args)
+
+        if isinstance(args[0], str):
+            r = PATT_MATCH.split(args[0])
+
+            # 头匹配
+            match_result = match_node = Match(r[1], pre=Match.PASS, post=Match.PASS)
+            match_result.brother = Match(pred=Match.TRUE, pre=Match.PASS, post=Match.PASS, next=match_node)
+
+            i, size = 3, len(r)-2
+            while i < size:
+                match_node.next = Match(r[i], pre=Match.PASS, post=Match.PASS)
+                match_node = match_node.next
+                match_node.brother = Match(pred=Match.TRUE, pre=Match.PASS, post=Match.PASS, next=match_node)
+                i += 2
+
+            # 尾节点
+            i = 0
+            if i < arg_num -1 and isinstance( args[i+1], types.FunctionType ):
+                pre = args[0+1]
+                if i < arg_num -2 and isinstance( args[i+2], types.FunctionType ):
+                    post, i = args[i+2], i+3
+                else:
+                    post, i = Match.DEFAULT, i+2
+            else:
+                pre, post, i = Match.DEFAULT, Match.DEFAULT, i+1
+            match_node.next = Match(r[-2], pre, post)
+            match_node = match_node.next
+            match_node.brother = Match(pred=Match.TRUE, pre=Match.PASS, next=match_node)
+
+            # 加入当前Match树结构中
+            if pos == None:     # 头节点填充            
+                self.stack[0].match = self.stack[-1].match = match_result
+            elif isinstance(pos, (tuple, list)):   # 默认父节点处理的next都指向当前头节点
+                node = self.stack[0].match.get_match(pos)
+                node.next = match_result
+
+        self.step = 10
+        return self
+
 
     def all(self):
         """遍历所有元素"""

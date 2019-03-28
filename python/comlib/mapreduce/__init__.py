@@ -90,9 +90,35 @@
   ### 支持map映射
   ```
     def test_map_commom(self):
-        # rst = [x for x in Query([1,2,3,4]).map(lambda x:x+10).skip()]
         rst = [x for x in Qmar([1,2,3,4]).skip().map(lambda x:x+10)]
         assert rst == [11,12,13,14]
+  ```
+
+  ### 支持数据Match
+  用户可以从Match和Child派生出自己的数据内联处理类。该类不仅仅是数据，也是Match和Child。
+  注意：扩展类必须调用Match.__init__进行初始化。
+  ```
+    class MyQMar(Match, Child):
+      def __init__(self, v, sub=[]):
+          super().__init__(pred=Match.NONE, pre=Match.NONE)
+          self.v = v
+          self.subs = sub
+
+      def sub(self, *datum):
+          return self.subs
+
+      def match(self,*datum, stack=[]):
+          return datum[0].v % 2 == 0
+
+      def pre(self, *datum, stack=[]):
+          return datum[0].v + 100
+
+
+    class TestQMar:
+      def test_common_qmar(self):
+          node = MyQMar(0, [MyQMar(i) for i in range(1,5)])
+          r = [x for x in Qmar(node).all()]
+          assert r == [100,102,104]
   ```
 
 """
