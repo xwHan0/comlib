@@ -1,4 +1,21 @@
+![Qmar](qmar.svg)
+
 [TOC]
+
+#### Match-Action
+**Match链**
+**Match串**
+
+#### 支持字符Match串
+Qmar支持使用字符串来表示一个Match串，这种字符串被称为字符Match串。一个字符Match串的格式为：
+```python
+    "objNameA[conditionA] connectA objNameB[conditionB] connectB ... objNameZ[conditionZ]"
+```
+其中：
+- objName: 当前迭代数据datum[0]的数据类型字符串
+- condition: 任何符合Python的，返回bool类型的表达式
+- connect: 两个匹配之间的关系表达式
+- 以上3个参数都满足Match初始化参数定义。可以参考comlib.mapreduce.Match定义
 
 #### 支持内联匹配
 内联匹配指用户通过扩展Match和Child类，把数据、匹配、子节点迭代器都柔和到一个数据类中的方法。在Qmar中，内联匹配(Qmar检测使用派生自Match)的执行优先级是高于普通的Match、Child捆绑的。
