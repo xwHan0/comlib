@@ -35,21 +35,7 @@
   - result(Option): Reduce操作的返回结果
 
 # Match匹配树
-  Qmar通过Match定义的指向两一个Match实例的brother和next指针维护了一个Match匹配树。其结构类似于：
-
-  match0 ----------(brother)---------- match1 ---(brother)--- match2
-     |                                   |
-   (next)                              (next)
-     |                                   |
-  match00 --(brother)-- match01        match10 --(brother)-- match11
- 
-  由brother指针串起来的一条match对象序列被称为一个匹配链。Qmar使用相同的datum节点数据按照brother
-  指定的顺序在一条匹配链上依次匹配，直到找到第一个匹配的match对象。这一过程类似于'case'语句：使用
-  同一个数据在多个条件中依次寻找第一个满足的条件。
-
-  Qmar成功匹配到一个match后，数据节点的子节点就需要使用匹配match.next指向的match进行匹配。这一过程
-  被称为条件顺次匹配。
-
+  
   Qmar在PRE过程中的匹配过程为：
   1. 使用Datum树的头节点数据在和Match树的头节点对应的匹配链中进行匹配；
   2. 若匹配到一个match(matchX)，则记录下一次需要匹配的match链为matchX.next指向的匹配链；

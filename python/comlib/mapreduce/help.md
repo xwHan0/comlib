@@ -2,11 +2,36 @@
 
 [TOC]
 
-#### Match-Action
-**Match链**
-**Match串**
+# Introduce
 
-#### 支持字符Match串
+# Basic Concept
+## Match-Action
+Qmar使用comlib.mapreduce.Match类来定义数据匹配判断和对应的动作。
+- match: 匹配判断函数
+- pre: PRE过程动作函数
+- post: POST过程动作函数
+Match类定义类似如下定义。具体定义与说明见comlib.mapreduce.Match
+```python
+    class Match:
+        def match(self, *datum, stack=[]): return True
+        def pre(self, *datum, stack=[]): return None
+        def post(self, *datum, stack=[]): return None
+```
+Qmar使用Match.match函数对数据*datum进行匹配判断，若匹配成功则执行该Match对应的pre和post函数。
+
+## Match树
+Qmar支持把一些列Match实例通过brother和next指针组织起来，形成一个Match匹配树结构。其结构类似于：
+![MatchTree](MatchTree.svg)
+
+由brother指针串起来的一条match对象序列被称为一个<font color='green'>**匹配链**</font>。Qmar使用相同的datum节点数据按照brother指定的顺序在一条匹配链上依次匹配，直到找到第一个匹配的match对象。这一过程类似于'case'语句：使用同一个数据在多个条件中依次寻找第一个满足的条件。
+
+由next指针串起来的一条match对象序列被称为一个<font color='green'>**匹配串**</font>。Qmar成功匹配到一个match后，数据节点的子节点就需要使用匹配match.next指向的match进行匹配。这一过程被称为条件顺次匹配。
+
+
+
+# Feature
+
+### 支持字符Match串
 Qmar支持使用字符串来表示一个Match串，这种字符串被称为字符Match串。一个字符Match串的格式为：
 ```python
     "objNameA[conditionA] connectA objNameB[conditionB] connectB ... objNameZ[conditionZ]"
@@ -17,7 +42,13 @@ Qmar支持使用字符串来表示一个Match串，这种字符串被称为字�
 - connect: 两个匹配之间的关系表达式
 - 以上3个参数都满足Match初始化参数定义。可以参考comlib.mapreduce.Match定义
 
-#### 支持内联匹配
+字符Match串使用方式为：
+```python
+    a = [1,2,[3,4,[5,6],7],8,[9,[10,11],12]]
+    rst = [x for x in Qmar(a).matches('list list list[len(#)%2] int[#.0%2==1]')]
+```
+
+### 支持内联匹配
 内联匹配指用户通过扩展Match和Child类，把数据、匹配、子节点迭代器都柔和到一个数据类中的方法。在Qmar中，内联匹配(Qmar检测使用派生自Match)的执行优先级是高于普通的Match、Child捆绑的。
 
 内联匹配类的定义时，必须<font color='red'>**注意**</font>以下点：
