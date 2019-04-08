@@ -110,3 +110,6 @@
 """
 
 from comlib.mapreduce.match import Match
+
+from comlib.mapreduce.iterator_common import CommonIterator
+from comlib.mapreduce.iterator_result_tree import ResultTree
