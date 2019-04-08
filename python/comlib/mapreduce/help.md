@@ -3,6 +3,7 @@
 [TOC]
 
 # Introduce
+Qmar是一个Tree结构遍历工具。Qmar在给定的树结构中，按给定顺序执行迭代(Query)-匹配(Match)-执行(Action)-返回(Return)动作。
 
 # Basic Concept
 ## Match-Action
@@ -21,9 +22,19 @@ Qmar使用Match.match函数对数据*datum进行匹配判断，若匹配成功�
 
 ## Match树
 Qmar支持把一些列Match实例通过brother和next指针组织起来，形成一个Match匹配树结构。其结构类似于：
+
 ![MatchTree](MatchTree.svg)
 
 由brother指针串起来的一条match对象序列被称为一个<font color='green'>**匹配链**</font>。Qmar使用相同的datum节点数据按照brother指定的顺序在一条匹配链上依次匹配，直到找到第一个匹配的match对象。这一过程类似于'case'语句：使用同一个数据在多个条件中依次寻找第一个满足的条件。
+
+```scala
+    case( *datum, stack=[] )
+        match0.match(*datum, stack=stack): match0.pre(...) && match0.post(...)
+        match1.match(*datum, stack=stack): match1.pre(...) && match1.post(...)
+        ......
+        matchN.match(*datum, stack=stack): matchN.pre(...) && matchN.post(...)
+        [else: matchElse.pre(...) && matchElse.post(...)]
+```
 
 由next指针串起来的一条match对象序列被称为一个<font color='green'>**匹配串**</font>。Qmar成功匹配到一个match后，数据节点的子节点就需要使用匹配match.next指向的match进行匹配。这一过程被称为条件顺次匹配。
 
