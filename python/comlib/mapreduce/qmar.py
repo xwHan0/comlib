@@ -207,6 +207,11 @@ class Qmar:
         self.step = 10
         return self
 
+    def reduce(self):
+        self._initial_()
+        self._enumerate_ = False
+        return self.__next__()
+
     def initial(self, init=None):
         self.stack[-1].result = init
         return self

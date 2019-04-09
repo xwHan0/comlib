@@ -4,6 +4,7 @@ sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../')
 from comlib import Index, ChildSub, ChildAttr, Query, Qmar, Child, Action
 from comlib import Pred, Proc
 from comlib.mapreduce import Match
+from comlib.mapreduce import ResultTree
 
 
 class node:
@@ -16,6 +17,10 @@ def children(node, idx):
         return node.sub
     else:
         return node
+
+
+node0 = node(100, [node(200),node(300)])
+
 
 class TestIterator:
     def test_1d_array(self):
@@ -93,6 +98,19 @@ class TestIterator:
         # r = [x.val for x,i in Query(n0, Index(), children={node:'sub'}, query='*[not (#0.val==300)]')]
         r = [x.val for x,i in Qmar(n0, Index()).child(node,'sub').filter('*[not (#0.val==300)]')]
         assert r == [100,200]
+
+
+def result_tree_pre(*nodes):
+    nodes[1].rst = nodes[0].v + 5
+    return None
+
+class TestIterator:
+    def test_result_tree(self):
+        rst = Qmar(node0, ResultTree()) \
+                .child(node, 'sub') \
+                .match(pre=result_tree_pre) \
+                .reduce()
+        assert rst.v==105 and rst.sub[0].v==205 and rst.sub[1].v==305
 
 
 class TestMap:
