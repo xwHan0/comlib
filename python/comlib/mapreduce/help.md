@@ -1,6 +1,7 @@
 ![Qmar](qmar.svg)
 
-[TOC]
+- Basic Concept
+  - (R)[Result](result.md)
 
 # Introduce
 Qmar是一个Tree结构遍历工具。Qmar在给定的树结构中，按给定顺序执行迭代(Query)-匹配(Match)-执行(Action)-返回(Return)动作。

@@ -185,57 +185,30 @@ class Qmar:
         self.step = 10
         return self
 
-
-    def all(self):
-        """遍历所有元素"""
-        self.stack[0].match = self.stack[-1].match = Match()
-        return self
-
-    def filter(self, pred, pre=Match.DEFAULT, post=Match.DEFAULT):
-        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。
-        filter本质上定义了一个满足参数pred, pre和post的Match，和一个匹配常成功，next指向自身匹配链的Match.
-        详细参数使用方法可以参考Match
+    def result(self, func=None):
         """
-        self.match( Match(pred=pred, pre=pre, post=post), Match(pre=Match.PASS) )
-        self.step = 10
-        return self
-
-    def map(self, pre):
-        """对数据每一个数据datum使用函数pre，返回pre处理的的结果列表。
-        map本质上为设置一个pre的Match"""
-        self.match(Match(pre=pre))
-        self.step = 10
-        return self
-
-    def reduce(self):
-        self._initial_()
+        遍历执行完成后，使用func在stack[-1]上，然后返回计算结果。当func=None时，默认返回stack[-1].datum[-1]。
+        func函数的格式为: rst = func(*datum, stack=[])，支持参数匹配填充特性。
+        注意：当func只包含一个参数时，套用的是datum[-1]
+        """
+        self._initial_()    # 迭代准备
         self._enumerate_ = False
-        return self.__next__()
+        self.__next__()     # 执行迭代
 
-    def initial(self, init=None):
-        self.stack[-1].result = init
-        return self
-   
-    def assist(self, *datum, children={}):
-        """
-        Append assist collection 'node' which children is children for iterator.
-        """
-        # self.append_children_relationship(children)
-        self.stack[-1].datum += datum
-        return self
-       
-    def run(self, enumrate=True): 
-        """执行迭代并返回结果。"""
-        self._enumerate_ = enumerate
-        if len(self.stack[0].datum) == 0:
-            def delay_query(*datum, children={}):
-                self.assist(*datum, children=children)
-                return self.__next__()
-            return delay_query
+        # 结果后处理
+        node = self.stack[-1]
+        if func == None: return node.datum[-1]  # 默认处理
+        if 'stack' in func.__code__.co_varnames:    # pred函数包含stack参数
+            arg_num = func.__code__.co_argcount-1
+            if arg_num == -1: return func(*node.datum, stack=self.stack)    # 完整处理
+            elif arg_num == 1: return func(node.datum[-1], stack=self.stack)
+            else: return func(*(node.datum[:arg_num]), stack=self.stack)
         else:
-            self._initial_()
-            return self.__next__()
-        
+            arg_num = func.__code__.co_argcount
+            if arg_num == 0: return func(*node.datum)
+            elif arg_num == 1: return func(node.datum[-1])
+            else: return func(*(node.datum[:arg_num]))
+
     def skip( self, n=1 ):
         """跳过前n个节点后开始遍历。
          skip并不会破坏数据的树结构，仅仅是在遍历迭代是略过前几个节点。这里的略过不仅仅指pre过程，也包括post过程。
@@ -266,6 +239,57 @@ class Qmar:
                 break
 
         return self
+
+    def all(self):
+        """遍历所有元素"""
+        self.stack[0].match = self.stack[-1].match = Match()
+        return self
+
+    def filter(self, pred, pre=Match.DEFAULT, post=Match.DEFAULT):
+        """为当前Qmar设置全局过滤匹配条件pre，并设置对应的pre和post处理。
+        filter本质上定义了一个满足参数pred, pre和post的Match，和一个匹配常成功，next指向自身匹配链的Match.
+        详细参数使用方法可以参考Match
+        """
+        self.match( Match(pred=pred, pre=pre, post=post), Match(pre=Match.PASS) )
+        self.step = 10
+        return self
+
+    def map(self, pre):
+        """对数据每一个数据datum使用函数pre，返回pre处理的的结果列表。
+        map本质上为设置一个pre的Match"""
+        self.match(Match(pre=pre))
+        self.step = 10
+        return self
+
+    def reduce(self):
+        self._initial_()
+        self._enumerate_ = False
+        return self.__next__()
+
+    def initial(self, init=None):
+        self.stack[-1].result = init
+        return self
+
+    def assist(self, *datum, children={}):
+        """
+        Append assist collection 'node' which children is children for iterator.
+        """
+        # self.append_children_relationship(children)
+        self.stack[-1].datum += datum
+        return self
+       
+    def run(self, enumrate=True): 
+        """执行迭代并返回结果。"""
+        self._enumerate_ = enumerate
+        if len(self.stack[0].datum) == 0:
+            def delay_query(*datum, children={}):
+                self.assist(*datum, children=children)
+                return self.__next__()
+            return delay_query
+        else:
+            self._initial_()
+            return self.__next__()
+        
         
     def _initial_(self):
         if self.step < 10:      # Step-10: Normal Process
@@ -274,8 +298,6 @@ class Qmar:
             # self.matches = [Qmar._matchIter_]
             pass
         self.step = 10
-
- 
 
     def _get_children_iter(self, *node):
         nxt = self.children_relationship.get(
