@@ -108,7 +108,7 @@ class TestIterator:
     def test_result_tree(self):
         rst = Qmar(node0, ResultTree()) \
                 .child(node, 'sub') \
-                .match(pre=result_tree_pre) \
+                .match(Match(pre=result_tree_pre)) \
                 .reduce()
         assert rst.v==105 and rst.sub[0].v==205 and rst.sub[1].v==305
 
