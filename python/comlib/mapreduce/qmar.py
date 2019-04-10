@@ -4,7 +4,6 @@ import types
 
 from comlib.mapreduce.child_relationship import TYPIC_CHILDREN_RELATIONSHIP, append_children_relationship
 from comlib.mapreduce.stack import NodeInfo
-from comlib.mapreduce.result import Result
 from comlib.mapreduce.match import Match  #, MatchIter, MatchPredIter, get_match
 from comlib.mapreduce.child import Child
 
@@ -78,7 +77,6 @@ class Qmar:
         self.children_relationship = TYPIC_CHILDREN_RELATIONSHIP.copy()
     
         # New architecture fields
-        # self.step, self.result, self.cfg, self.matches = 1, Result(), cfg, []
         self.step, self.cfg = 1, cfg
 
         # self.pre_return/self.post_return
@@ -409,8 +407,8 @@ class Qmar:
                 node.sta = PRE  # 为下一次迭代做准备
                 if self._enumerate_:
                     raise StopIteration()
-                else:
-                    return self.stack[-1].result
+                # else:
+                #     return self.stack[-1].result
 
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
@@ -418,8 +416,8 @@ class Qmar:
                 self.stack[-1].match = self.stack[0].match
                 if self._enumerate_:
                     raise StopIteration()
-                else:
-                    return self.stack[-1].result
+                # else:
+                #     return self.stack[-1].result
 
             else:
                 raise Exception('Invalid status of FSM!')
