@@ -40,7 +40,7 @@ Qmar支持把一些列Match实例通过brother和next指针组织起来，形成
 
 # Feature
 
-### 支持字符Match串
+## 支持字符Match串
 Qmar支持使用字符串来表示一个Match串，这种字符串被称为字符Match串。一个字符Match串的格式为：
 ```python
     "objNameA[conditionA] connectA objNameB[conditionB] connectB ... objNameZ[conditionZ]"
@@ -57,7 +57,7 @@ Qmar支持使用字符串来表示一个Match串，这种字符串被称为字�
     rst = [x for x in Qmar(a).matches('list list list[len(#)%2] int[#.0%2==1]')]
 ```
 
-### 支持内联匹配
+## 支持内联匹配
 内联匹配指用户通过扩展Match和Child类，把数据、匹配、子节点迭代器都柔和到一个数据类中的方法。在Qmar中，内联匹配(Qmar检测使用派生自Match)的执行优先级是高于普通的Match、Child捆绑的。
 
 内联匹配类的定义时，必须<font color='red'>**注意**</font>以下点：
