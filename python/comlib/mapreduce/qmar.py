@@ -304,10 +304,10 @@ class Qmar:
 
         if nxt:
             return nxt.sub(*node)  # 调用类函数处理
-        elif hasattr(node[0], '__iter__'):
-            return iter(node[0])
         elif isinstance(node[0], Child):
             return node[0].sub(*node)
+        elif hasattr(node[0], '__iter__'):
+            return iter(node[0])
         
     def __iter__(self):
         self._initial_()
@@ -407,8 +407,8 @@ class Qmar:
                 node.sta = PRE  # 为下一次迭代做准备
                 if self._enumerate_:
                     raise StopIteration()
-                # else:
-                #     return self.stack[-1].result
+                else:
+                    return
 
             elif node.sta == SKIP:  # SKIP 状态继续保持
 
@@ -416,8 +416,8 @@ class Qmar:
                 self.stack[-1].match = self.stack[0].match
                 if self._enumerate_:
                     raise StopIteration()
-                # else:
-                #     return self.stack[-1].result
+                else:
+                    return
 
             else:
                 raise Exception('Invalid status of FSM!')

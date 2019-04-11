@@ -106,7 +106,7 @@ class TestIterator:
                 .child(node, 'sub') \
                 .match(Match(pre=result_tree_pre)) \
                 .result()
-        assert rst.rst==105 and rst.sub[0].rst==205 and rst.sub[1].rst==305
+        assert rst.rst==105 and rst[0].rst==205 and rst[1].rst==305
 
 
 class TestMap:
