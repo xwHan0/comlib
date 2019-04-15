@@ -112,4 +112,5 @@
 from comlib.mapreduce.match import Match
 from comlib.mapreduce.child import Child
 
-from comlib.mapreduce.iterator_result import Result, ResultTree
+from comlib.mapreduce.iterator_result import Result
+from comlib.mapreduce.tree.result_tree imort ResultTree
