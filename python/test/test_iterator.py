@@ -1,10 +1,11 @@
 import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))) )
 
-from comlib import Index, Qmar, Child
+from comlib import Qmar
 from comlib import Pred, Proc
-from comlib.mapreduce import Match
+from comlib.mapreduce import Match, Child
 from comlib.mapreduce import ResultTree
+from comlib.mapreduce.tree import Index
 
 
 class node:
