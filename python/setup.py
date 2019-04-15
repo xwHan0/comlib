@@ -13,11 +13,13 @@ setup(
         'comlib', 
          'comlib.ex',
          'comlib.mapreduce',
+         'comlib.mapreduce.tree',
     ],
     package_dir={
         'comlib':'comlib',
         'comlib.ex':'comlib/ex',
         'comlib.mapreduce':'comlib/mapreduce',
+        'comlib.mapreduce.tree':'comlib/mapreduce/tree',
     },
     long_description="",
     license='Public domain',
