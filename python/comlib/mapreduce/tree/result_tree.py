@@ -1,5 +1,5 @@
 
-from comlib.mapreduce.tree from SelfGrowthTree
+from comlib.mapreduce.tree import SelfGrowthTree
 
 class ResultTree(SelfGrowthTree):
     def __init__(self):
