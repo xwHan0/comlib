@@ -50,7 +50,7 @@ class Qmar:
       - Qmar定义并实例化了一个Result对象来保存返回结果。当前用户也可以使用stack来保存每级执行的结果
     """
     
-    MAX_IT_NUM = 999999
+    ITIMES = 999999
     CRITERIA_NODE_PATT = re.compile(r'#(\d+)')
 #===================  内部默认定义变量  ====================
     # _matchIter_ = MatchIter()
@@ -65,8 +65,8 @@ class Qmar:
                     (re.compile(r'{0}\.'.format(v)), r'node[0].'),
                 ]
                 Qmar.CRITERIA_NODE_PATT = re.compile(r'{0}(\d+)'.format(v))
-            elif k=='max_it_num':
-                Qmar.MAX_IT_NUM = v
+            elif k=='ITIMES':
+                Qmar.ITIMES = v
     
 
     def __init__(self, *datum, **cfg):
@@ -182,6 +182,11 @@ class Qmar:
 
         self.step = 10
         return self
+
+    def wm(self, *args):
+        """绑定到Middleware"""
+        args[0].bind_qmar(self)
+        return args[0]
 
     def result(self, func=None):
         """
@@ -316,7 +321,7 @@ class Qmar:
         
     def __next__( self ):
         
-        for _ in range(Qmar.MAX_IT_NUM):
+        for _ in range(Qmar.ITIMES):
             
             # 获取当前处理的节点
             node = self.stack[-1]

@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- 由 Microsoft Visio, SVG Export 生成 WorkFlow.svg 页-1 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		width="7.78981in" height="9.33728in" viewBox="0 0 560.866 672.284" xml:space="preserve" color-interpolation-filters="sRGB"
+		class="st14">
+	<style type="text/css">
+	<![CDATA[
+		.st1 {marker-end:url(#mrkr5-6);stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st2 {fill:#000000;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:0.34246575342466}
+		.st3 {fill:#ffffff;stroke:#000000;stroke-width:0.25}
+		.st4 {fill:#000000;font-family:黑体;font-size:0.75em}
+		.st5 {font-family:Arial;font-size:1em}
+		.st6 {fill:#000000;font-family:Arial;font-size:0.75em}
+		.st7 {fill:#ffffff;stroke:none;stroke-linecap:butt;stroke-width:7.2}
+		.st8 {fill:#4f87bb;font-family:Arial;font-size:0.666664em}
+		.st9 {font-family:黑体;font-size:1em}
+		.st10 {font-size:1em}
+		.st11 {fill:#ff0000;font-family:Arial;font-size:0.666664em}
+		.st12 {fill:#ffffff}
+		.st13 {stroke:#000000;stroke-width:0.25}
+		.st14 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<defs id="Markers">
+		<g id="lend5">
+			<path d="M 2 1 L 0 0 L 1.98117 -0.993387 C 1.67173 -0.364515 1.67301 0.372641 1.98465 1.00043 " style="stroke:none"/>
+		</g>
+		<marker id="mrkr5-6" class="st2" refX="-5.11" orient="auto" markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend5" transform="scale(-2.92,-2.92) "/>
+		</marker>
+	</defs>
+	<g>
+		<title>页-1</title>
+		<g id="shape29-1" transform="translate(239.685,-643.688)">
+			<title>动态连接线.29</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape196-7" transform="translate(190.079,-586.995)">
+			<title>判定.196</title>
+			<desc>迭代ITIMES次</desc>
+			<path d="M0 658.11 L56.69 643.94 L113.39 658.11 L56.69 672.28 L0 658.11 Z" class="st3"/>
+			<text x="28.19" y="661.04" class="st4">迭代<tspan class="st5">ITIMES</tspan>次</text>		</g>
+		<g id="shape197-11" transform="translate(303.465,-601.168)">
+			<title>动态连接线.197</title>
+			<path d="M0 672.28 L99.21 672.28 L99.21 696.8" class="st1"/>
+		</g>
+		<g id="shape198-16" transform="translate(360.157,-487.782)">
+			<title>判定.198</title>
+			<desc>node.sta</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="25.26" y="660.81" class="st6">node.sta</text>		</g>
+		<g id="shape201-19" transform="translate(360.157,-501.955)">
+			<title>动态连接线.201</title>
+			<desc>PRE</desc>
+			<path d="M0 672.28 L-10.63 672.28 L-10.63 615.59 L-109.55 615.59" class="st1"/>
+			<rect x="-36.571" y="610.791" width="16.449" height="9.59985" class="st7"/>
+			<text x="-36.57" y="617.99" class="st8">PRE</text>		</g>
+		<g id="shape203-26" transform="translate(48.3465,-459.436)">
+			<title>流程.203</title>
+			<desc>datum[0]</desc>
+			<rect x="0" y="643.938" width="56.6929" height="28.3465" class="st3"/>
+			<text x="10.84" y="660.81" class="st6">datum[0]</text>		</g>
+		<g id="shape204-29" transform="translate(246.772,-459.436)">
+			<title>流程.204</title>
+			<desc>None</desc>
+			<rect x="0" y="643.938" width="56.6929" height="28.3465" class="st3"/>
+			<text x="17.59" y="660.81" class="st6">None</text>		</g>
+		<g id="shape205-32" transform="translate(119.213,-459.436)">
+			<title>流程.205</title>
+			<desc>node.match._match_full</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="8.92" y="660.81" class="st6">node.match._match_full</text>		</g>
+		<g id="shape206-35" transform="translate(133.386,-544.475)">
+			<title>自定义 4</title>
+			<desc>设置匹配 node.matched</desc>
+			<path d="M17.01 672.28 L96.38 672.28 L113.39 658.11 L96.38 643.94 L17.01 643.94 L0 658.11 L17.01 672.28 Z" class="st3"/>
+			<text x="38.69" y="655.64" class="st4">设置匹配 <tspan x="28.17" dy="1.225em" class="st5">node</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">matched</tspan></text>		</g>
+		<g id="shape207-41" transform="translate(133.386,-558.648)">
+			<title>动态连接线.207</title>
+			<desc>Datum[0]为Match子类 且匹配成功</desc>
+			<path d="M0 672.28 L-56.69 672.28 L-56.69 739.32" class="st1"/>
+			<rect x="-99.8137" y="668.968" width="86.2416" height="20.8056" class="st7"/>
+			<text x="-99.81" y="676.77" class="st8">Datum[0]<tspan class="st9">为</tspan>Match<tspan class="st9">子类</tspan><tspan
+						class="st9">， </tspan><tspan x="-76.69" dy="1.3em" class="st9">且匹配成功</tspan></text>		</g>
+		<g id="shape208-52" transform="translate(161.732,-544.475)">
+			<title>动态连接线.208</title>
+			<desc>ELSE</desc>
+			<path d="M0 672.28 L0 682.91 L14.17 682.91 L14.17 725.14" class="st1"/>
+			<rect x="3.94502" y="688.744" width="20.4565" height="9.59985" class="st7"/>
+			<text x="3.95" y="695.94" class="st8">ELSE</text>		</g>
+		<g id="shape209-59" transform="translate(218.425,-544.475)">
+			<title>动态连接线.209</title>
+			<desc>Datum[0]为Match子类 且匹配失败</desc>
+			<path d="M0 672.28 L0 700.63 L56.69 700.63 L56.69 725.14" class="st1"/>
+			<rect x="-14.7744" y="690.228" width="86.2416" height="20.8056" class="st7"/>
+			<text x="-14.77" y="698.03" class="st8">Datum[0]<tspan class="st9">为</tspan>Match<tspan class="st9">子类</tspan><tspan
+						class="st9">， </tspan><tspan x="8.35" dy="1.3em" class="st9">且匹配失败</tspan></text>		</g>
+		<g id="shape211-70" transform="translate(48.3465,-402.743)">
+			<title>流程.211</title>
+			<desc>获取子节点迭代器 node.childen = ...</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="20.69" y="655.64" class="st4">获取子节点迭代器 <tspan x="22.29" dy="1.225em" class="st5">node</tspan><tspan
+						class="st5">.</tspan><tspan class="st5">childen </tspan><tspan class="st5">= ...</tspan></text>		</g>
+		<g id="shape212-77" transform="translate(175.906,-459.436)">
+			<title>动态连接线.212</title>
+			<path d="M0 672.28 L0 682.91 L-70.87 682.91 L-70.87 696.8" class="st1"/>
+		</g>
+		<g id="shape213-82" transform="translate(48.3465,-346.05)">
+			<title>流程.213</title>
+			<desc>获取第一个子节点 nxt = next(...)</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="20.69" y="655.64" class="st4">获取第一个子节点 <tspan x="30.31" dy="1.225em" class="st5">nxt </tspan><tspan
+						class="st5">= </tspan><tspan class="st5">next</tspan><tspan class="st5">(...)</tspan></text>		</g>
+		<g id="shape214-89" transform="translate(97.9528,-402.743)">
+			<title>动态连接线.214</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape215-94" transform="translate(62.5197,-289.357)">
+			<title>判定.215</title>
+			<desc>node.matched</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="14" y="660.81" class="st6">node.matched</text>		</g>
+		<g id="shape216-97" transform="translate(48.3465,-232.664)">
+			<title>流程.216</title>
+			<desc>PRE处理 rst = node.matched.pre(..)</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="38.44" y="655.64" class="st6">PRE<tspan class="st9">处理 </tspan><tspan x="4.79" dy="1.225em" class="st10">rst </tspan>= node.matched.pre(..)</text>		</g>
+		<g id="shape217-102" transform="translate(97.9528,-346.05)">
+			<title>动态连接线.217</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape218-107" transform="translate(97.9528,-289.357)">
+			<title>动态连接线.218</title>
+			<desc>Y</desc>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+			<rect x="4.41865" y="681.658" width="5.33578" height="9.59985" class="st7"/>
+			<text x="4.42" y="688.86" class="st8">Y</text>		</g>
+		<g id="shape219-114" transform="translate(48.3465,-175.971)">
+			<title>流程.219</title>
+			<desc>压入子节点 stack.append(...)</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="34.19" y="655.64" class="st4">压入子节点 <tspan x="23.18" dy="1.225em" class="st5">stack</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">append</tspan><tspan class="st5">(...)</tspan></text>		</g>
+		<g id="shape220-121" transform="translate(97.9528,-232.664)">
+			<title>动态连接线.220</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape221-126" transform="translate(48.3465,-119.278)">
+			<title>流程.221</title>
+			<desc>修改状态 node.sta = POST</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="38.69" y="655.64" class="st4">修改状态 <tspan x="22.05" dy="1.225em" class="st5">node</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">sta </tspan><tspan class="st5">= </tspan><tspan class="st5">POST</tspan></text>		</g>
+		<g id="shape222-134" transform="translate(133.386,-62.5852)">
+			<title>判定.222</title>
+			<desc>node.matched &#38;&#38; rst!=None</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="14" y="655.41" class="st6">node.matched <tspan x="15.63" dy="1.2em" class="st10">&#38;&#38; </tspan>rst!=None</text>		</g>
+		<g id="shape224-138" transform="translate(190.079,-232.664)">
+			<title>流程.224</title>
+			<desc>设置叶子节点 node.children = None</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="29.69" y="655.64" class="st4">设置叶子节点 <tspan x="13.79" dy="1.225em" class="st5">node</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">children </tspan><tspan class="st5">= </tspan><tspan class="st5">None</tspan></text>		</g>
+		<g id="shape225-146" transform="translate(204.252,-289.357)">
+			<title>判定.225</title>
+			<desc>node.matched</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="14" y="660.81" class="st6">node.matched</text>		</g>
+		<g id="shape227-149" transform="translate(190.079,-175.971)">
+			<title>流程.227</title>
+			<desc>PRE处理 rst = node.matched.pre(..)</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="38.44" y="655.64" class="st6">PRE<tspan class="st9">处理 </tspan><tspan x="4.79" dy="1.225em" class="st10">rst </tspan>= node.matched.pre(..)</text>		</g>
+		<g id="shape228-154" transform="translate(161.732,-416.916)">
+			<title>动态连接线.228</title>
+			<desc>TypeError</desc>
+			<path d="M0 672.28 L85.04 672.28 L85.04 767.66" class="st1"/>
+			<rect x="67.258" y="674.571" width="35.5627" height="9.59985" class="st7"/>
+			<text x="67.26" y="681.77" class="st11">TypeError</text>		</g>
+		<g id="shape229-161" transform="translate(161.732,-360.223)">
+			<title>动态连接线.229</title>
+			<desc>StopIteration</desc>
+			<path d="M0 672.28 L85.04 672.28 L85.04 710.97" class="st1"/>
+			<rect x="41.0982" y="667.484" width="45.3625" height="9.59985" class="st7"/>
+			<text x="41.1" y="674.68" class="st11">StopIteration</text>		</g>
+		<g id="shape230-168" transform="translate(204.252,-303.53)">
+			<title>动态连接线.230</title>
+			<desc>N</desc>
+			<path d="M0 672.28 L-31.89 672.28 L-31.89 842.36 L-38.69 842.36" class="st1"/>
+			<rect x="-34.7786" y="741.894" width="5.77744" height="9.59985" class="st7"/>
+			<text x="-34.78" y="749.09" class="st8">N</text>		</g>
+		<g id="shape231-175" transform="translate(239.685,-289.357)">
+			<title>动态连接线.231</title>
+			<desc>Y</desc>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+			<rect x="4.41865" y="681.658" width="5.33578" height="9.59985" class="st7"/>
+			<text x="4.42" y="688.86" class="st8">Y</text>		</g>
+		<g id="shape232-182" transform="translate(239.685,-232.664)">
+			<title>动态连接线.232</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape233-187" transform="translate(246.772,-175.971)">
+			<title>动态连接线.233</title>
+			<path d="M0 672.28 L0 714.8 L-81.21 714.8" class="st1"/>
+		</g>
+		<g id="shape234-192" transform="translate(97.9528,-175.971)">
+			<title>动态连接线.234</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape235-197" transform="translate(105.039,-119.278)">
+			<title>动态连接线.235</title>
+			<path d="M0 672.28 L0 682.91 L70.87 682.91 L70.87 696.8" class="st1"/>
+		</g>
+		<g id="shape236-202" transform="translate(175.906,-62.5852)">
+			<title>动态连接线.236</title>
+			<path d="M0 672.28 L0 694.68 L-155.91 694.68 L-155.91 133.7 L10.34 133.7" class="st1"/>
+		</g>
+		<g id="shape237-207" transform="translate(133.386,-69.6719)">
+			<title>动态连接线.237</title>
+			<desc>Y</desc>
+			<path d="M0 665.2 L-24.51 665.2" class="st1"/>
+			<rect x="-16.8412" y="660.398" width="5.33578" height="9.59985" class="st7"/>
+			<text x="-16.84" y="667.6" class="st8">Y</text>		</g>
+		<g id="shape239-214" transform="translate(76.6929,-459.436)">
+			<title>动态连接线.239</title>
+			<path d="M0 672.28 L0 682.91 L28.35 682.91 L28.35 696.8" class="st1"/>
+		</g>
+		<g id="shape240-219" transform="translate(275.118,-459.436)">
+			<title>动态连接线.240</title>
+			<path d="M0 672.28 L0 682.91 L-170.08 682.91 L-170.08 696.8" class="st1"/>
+		</g>
+		<g id="shape241-224" transform="translate(62.5197,-303.53)">
+			<title>动态连接线.241</title>
+			<desc>N</desc>
+			<path d="M0 672.28 L-24.8 672.28 L-24.8 785.67 L-18.01 785.67" class="st1"/>
+			<rect x="-27.6919" y="717.091" width="5.77744" height="9.59985" class="st7"/>
+			<text x="-27.69" y="724.29" class="st8">N</text>		</g>
+		<g id="shape242-231" transform="translate(303.465,-416.916)">
+			<title>判定.242</title>
+			<desc>node.matched</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="14" y="660.81" class="st6">node.matched</text>		</g>
+		<g id="shape243-234" transform="translate(289.291,-360.223)">
+			<title>流程.243</title>
+			<desc>POST处理 rst = node.matched.post(..)</desc>
+			<rect x="0" y="643.938" width="113.386" height="28.3465" class="st3"/>
+			<text x="35.44" y="655.64" class="st6">POST<tspan class="st9">处理 </tspan><tspan x="2.79" dy="1.225em" class="st10">rst </tspan>= node.matched.post(..)</text>		</g>
+		<g id="shape244-239" transform="translate(338.898,-416.916)">
+			<title>动态连接线.244</title>
+			<desc>Y</desc>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+			<rect x="4.41865" y="681.658" width="5.33578" height="9.59985" class="st7"/>
+			<text x="4.42" y="688.86" class="st8">Y</text>		</g>
+		<g id="shape245-246" transform="translate(303.465,-303.53)">
+			<title>判定.245</title>
+			<desc>是否根节点</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="20.02" y="661.04" class="st4">是否根节点</text>		</g>
+		<g id="shape246-249" transform="translate(331.811,-62.5852)">
+			<title>流程.246</title>
+			<desc>修改状态 node.sta = DONE</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="24.52" y="655.64" class="st4">修改状态 <tspan x="7.13" dy="1.225em" class="st5">node</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">sta </tspan><tspan class="st5">= </tspan><tspan class="st5">DONE</tspan></text>		</g>
+		<g id="shape247-257" transform="translate(388.504,-317.703)">
+			<title>动态连接线.247</title>
+			<desc>Y</desc>
+			<path d="M0 672.28 L38.98 672.28 L38.98 913.23 L32.18 913.23" class="st1"/>
+			<rect x="36.3084" y="773.784" width="5.33578" height="9.59985" class="st7"/>
+			<text x="36.31" y="780.98" class="st8">Y</text>		</g>
+		<g id="shape249-264" transform="translate(338.898,-360.223)">
+			<title>动态连接线.249</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape250-269" transform="translate(331.811,-246.837)">
+			<title>流程.250</title>
+			<desc>修改状态 node.sta = PRE</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="24.52" y="655.64" class="st4">修改状态 <tspan x="10.87" dy="1.225em" class="st5">node</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">sta </tspan><tspan class="st5">= </tspan><tspan class="st5">PRE</tspan></text>		</g>
+		<g id="shape251-277" transform="translate(345.984,-303.53)">
+			<title>动态连接线.251</title>
+			<desc>N</desc>
+			<path d="M0 672.28 L0 682.91 L28.35 682.91 L28.35 696.8" class="st1"/>
+			<rect x="14.8277" y="678.114" width="5.77744" height="9.59985" class="st7"/>
+			<text x="14.83" y="685.31" class="st8">N</text>		</g>
+		<g id="shape252-284" transform="translate(331.811,-204.318)">
+			<title>流程.252</title>
+			<desc>处理完出栈 stack.pop()</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="15.52" y="655.64" class="st4">处理完，出栈 <tspan x="20.26" dy="1.225em" class="st5">stack</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">pop</tspan><tspan class="st5">()</tspan></text>		</g>
+		<g id="shape253-291" transform="translate(367.244,-246.837)">
+			<title>动态连接线.253</title>
+			<path d="M7.09 672.28 L7.09 682.62" class="st1"/>
+		</g>
+		<g id="shape254-296" transform="translate(331.811,-161.798)">
+			<title>流程.254</title>
+			<desc>获取下一个子节点 nxt = next(...)</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="6.52" y="655.64" class="st4">获取下一个子节点 <tspan x="16.13" dy="1.225em" class="st5">nxt </tspan><tspan class="st5">= </tspan><tspan
+						class="st5">next</tspan><tspan class="st5">(...)</tspan></text>		</g>
+		<g id="shape255-303" transform="translate(367.244,-204.318)">
+			<title>动态连接线.255</title>
+			<path d="M7.09 672.28 L7.09 682.62" class="st1"/>
+		</g>
+		<g id="shape256-308" transform="translate(331.811,-119.278)">
+			<title>流程.256</title>
+			<desc>压入子节点 stack.append(...)</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="20.02" y="655.64" class="st4">压入子节点 <tspan x="9" dy="1.225em" class="st5">stack</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">append</tspan><tspan class="st5">(...)</tspan></text>		</g>
+		<g id="shape257-315" transform="translate(367.244,-161.798)">
+			<title>动态连接线.257</title>
+			<path d="M7.09 672.28 L7.09 682.62" class="st1"/>
+		</g>
+		<g id="shape258-320" transform="translate(331.811,-133.451)">
+			<title>动态连接线.258</title>
+			<path d="M0 672.28 L-10.63 672.28 L-10.63 728.98 L-109.55 728.98" class="st1"/>
+		</g>
+		<g id="shape260-325" transform="translate(331.811,-175.971)">
+			<title>动态连接线.260</title>
+			<desc>StopIteration</desc>
+			<path d="M0 672.28 L-10.63 672.28 L-10.63 771.5 L-109.55 771.5" class="st1"/>
+			<rect x="-13.8112" y="688.654" width="45.3625" height="9.59985" class="st7"/>
+			<text x="-13.81" y="695.85" class="st11">StopIteration</text>		</g>
+		<g id="shape261-332" transform="translate(331.811,-83.8451)">
+			<title>动态连接线.261</title>
+			<path d="M0 679.37 L-109.55 679.37" class="st1"/>
+		</g>
+		<g id="shape262-337" transform="translate(387.625,-492.799)">
+			<title>动态连接线.262</title>
+			<desc>POST</desc>
+			<path d="M0 672.28 L0 687.93 L-41.64 687.93 L-41.64 715.99" class="st1"/>
+			<rect x="-39.8321" y="683.132" width="21.7809" height="9.59985" class="st7"/>
+			<text x="-39.83" y="690.33" class="st8">POST</text>		</g>
+		<g id="shape263-344" transform="translate(445.197,-416.916)">
+			<title>流程.263</title>
+			<desc>恢复状态 node.sta = PRE</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="24.52" y="655.64" class="st4">恢复状态 <tspan x="10.87" dy="1.225em" class="st5">node</tspan><tspan class="st5">.</tspan><tspan
+						class="st5">sta </tspan><tspan class="st5">= </tspan><tspan class="st5">PRE</tspan></text>		</g>
+		<g id="shape264-352" transform="translate(415.782,-492.15)">
+			<title>动态连接线.264</title>
+			<desc>DONE</desc>
+			<path d="M0 672.28 L0 733.35 L25.58 733.35" class="st1"/>
+			<rect x="-11.5567" y="712.722" width="23.1133" height="9.59985" class="st7"/>
+			<text x="-11.56" y="719.92" class="st8">DONE</text>		</g>
+		<g id="shape265-359" transform="translate(445.197,-360.223)">
+			<title>判定.265</title>
+			<desc>迭代处理</desc>
+			<path d="M0 658.11 L42.52 643.94 L85.04 658.11 L42.52 672.28 L0 658.11 Z" class="st3"/>
+			<text x="20.02" y="661.04" class="st4">迭代处理？</text>		</g>
+		<g id="shape266-362" transform="translate(480.63,-416.916)">
+			<title>动态连接线.266</title>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape267-367" transform="translate(445.197,-303.53)">
+			<title>开始/结束.267</title>
+			<desc>结束迭代 raise StopIteration()</desc>
+			<path d="M14.17 672.28 L70.87 672.28 A14.1732 14.1732 -180 0 0 70.87 643.94 L14.17 643.94 A14.1732 14.1732 -180 1 0 14.17
+						 672.28 Z" class="st3"/>
+			<text x="24.52" y="655.64" class="st4">结束迭代 <tspan x="3" dy="1.225em" class="st5">raise StopIteration</tspan><tspan
+						class="st5">()</tspan></text>		</g>
+		<g id="shape268-372" transform="translate(480.63,-360.223)">
+			<title>动态连接线.268</title>
+			<desc>Y</desc>
+			<path d="M7.09 672.28 L7.09 696.8" class="st1"/>
+			<rect x="4.41865" y="681.658" width="5.33578" height="9.59985" class="st7"/>
+			<text x="4.42" y="688.86" class="st8">Y</text>		</g>
+		<g id="shape269-379" transform="translate(445.197,-246.837)">
+			<title>开始/结束.269</title>
+			<desc>END</desc>
+			<path d="M14.17 672.28 L70.87 672.28 A14.1732 14.1732 -180 0 0 70.87 643.94 L14.17 643.94 A14.1732 14.1732 -180 1 0 14.17
+						 672.28 Z" class="st3"/>
+			<text x="33.02" y="660.81" class="st6">END</text>		</g>
+		<g id="shape270-382" transform="translate(523.15,-374.396)">
+			<title>动态连接线.270</title>
+			<desc>N</desc>
+			<path d="M7.09 672.28 L17.72 672.28 L17.72 785.67 L10.92 785.67" class="st1"/>
+			<rect x="14.8277" y="724.177" width="5.77744" height="9.59985" class="st7"/>
+			<text x="14.83" y="731.38" class="st8">N</text>		</g>
+		<g id="shape271-389" transform="translate(473.543,-473.609)">
+			<title>流程.271</title>
+			<desc>恢复状态 skip()</desc>
+			<rect x="0" y="615.591" width="56.6929" height="56.6929" class="st3"/>
+			<text x="10.35" y="641.46" class="st4">恢复状态 <tspan x="17.35" dy="1.225em" class="st5">skip</tspan><tspan class="st5">()</tspan></text>		</g>
+		<g id="shape272-394" transform="translate(445.197,-509.042)">
+			<title>动态连接线.272</title>
+			<desc>SKIP</desc>
+			<path d="M0 679.37 L24.51 679.37" class="st1"/>
+			<rect x="5.05821" y="674.571" width="18.2299" height="9.59985" class="st7"/>
+			<text x="5.06" y="681.77" class="st8">SKIP</text>		</g>
+		<g id="shape273-401" transform="translate(530.236,-501.955)">
+			<title>动态连接线.273</title>
+			<path d="M0 672.28 L7.09 672.28 L7.09 775.04 L-42.52 775.04 L-42.52 781.84" class="st1"/>
+		</g>
+		<g id="shape274-406" transform="translate(204.252,-643.688)">
+			<title>子流程.274</title>
+			<desc>__next__</desc>
+			<path d="M0 672.28 L85.04 672.28 L85.04 643.94 L0 643.94 L0 672.28 Z" class="st12"/>
+			<path d="M0 672.28 L85.04 672.28 L85.04 643.94 L0 643.94 L0 672.28" class="st13"/>
+			<path d="M8.5 672.28 L8.5 643.94" class="st13"/>
+			<path d="M76.54 672.28 L76.54 643.94" class="st13"/>
+			<text x="24" y="660.81" class="st6">__next__</text>		</g>
+		<g id="shape275-412" transform="translate(360.157,-544.475)">
+			<title>流程.275</title>
+			<desc>获取尾节点 node=stack[-1]</desc>
+			<rect x="0" y="643.938" width="85.0394" height="28.3465" class="st3"/>
+			<text x="20.02" y="655.64" class="st4">获取尾节点 <tspan x="12.88" dy="1.225em" class="st5">node</tspan><tspan class="st5">=</tspan><tspan
+						class="st5">stack</tspan><tspan class="st5">[</tspan><tspan class="st5">-</tspan><tspan class="st5">1</tspan><tspan
+						class="st5">]</tspan></text>		</g>
+		<g id="shape277-422" transform="translate(409.764,-544.475)">
+			<title>动态连接线.277</title>
+			<path d="M-7.09 672.28 L-7.09 696.8" class="st1"/>
+		</g>
+		<g id="shape281-427" transform="translate(48.3465,-62.5852)">
+			<title>流程.281</title>
+			<desc>返回数据 return rst</desc>
+			<rect x="0" y="643.938" width="56.6929" height="28.3465" class="st3"/>
+			<text x="10.35" y="655.64" class="st4">返回数据 <tspan x="10.34" dy="1.225em" class="st5">return rst</tspan></text>		</g>
+		<g id="shape282-431" transform="translate(48.3465,-76.7585)">
+			<title>动态连接线.282</title>
+			<path d="M0 672.28 L-28.35 672.28 L-28.35 147.87 L137.9 147.87" class="st1"/>
+		</g>
+	</g>
+</svg>

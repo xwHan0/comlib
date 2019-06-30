@@ -114,3 +114,5 @@ from comlib.mapreduce.child import Child
 
 from comlib.mapreduce.iterator_result import Result
 from comlib.mapreduce.tree.result_tree import ResultTree
+
+from comlib.mapreduce.middleware.middleware import MiddleWare
