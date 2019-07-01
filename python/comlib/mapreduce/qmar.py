@@ -185,7 +185,7 @@ class Qmar:
 
     def wm(self, *args):
         """绑定到Middleware"""
-        args[0].bind_qmar(self)
+        args[0].bind(self)
         return args[0]
 
     def result(self, func=None):

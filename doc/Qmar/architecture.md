@@ -1,3 +1,8 @@
+
+# Structure
+
+![Strucute](Structure.svg)
+
 # Stack
 Qmar对树的搜索采用了stack迭代方式。Qmar在内部维护了一个遍历stack。其结构如下：
 ```python

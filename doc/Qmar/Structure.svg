@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- 由 Microsoft Visio, SVG Export 生成 Structure.svg 页-1 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		width="7.07953in" height="4.80089in" viewBox="0 0 509.726 345.664" xml:space="preserve" color-interpolation-filters="sRGB"
+		class="st19">
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:#ffffff;stroke:none;stroke-width:0.25}
+		.st2 {fill:#f2f2f2;stroke:#000000;stroke-width:0.25}
+		.st3 {fill:#000000;font-family:Arial;font-size:0.75em;font-weight:bold}
+		.st4 {fill:none;stroke:#0070c0;stroke-dasharray:2.25,2.25;stroke-width:0.75}
+		.st5 {marker-end:url(#mrkr5-14);stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st6 {fill:#000000;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:0.34246575342466}
+		.st7 {fill:#ffffff;stroke:none;stroke-linecap:butt;stroke-width:7.2}
+		.st8 {fill:#4f87bb;font-family:Arial;font-size:0.666664em}
+		.st9 {fill:#bfbfbf;stroke:#000000;stroke-width:0.25}
+		.st10 {fill:#000000;font-family:Arial;font-size:0.666664em}
+		.st11 {fill:#000000;font-family:黑体;font-size:0.666664em}
+		.st12 {fill:none;stroke:none;stroke-width:0.25}
+		.st13 {fill:#fbe5d5;stroke:#000000;stroke-width:0.25}
+		.st14 {marker-end:url(#mrkr5-14);stroke:#000000;stroke-dasharray:5.25,3.75,0,3.75;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st15 {marker-end:url(#mrkr5-110);stroke:#00b050;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st16 {fill:#00b050;fill-opacity:1;stroke:#00b050;stroke-opacity:1;stroke-width:0.34246575342466}
+		.st17 {stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.5}
+		.st18 {marker-end:url(#mrkr5-14);stroke:#000000;stroke-dasharray:0.75,1.5;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st19 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<defs id="Markers">
+		<g id="lend5">
+			<path d="M 2 1 L 0 0 L 1.98117 -0.993387 C 1.67173 -0.364515 1.67301 0.372641 1.98465 1.00043 " style="stroke:none"/>
+		</g>
+		<marker id="mrkr5-14" class="st6" refX="-5.11" orient="auto" markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend5" transform="scale(-2.92,-2.92) "/>
+		</marker>
+		<marker id="mrkr5-110" class="st16" refX="-4.63" orient="auto" markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend5" transform="scale(-2.92,-2.92) "/>
+		</marker>
+	</defs>
+	<g>
+		<title>页-1</title>
+		<g id="shape337-1" transform="translate(177.915,-104.469)">
+			<title>流程.337</title>
+			<rect x="0" y="331.491" width="113.386" height="14.1732" class="st1"/>
+		</g>
+		<g id="shape314-3" transform="translate(170.829,-146.989)">
+			<title>圆角矩形</title>
+			<desc>Qmar (Iter)</desc>
+			<path d="M12.76 345.66 L114.8 345.66 A12.7557 12.7557 -180 0 0 127.56 332.91 L127.56 159.99 A12.7557 12.7557 -180 0 0
+						 114.8 147.24 L12.76 147.24 A12.7557 12.7557 -180 0 0 0 159.99 L0 332.91 A12.7557 12.7557 -180 0 0 12.76
+						 345.66 Z" class="st2"/>
+			<text x="40.77" y="157.34" class="st3">Qmar (Iter)</text>		</g>
+		<g id="shape287-6" transform="translate(355.081,-175.335)">
+			<title>流程.287</title>
+			<desc>MiddleWare (Iter)</desc>
+			<path d="M0 345.66 L113.39 345.66 L113.39 203.93 L0 203.93 L0 345.66 Z" class="st4"/>
+			<text x="2" y="214.03" class="st3">MiddleWare (Iter)</text>		</g>
+		<g id="shape289-9" transform="translate(298.388,-239.115)">
+			<title>动态连接线.289</title>
+			<desc>wm(...)</desc>
+			<path d="M0 338.58 L52.86 338.58" class="st5"/>
+			<rect x="16.1278" y="333.778" width="24.4374" height="9.59985" class="st7"/>
+			<text x="16.13" y="340.98" class="st8">wm(...)</text>		</g>
+		<g id="shape290-17" transform="translate(206.262,-76.1228)">
+			<title>流程.290</title>
+			<desc>matched</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st9"/>
+			<text x="13" y="340.98" class="st10">matched</text>		</g>
+		<g id="shape292-20" transform="translate(177.915,-76.1228)">
+			<title>流程.292</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st9"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape293-23" transform="translate(262.955,-76.1228)">
+			<title>流程.293</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st9"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape294-26" transform="translate(206.262,-61.9496)">
+			<title>流程.294</title>
+			<desc>matched</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st9"/>
+			<text x="13" y="340.98" class="st10">matched</text>		</g>
+		<g id="shape295-29" transform="translate(177.915,-61.9496)">
+			<title>流程.295</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st9"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape296-32" transform="translate(262.955,-61.9496)">
+			<title>流程.296</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st9"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape300-35" transform="translate(206.262,-19.4299)">
+			<title>流程.300</title>
+			<desc>matched</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st9"/>
+			<text x="13" y="340.98" class="st10">matched</text>		</g>
+		<g id="shape301-38" transform="translate(177.915,-19.4299)">
+			<title>流程.301</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st9"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape302-41" transform="translate(262.955,-19.4299)">
+			<title>流程.302</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st9"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape303-44" transform="translate(523.58,283.715) rotate(90)">
+			<title>流程.303</title>
+			<desc>…</desc>
+			<rect x="0" y="232.278" width="28.3465" height="113.386" class="st9"/>
+			<text x="10.17" y="291.57" class="st11">…</text>		</g>
+		<g id="shape304-47" transform="translate(135.396,-19.4299)">
+			<title>工作表.304</title>
+			<desc>ROOT</desc>
+			<rect x="0" y="331.491" width="42.5197" height="14.1732" class="st12"/>
+			<text x="15.41" y="340.98" class="st10">ROOT</text>		</g>
+		<g id="shape305-50" transform="translate(369.254,-196.595)">
+			<title>开始/结束.305</title>
+			<desc>Reduce</desc>
+			<path d="M7.09 345.66 L77.95 345.66 A7.08661 7.08661 -180 0 0 77.95 331.49 L7.09 331.49 A7.08661 7.08661 -180 1 0 7.09
+						 345.66 Z" class="st2"/>
+			<text x="26.26" y="341.28" class="st3">Reduce</text>		</g>
+		<g id="shape306-53" transform="translate(369.254,-182.422)">
+			<title>开始/结束.306</title>
+			<desc>ReduceTree</desc>
+			<path d="M7.09 345.66 L77.95 345.66 A7.08661 7.08661 -180 0 0 77.95 331.49 L7.09 331.49 A7.08661 7.08661 -180 1 0 7.09
+						 345.66 Z" class="st2"/>
+			<text x="16.76" y="341.28" class="st3">ReduceTree</text>		</g>
+		<g id="shape308-56" transform="translate(135.396,-61.9496)">
+			<title>工作表.308</title>
+			<desc>Parent</desc>
+			<rect x="0" y="331.491" width="42.5197" height="14.1732" class="st12"/>
+			<text x="14.95" y="340.98" class="st10">Parent</text>		</g>
+		<g id="shape309-59" transform="translate(135.396,-76.1228)">
+			<title>工作表.309</title>
+			<desc>Current</desc>
+			<rect x="0" y="331.491" width="42.5197" height="14.1732" class="st12"/>
+			<text x="11.84" y="340.98" class="st10">Current</text>		</g>
+		<g id="shape310-62" transform="translate(502.32,283.715) rotate(90)">
+			<title>工作表.310</title>
+			<desc>…</desc>
+			<rect x="0" y="331.491" width="28.3465" height="14.1732" class="st12"/>
+			<text x="10.17" y="341.18" class="st11">…</text>		</g>
+		<g id="shape311-65" transform="translate(227.522,-146.989)">
+			<title>动态连接线.311</title>
+			<desc>stack[]</desc>
+			<path d="M7.09 345.66 L7.09 370.18" class="st5"/>
+			<rect x="-4.47204" y="355.038" width="23.1172" height="9.59985" class="st7"/>
+			<text x="-4.47" y="362.24" class="st8">stack[]</text>		</g>
+		<g id="shape315-72" transform="translate(0.75,-175.335)">
+			<title>流程.315</title>
+			<desc>CommonIterator</desc>
+			<path d="M0 345.66 L113.39 345.66 L113.39 203.93 L0 203.93 L0 345.66 Z" class="st4"/>
+			<text x="2" y="214.03" class="st3">CommonIterator</text>		</g>
+		<g id="shape316-75" transform="translate(14.9232,-196.595)">
+			<title>开始/结束.316</title>
+			<desc>Counter</desc>
+			<path d="M7.09 345.66 L77.95 345.66 A7.08661 7.08661 -180 0 0 77.95 331.49 L7.09 331.49 A7.08661 7.08661 -180 1 0 7.09
+						 345.66 Z" class="st2"/>
+			<text x="25.27" y="341.28" class="st3">Counter</text>		</g>
+		<g id="shape317-78" transform="translate(14.9232,-182.422)">
+			<title>开始/结束.317</title>
+			<desc>Index</desc>
+			<path d="M7.09 345.66 L77.95 345.66 A7.08661 7.08661 -180 0 0 77.95 331.49 L7.09 331.49 A7.08661 7.08661 -180 1 0 7.09
+						 345.66 Z" class="st2"/>
+			<text x="30.77" y="341.28" class="st3">Index</text>		</g>
+		<g id="shape318-81" transform="translate(170.829,-239.115)">
+			<title>动态连接线.318</title>
+			<desc>init(...)</desc>
+			<path d="M0 338.58 L-52.86 338.58" class="st5"/>
+			<rect x="-39.4577" y="333.778" width="22.2223" height="9.59985" class="st7"/>
+			<text x="-39.46" y="340.98" class="st8">init(...)</text>		</g>
+		<g id="shape327-88" transform="translate(355.081,-5.25669)">
+			<title>圆角矩形.327</title>
+			<desc>Match</desc>
+			<path d="M12.76 345.66 L114.8 345.66 A12.7557 12.7557 -180 0 0 127.56 332.91 L127.56 216.69 A12.7557 12.7557 -180 0 0
+						 114.8 203.93 L12.76 203.93 A12.7557 12.7557 -180 0 0 -0 216.69 L0 332.91 A12.7557 12.7557 -180 0 0 12.76
+						 345.66 Z" class="st2"/>
+			<text x="50.78" y="214.03" class="st3">Match</text>		</g>
+		<g id="shape328-91" transform="translate(369.254,-104.469)">
+			<title>流程.328</title>
+			<desc>pred</desc>
+			<rect x="0" y="331.491" width="50.7402" height="14.1732" class="st13"/>
+			<text x="17.36" y="340.98" class="st10">pred</text>		</g>
+		<g id="shape330-94" transform="translate(369.254,-90.2961)">
+			<title>流程.330</title>
+			<desc>pre</desc>
+			<rect x="0" y="331.491" width="50.7402" height="14.1732" class="st13"/>
+			<text x="19.59" y="340.98" class="st10">pre</text>		</g>
+		<g id="shape331-97" transform="translate(419.994,-90.2961)">
+			<title>流程.331</title>
+			<desc>post</desc>
+			<rect x="0" y="331.491" width="48.4724" height="14.1732" class="st13"/>
+			<text x="16.68" y="340.98" class="st10">post</text>		</g>
+		<g id="shape332-100" transform="translate(234.608,-19.4299)">
+			<title>动态连接线.332</title>
+			<path d="M0 345.66 L0 356.29 L109.84 356.29 L109.84 288.97 L116.64 288.97" class="st14"/>
+		</g>
+		<g id="shape333-105" transform="translate(475.553,-132.816)">
+			<title>动态连接线.333</title>
+			<desc>next</desc>
+			<path d="M7.09 345.66 C14.17 345.66 14.17 356.29 14.17 366.92 C14.17 375.32 14.17 383.71 10.69 386.87 L10.35 386.99"
+					class="st15"/>
+			<rect x="6.61277" y="362.124" width="15.121" height="9.59985" class="st7"/>
+			<text x="6.61" y="369.32" class="st8">next</text>		</g>
+		<g id="shape334-113" transform="translate(475.553,-61.9496)">
+			<title>动态连接线.334</title>
+			<desc>brother</desc>
+			<path d="M7.09 345.66 C14.17 345.66 14.17 356.29 14.17 366.92 C14.17 375.32 14.17 383.71 10.69 386.87 L10.35 386.99"
+					class="st15"/>
+			<rect x="1.49946" y="362.124" width="25.3477" height="9.59985" class="st7"/>
+			<text x="1.5" y="369.32" class="st8">brother</text>		</g>
+		<g id="shape335-120" transform="translate(-167.749,326.234) rotate(-90)">
+			<title>工作表.335</title>
+			<path d="M0 345.66 L113.39 345.66" class="st17"/>
+		</g>
+		<g id="shape336-123" transform="translate(-54.363,326.234) rotate(-90)">
+			<title>工作表.336</title>
+			<path d="M0 345.66 L113.39 345.66" class="st17"/>
+		</g>
+		<g id="shape347-126" transform="translate(177.915,-302.894)">
+			<title>流程.347</title>
+			<desc>assist</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="18.12" y="340.98" class="st10">assist</text>		</g>
+		<g id="shape351-129" transform="translate(234.608,-302.894)">
+			<title>流程.351</title>
+			<desc>child</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="20.12" y="340.98" class="st10">child</text>		</g>
+		<g id="shape352-132" transform="translate(177.915,-288.721)">
+			<title>流程.352</title>
+			<desc>match</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="17.45" y="340.98" class="st10">match</text>		</g>
+		<g id="shape353-135" transform="translate(234.608,-288.721)">
+			<title>流程.353</title>
+			<desc>matches</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="13.23" y="340.98" class="st10">matches</text>		</g>
+		<g id="shape354-138" transform="translate(177.915,-260.375)">
+			<title>流程.354</title>
+			<desc>skip</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="21.23" y="340.98" class="st10">skip</text>		</g>
+		<g id="shape355-141" transform="translate(234.608,-260.375)">
+			<title>流程.355</title>
+			<desc>all</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="24.34" y="340.98" class="st10">all</text>		</g>
+		<g id="shape356-144" transform="translate(177.915,-232.028)">
+			<title>流程.356</title>
+			<desc>filter</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="20.79" y="340.98" class="st10">filter</text>		</g>
+		<g id="shape357-147" transform="translate(234.608,-232.028)">
+			<title>流程.357</title>
+			<desc>result</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="18.57" y="340.98" class="st10">result</text>		</g>
+		<g id="shape358-150" transform="translate(177.915,-217.855)">
+			<title>流程.358</title>
+			<desc>map</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="20.57" y="340.98" class="st10">map</text>		</g>
+		<g id="shape359-153" transform="translate(234.608,-217.855)">
+			<title>流程.359</title>
+			<desc>reduce</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="16.12" y="340.98" class="st10">reduce</text>		</g>
+		<g id="shape360-156" transform="translate(177.915,-189.509)">
+			<title>流程.360</title>
+			<desc>run</desc>
+			<rect x="0" y="331.491" width="56.6929" height="14.1732" class="st13"/>
+			<text x="22.57" y="340.98" class="st10">run</text>		</g>
+		<g id="shape364-159" transform="translate(355.081,-224.942)">
+			<title>动态连接线.364</title>
+			<desc>bind(...)</desc>
+			<path d="M0 338.58 L-52.86 338.58" class="st18"/>
+			<rect x="-41.9069" y="333.778" width="27.1208" height="9.59985" class="st7"/>
+			<text x="-41.91" y="340.98" class="st8">bind(...)</text>		</g>
+		<g id="shape365-166" transform="translate(461.38,-302.894)">
+			<title>动态连接线.365</title>
+			<desc>wm(...)</desc>
+			<path d="M7.09 345.66 C14.17 345.66 14.17 356.29 14.17 366.92 C14.17 375.32 14.17 383.71 10.69 386.87 L10.35 386.99"
+					class="st15"/>
+			<rect x="1.95457" y="362.124" width="24.4374" height="9.59985" class="st7"/>
+			<text x="1.95" y="369.32" class="st8">wm(...)</text>		</g>
+		<g id="shape366-173" transform="translate(461.38,-189.509)">
+			<title>动态连接线.366</title>
+			<desc>bind(...)</desc>
+			<path d="M7.09 345.66 C14.17 345.66 14.17 335.03 14.17 324.4 C14.17 316.01 14.17 307.62 10.69 304.46 L10.35 304.34"
+					class="st15"/>
+			<rect x="0.612865" y="319.605" width="27.1208" height="9.59985" class="st7"/>
+			<text x="0.61" y="326.8" class="st8">bind(...)</text>		</g>
+	</g>
+</svg>

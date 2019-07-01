@@ -1,6 +1,6 @@
 class MiddleWare:
 
-    def bind_qmar(self, qmar): 
+    def bind(self, qmar): 
         self.qmar = qmar
 
     def __iter__(self):
