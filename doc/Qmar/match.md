@@ -1,24 +1,23 @@
 ![Qmar](qmar.svg)
 
-# Introduce
-Qmar是一个Tree结构遍历工具。Qmar在给定的树结构中，按给定顺序执行迭代(Query)-匹配(Match)-执行(Action)-返回(Return)动作。
+- [Match](#Match)
+- [匹配条件树](#%E5%8C%B9%E9%85%8D%E6%9D%A1%E4%BB%B6%E6%A0%91)
+- [Feature](#Feature)
+  - [支持字符Match串](#%E6%94%AF%E6%8C%81%E5%AD%97%E7%AC%A6Match%E4%B8%B2)
+  - [支持内联匹配](#%E6%94%AF%E6%8C%81%E5%86%85%E8%81%94%E5%8C%B9%E9%85%8D)
 
-# Basic Concept
-## Match-Action
-Qmar使用comlib.mapreduce.Match类来定义数据匹配判断和对应的动作。
-- match: 匹配判断函数
-- pre: PRE过程动作函数
-- post: POST过程动作函数
-Match类定义类似如下定义。具体定义与说明见comlib.mapreduce.Match
+# Match
+comlib.mapreduce.Match类定义了数据匹配判断和对应的动作。其定义参考如下
 ```python
     class Match:
-        def match(self, *datum, stack=[]): return True
-        def pre(self, *datum, stack=[]): return None
-        def post(self, *datum, stack=[]): return None
+        def match(self, *datum, stack=[]): return True #匹配判断函数
+        def pre(self, *datum, stack=[]): return None #PRE过程Action
+        def post(self, *datum, stack=[]): return None #POST过程Action
 ```
+
 Qmar使用Match.match函数对数据*datum进行匹配判断，若匹配成功则执行该Match对应的pre和post函数。
 
-## Match树
+# 匹配条件树
 Qmar支持把一些列Match实例通过brother和next指针组织起来，形成一个Match匹配树结构。其结构类似于：
 
 ![MatchTree](MatchTree.svg)

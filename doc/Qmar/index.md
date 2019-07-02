@@ -6,7 +6,7 @@ Qmar是一个Tree结构遍历工具。Qmar在给定的树结构中，按给定�
   - (Q)[Query](query.md)
   - (M)[Match](match.md)
   - (R)[Result](result.md)
-
+- [Development guide](architecture.md)
 
 # Feature
 
