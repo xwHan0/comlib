@@ -108,7 +108,7 @@ var IterTree = {
                     }else{
                         node.sta = PRE  //复位状态，供下一次迭代使用
                         this.stack.pop()    //当前节点出栈
-                        if( nxts = _get_next_elements_(this.stack[this.stack.length-1].iters) ){   //还需要继续迭代父元素的下一个
+                        if( nxts = this._get_next_elements_(this.stack[this.stack.length-1].iters) ){   //还需要继续迭代父元素的下一个
                             //处理下一个兄弟节点
                             this.stack.push({value:nxts, sta:PRE})
                         }

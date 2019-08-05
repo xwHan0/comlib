@@ -11,7 +11,11 @@ var a = [1,2,3]
 
 it.stack = [{value:[a], sta:0}]
 
-it.next()
+var rst = []
+for( let r of it )
+    rst.push(r)
+
+console.log(rst)
 
 </script>
 </html>
