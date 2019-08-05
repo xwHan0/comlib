@@ -34,42 +34,41 @@ const DEFAULT_MATCHES = [
 //==================   对外接口定义  ======================
 
 // 核心类定义
-var IterTree = function(){
+var IterTree = {
 
     //--------  类常量定义
 
 
     //--------  实例变量定义
-    self = this
-    this.stack = []     //迭代堆栈
-    this.matches = DEFAULT_MATCHES
+    stack : [],    //迭代堆栈
+    matches : DEFAULT_MATCHES,
 
     // 获取子项迭代器
-    var _get_child_iter_ = function(child){
-        for( let match of self.matches ){   //非this开放函数，this被转向
+    _get_child_iter_ : function(child){
+        for( let match of this.matches ){   //非this开放函数，this被转向
             if( match.pred(child) )
                 return match.iter(child)    //返回第一个匹配成功的迭代器获取函数
         }
         return null //无匹配条件，返回null
-    }
+    },
 
     //获取节点数据集合的子节点迭代器集合
     //遵循最小迭代原则：一个节点数据没有迭代器，则整体返回null
-    var _get_children_iters_ = function(children){
+    _get_children_iters_ : function(children){
         let rst = []
         for( let child of children ){
-            iter = _get_child_iter_(child)
+            iter = this._get_child_iter_(child)
             if( iter == null )
                 return null
             else
                 rst.push(iter)
         }
         return rst
-    }
+    },
 
     //获取迭代器集合iters的每个迭代器的第一个元素集合。
     //遵循最小迭代原则：有一个迭代器返回done=true，则整体返回null
-    var _get_next_elements_ = function(iters){
+    _get_next_elements_ : function(iters){
         let rst = []
         for( let iter of iters ){
             nxt = iter.next()
@@ -79,10 +78,10 @@ var IterTree = function(){
                 rst.push(nxt.value)
         }
         return rst
-    }
+    },
 
     //----------------------  迭代核心代码  --------------------------
-    this.next = function(){
+    next : function(){
         for( let i=0; i<ITIMES; i++ ){
             //获取堆栈的顶节点，作为当前处理节点
             let node = this.stack[this.stack.length-1]
@@ -91,9 +90,9 @@ var IterTree = function(){
             switch( node.sta ){
                 case PRE:
                     //获取子节点迭代器集合
-                    if( node.iters = _get_children_iters_(node.value) ){
+                    if( node.iters = this._get_children_iters_(node.value) ){
                         //获取所有迭代器的第一个子节点
-                        if( nxts = _get_next_elements_(node.iters) ){
+                        if( nxts = this._get_next_elements_(node.iters) ){
                             //把子节点压入堆栈
                             this.stack.push({value:nxts, sta:PRE})
                         }
@@ -103,7 +102,7 @@ var IterTree = function(){
                     //返回结果
                     return {value:node.value, done:false, sta:PRE, stack:this.stack}
                 
-                    case POST:
+                case POST:
                     if( this.stack.length == 1 ){
                         node.sta = DONE     //已经到了根节点
                     }else{
@@ -124,10 +123,10 @@ var IterTree = function(){
                     throw "Please do NOT modify stack[x].sta property!"
             }
         }
-    }
+    },
 
     //Javascript可迭代协议
-    // [Symbol.iterator] = function(){return this}
+    [Symbol.iterator] : function(){return this}
 }
 
 // export {
