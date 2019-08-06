@@ -1,15 +1,10 @@
 <html>
 
 <script src="itertree.js"></script>
-<script type="modules">
-
-// import {IterTree} from "./itertree.js"
-
+<script>
 
 var a = [1,2,3]
-var it = IterTree(a)
-
-// it.stack = [{value:[a], sta:0}]
+var it = comlib.mapreduce.iterTree(a)
 
 var rst = []
 for( let r of it )
