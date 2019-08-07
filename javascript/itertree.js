@@ -13,11 +13,12 @@ comlib.mapreduce.index = function(prefix=[]){
 
 	next : function(){
 	    prefix[prefix.length-1] += 1
-	    return index(prefix)
+	    return {value:comlib.mapreduce.index(prefix), done:false}
 	},
 
         [Symbol.iterator] : function(){
-	    return index(prefix.push(-1))
+	    prefix.push(-1)
+	    return comlib.mapreduce.index(prefix)
         },
     }
 }
