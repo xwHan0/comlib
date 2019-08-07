@@ -4,13 +4,12 @@
 <script>
 
 var a = [1,2,3]
-var it = comlib.mapreduce.iterTree(a)
+var it = comlib.mapreduce.iterTree(a, comlib.mapreduce.index())
 
-var rst = []
-for( let r of it )
-    rst.push(r)
-
-console.log([...it])
+for( let n of it ){
+    if ( n[1].idx.length > 0 )
+        console.log(n[0])
+}
 
 </script>
 </html>

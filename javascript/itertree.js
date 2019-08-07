@@ -8,17 +8,17 @@ comlib.mapreduce = new function(){}
 comlib.mapreduce.index = function(prefix=[]){
 
     return {
-	idx : function(){return prefix},
-	lvl : function(){return prefix.length},
+        idx : prefix,
+        lvl : function(){return this.idx.length},
 
-	next : function(){
-	    prefix[prefix.length-1] += 1
-	    return {value:comlib.mapreduce.index(prefix), done:false}
-	},
+	    next : function(){
+            // var nprefix = prefix.slice()
+            this.idx[this.idx.length-1] += 1
+	        return {value:comlib.mapreduce.index(this.idx), done:false}
+	    },
 
         [Symbol.iterator] : function(){
-	    prefix.push(-1)
-	    return comlib.mapreduce.index(prefix)
+	        return comlib.mapreduce.index(this.idx.concat([-1]))
         },
     }
 }
