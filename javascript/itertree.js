@@ -4,44 +4,20 @@ var comlib = window.comlib || {}
 comlib.mapreduce = new function(){}
 
 
-// class Index(CommonIterator):
-//     """返回节点序号迭代器"""
-//     def __init__(self, prefix=[], root=True):
-//         CommonIterator.__init__(self)
-//         self.curr = -1
-//         self.prefix = prefix
-//         self.root = root
-        
-//     def __next__(self):
-//         self.curr += 1
-//         return self
-
-//     def idx(self): return self.prefix if self.root else self.prefix + [self.curr]
-//     def lvl(self): return len(self.prefix)
-//     def sub(self,*node): return Index( self.prefix, False ) if self.root else Index(self.prefix + [self.curr], False)
-
-
 // 位置迭代器定义
-comlib.mapreduce.indexNext = function(){
-
-}
-
 comlib.mapreduce.index = function(prefix=[]){
-    this.prefix = prefix
-    var self = this
 
     return {
-        prefix : [],
-        curr: -1,
-        root: true,
+	idx : function(){return prefix},
+	lvl : function(){return prefix.length},
 
-        next: function(){
-            return {done:false, value:indexNext(prefix)}
-        },
+	next : function(){
+	    prefix[prefix.length-1] += 1
+	    return index(prefix)
+	},
 
         [Symbol.iterator] : function(){
-            this.prefix = self.prefix
-            return this
+	    return index(prefix.push(-1))
         },
     }
 }
@@ -156,7 +132,7 @@ comlib.mapreduce.iterTree = function(args){
         matches : DEFAULT_MATCHES,
         pred : null,
 
-        filter : function(pred){this.pred = pred},
+        filter : function(pred){this.pred = pred;return this},
 
         //----------------------  迭代核心代码  --------------------------
         next : function(){
