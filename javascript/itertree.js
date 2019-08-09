@@ -8,7 +8,7 @@ comlib.mapreduce = new function(){}
 comlib.mapreduce.index = function(prefix=[]){
 
     return {
-        idx : prefix,
+        idx : prefix.slice(), //防止指针传递问题
         lvl : function(){return this.idx.length},
 
 	    next : function(){
