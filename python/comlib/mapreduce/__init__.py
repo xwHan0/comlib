@@ -1,112 +1,4 @@
 """
-# Introduce
-  一次Qmar调用分为2个步骤：
-  1. 实例化Qmar对象
-    Qmar对象的构建包含：数据绑定、偏移设置、子迭代器设置和匹配设置几个步骤。
-    注意：!步骤之间的顺序不可以改写!
-    ```
-        a = [1,2,3,4]
-        qm = Qmar(a, Index())   # MUST. 绑定数据
-            .skip()  # Optional. 便宜设置
-            .child(list, ChildSub('sub'))  # Optional. 子迭代器设置
-            .match(lambda x: odd, lambda x: x+100)  # 匹配设置
-    ```
-  2. 迭代，并获取结果
-    ```
-        rst = [x for x in qm]
-    ```
-
-# 匹配执行
-  Qmar使用Match对象来对数据进行过滤匹配和动作执行。Qmar使用Match.match函数进行匹配，若匹配成功则在PRE过程中
-  执行Match.pre函数，在POST过程中执行Match.post函数。Match的详细定义参考：comlib.Match.
-  User可以通过实例化或者扩展Match类来实现自定义的匹配和定义相对应的执行动作。
-
-# 迭代栈
-  Qmar在迭代时，会依照datum的树状层次把datum压入一个栈，同时为栈节点设置相关的状态表示。该栈被称为Qmar的迭代栈。
-  
-  迭代栈的[0]节点对应树的根节点信息，[-1]节点对应当前节点信息。[-2]节点对应当前节点的父节点信息，依此类推。
-
-  每个迭代节点包含以下信息：
-  - sta: 当前迭代过程：PRE|POST|DONE;
-  - datum: 当前节点数据Tuple;
-  - match: 当前节点的匹配链(见'Match匹配树'小节说明)起始match
-  - matched: 当前节点匹配到的match。没有匹配成功，该域为None
-  - children：当前节点子节点的迭代器
-  - result(Option): Reduce操作的返回结果
-
-# Match匹配树
-  
-  Qmar在PRE过程中的匹配过程为：
-  1. 使用Datum树的头节点数据在和Match树的头节点对应的匹配链中进行匹配；
-  2. 若匹配到一个match(matchX)，则记录下一次需要匹配的match链为matchX.next指向的匹配链；
-  3. 若找不到，则判断为匹配失败。跳过当前树节点的子节点继续迭代；
-
-  使用brother并行匹配的例子为：
-  ```
-  l = [1, 'Hello', 2, 'World', 3, (4.5, 6,7)]   # 待迭代的数据结构
-  mt0 = Match(lambda x: type(x)==int, lambda (*d, result=None, stack=[]): return d[0]+1)   # 定义整型数匹配
-  mt1 = Match(lambda x: type(x)==str, lambda (*d, result=None, stack=[]): return d[0]+',')   # 定义字符串匹配
-  mt0.brother = mt1 # 定义Match关系
-  rst = [for x in Qmar(l).match(mt0)]
-  ```
-
-  # Feature
-
-  ### 支持多迭代
-  Qmar支持实例化一次，然后多次迭代。Qmar每次迭代完成后，会恢复迭代状态，供下次迭代使用。例如：
-  ```
-      def test_1d_array(self):
-        a = [10,20,30,40]
-        que = Qmar(a).skip().all()
-        r =[]
-        for i in range(5):
-            r += [x for x in que]
-        assert r == [10,20,30,40]*5
-  ```
-
-  ### 支持条件过滤
-  Qmar支持使用filter设置过滤条件。
-  ```
-      def test_func_pred(self):
-        a = [1,2,3,4,5,6,7]
-        r = [x for x in Qmar(a).skip().filter(lambda x:x%2==0)]
-        assert r == [2,4,6]
-  ```
-
-  ### 支持map映射
-  ```
-    def test_map_commom(self):
-        rst = [x for x in Qmar([1,2,3,4]).skip().map(lambda x:x+10)]
-        assert rst == [11,12,13,14]
-  ```
-
-  ### 支持数据Match
-  用户可以从Match和Child派生出自己的数据内联处理类。该类不仅仅是数据，也是Match和Child。
-  注意：扩展类必须调用Match.__init__进行初始化。
-  ```
-    class MyQMar(Match, Child):
-      def __init__(self, v, sub=[]):
-          super().__init__(pred=Match.NONE, pre=Match.NONE)
-          self.v = v
-          self.subs = sub
-
-      def sub(self, *datum):
-          return self.subs
-
-      def match(self,*datum, stack=[]):
-          return datum[0].v % 2 == 0
-
-      def pre(self, *datum, stack=[]):
-          return datum[0].v + 100
-
-
-    class TestQMar:
-      def test_common_qmar(self):
-          node = MyQMar(0, [MyQMar(i) for i in range(1,5)])
-          r = [x for x in Qmar(node).all()]
-          assert r == [100,102,104]
-  ```
-
 """
 
 from comlib.mapreduce.match import Match
@@ -116,3 +8,114 @@ from comlib.mapreduce.iterator_result import Result
 from comlib.mapreduce.tree.result_tree import ResultTree
 
 from comlib.mapreduce.middleware.middleware import MiddleWare
+
+
+
+PRE,POST,DONE = 0,1,2
+
+
+class IterTreeResult:
+     def __init__(self, value, done, status, stack):
+        self.value = value
+        self.done = done
+        self.status = status
+        self.stack = stack
+
+
+class IterTreeNode:
+    def __init__(self, value, sta=PRE):
+        self.value = value
+        self.sta = sta
+
+    
+class IterTreeMatch:
+    def __init__(self, pred, iter):
+        self.pred = pred
+        self.iter = iter
+
+
+DEFAULT_MATCHES = [
+    IterTreeMatch(lambda x:hasattr(x,'__iter__'), iter),
+]
+
+
+class iterTree:
+    ITIMES = 999999
+
+    def __init__(self, *value):
+        self.stack = [IterTreeNode(value)]
+        self.matches = DEFAULT_MATCHES
+
+    def _get_child_iter_(self, child):
+        for match in self.matches:
+            if match.pred(child):
+                return match.iter(child)
+        return None
+
+    def _get_children_iters_(self, children):
+        rst = []
+        for child in children:
+            iter = self._get_child_iter_(child)
+            if iter == None:
+                return None
+            else:
+                rst.append(iter)
+        return rst
+
+    def __iter__(self):
+        return self
+
+    def __next__( self ):
+        
+        for _ in range(iterTree.ITIMES):
+                
+            # 获取当前处理的节点
+            node = self.stack[-1]
+                
+            if node.sta == PRE: # PRE处理过程
+                      
+                # Next prepare
+                try:
+                        
+                    # 获取datum子节点迭代器集合
+                    node.children = self._get_children_iters_(node.value)
+                    if node.children:
+                        # 获取下一个子节点
+                        nxt_datum = [next(i) for i in node.children]
+                        # Push next elements into stack
+                        self.stack.append(IterTreeNode(nxt_datum))
+                except (StopIteration,TypeError):   #Leaf node
+                    node.children = None
+                        
+                # Modify top element status of stack
+                node.sta = POST
+                # Return
+                return IterTreeResult(node.value, False, PRE, self.stack)
+                        
+            elif node.sta == POST:
+                try:
+                    # 判断是否到根节点
+                    if len(self.stack) == 1:
+                        node.sta = DONE
+                    else: # 非根节点
+                        node.sta = PRE  # For next status
+                        # Pop stack
+                        self.stack.pop()
+    
+                        # Parent element forward
+                        nxt_datum = [next(i) for i in self.stack[-1].children]
+                        self.stack.append(IterTreeNode(nxt_datum))
+    
+                except StopIteration: # IndexError for empty-stack
+                    pass
+    
+                return IterTreeResult(node.value, False, PRE, self.stack)
+    
+            elif node.sta == DONE:
+                    
+                node.sta = PRE  # 为下一次迭代做准备
+                raise StopIteration()
+    
+            else:
+                raise Exception('Invalid status of FSM!')
+        

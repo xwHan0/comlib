@@ -99,7 +99,7 @@ comlib.mapreduce.iterTree = function(args){
 
     //获取节点数据集合的子节点迭代器集合
     //遵循最小迭代原则：一个节点数据没有迭代器，则整体返回null
-    var _get_children_iters_ = function(children, matches, pred){
+    var _get_children_iters_ = function(children, matches){
         let rst = []
         for( let child of children ){
             iter = _get_child_iter_(child, matches)
@@ -108,7 +108,7 @@ comlib.mapreduce.iterTree = function(args){
             else
                 rst.push(iter)
         }
-        return pred==null ? rst : comlib.mapreduce.filter.apply(pred,iter)
+        return rst
     }
 
     //获取迭代器集合iters的每个迭代器的第一个元素集合。
@@ -133,8 +133,6 @@ comlib.mapreduce.iterTree = function(args){
         matches : DEFAULT_MATCHES,
         pred : null,
 
-        filter : function(pred){this.pred = pred;return this},
-
         //----------------------  迭代核心代码  --------------------------
         next : function(){
             for( let i=0; i<ITIMES; i++ ){
@@ -145,9 +143,9 @@ comlib.mapreduce.iterTree = function(args){
                 switch( node.sta ){
                     case PRE:
                         //获取子节点迭代器集合
-                        if( node.iters = _get_children_iters_(node.value, this.matches, this.pred) ){
+                        if( node.children = _get_children_iters_(node.value, this.matches) ){
                             //获取所有迭代器的第一个子节点
-                            if( nxts = _get_next_elements_(node.iters) ){
+                            if( nxts = _get_next_elements_(node.children) ){
                                 //把子节点压入堆栈
                                 this.stack.push({value:nxts, sta:PRE})
                             }
@@ -155,7 +153,7 @@ comlib.mapreduce.iterTree = function(args){
                         //修改节点状态
                         node.sta = POST
                         //返回结果
-                        return {value:node.value, done:false, sta:PRE, stack:this.stack}
+                        return {value:node.value, done:false, status:PRE, stack:this.stack}
                     
                     case POST:
                         if( this.stack.length == 1 ){
@@ -163,19 +161,19 @@ comlib.mapreduce.iterTree = function(args){
                         }else{
                             node.sta = PRE  //复位状态，供下一次迭代使用
                             this.stack.pop()    //当前节点出栈
-                            if( nxts = _get_next_elements_(this.stack[this.stack.length-1].iters) ){   //还需要继续迭代父元素的下一个
+                            if( nxts = _get_next_elements_(this.stack[this.stack.length-1].children) ){   //还需要继续迭代父元素的下一个
                                 //处理下一个兄弟节点
-                                this.stack.push({value:nxts, sta:PRE})
+                                this.stack.push({value:nxts, status:PRE})
                             }
                         }
-                        return {value:node.value, done:false, sta:POST, stack:this.stack}
+                        return {value:node.value, done:false, status:POST, stack:this.stack}
                     
                     case DONE:
                         node.sta = PRE  //复位状态，供下一次迭代使用
                         return {done:true}
                     
                     default:
-                        throw "Please do NOT modify stack[x].sta property!"
+                        throw "Please do NOT modify stack[x].status property!"
                 }
             }
         },
