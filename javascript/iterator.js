@@ -1,11 +1,11 @@
 
 var comlib = window.comlib || {}
 
-comlib.mapreduce = new function(){}
+comlib.iterator = new function(){}
 
 
 // 位置迭代器定义
-comlib.mapreduce.index = function(prefix=[]){
+comlib.iterator.index = function(prefix=[]){
 
     return {
         idx : prefix.slice(), //防止指针传递问题
@@ -14,18 +14,18 @@ comlib.mapreduce.index = function(prefix=[]){
 	    next : function(){
             // var nprefix = prefix.slice()
             this.idx[this.idx.length-1] += 1
-	        return {value:comlib.mapreduce.index(this.idx), done:false}
+	        return {value:comlib.iterator.index(this.idx), done:false}
 	    },
 
         [Symbol.iterator] : function(){
-	        return comlib.mapreduce.index(this.idx.concat([-1]))
+	        return comlib.iterator.index(this.idx.concat([-1]))
         },
     }
 }
 
 
 // 过滤器定义
-comlib.mapreduce.filter = function(arguments){
+comlib.iterator.filter = function(arguments){
 
     var iters = Array.from(arguments)
     var pred = iters.shift()
@@ -56,7 +56,7 @@ comlib.mapreduce.filter = function(arguments){
 }
 
 // 核心类定义
-comlib.mapreduce.iterTree = function(args){
+comlib.iterator.tree = function(args){
 
     //=====================  常量定义  ===================
     const ITIMES = 9999999
