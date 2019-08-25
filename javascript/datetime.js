@@ -1,11 +1,10 @@
 var comlib = window.comlib || {}
-comlib.datetime = new function(){}
 
 function padLeftZero (str) {
     return ('00' + str).substr(str.length)
 }
 
-comlib.datetime.format = function(date, fmt) {
+Date.prototype.format = function(date, fmt) {
     if (/(y+)/.test(fmt)) {
       fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
     }
@@ -25,3 +24,8 @@ comlib.datetime.format = function(date, fmt) {
     return fmt
 }
   
+comlib.datetime = function(t){
+  return new Date(t)
+}
+
+exports.comlib = comlib
