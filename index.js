@@ -1,4 +1,5 @@
-// module.exports = require('./javascript/iterator.js')
-export function hello(){
-    console.log('Hello')
-}
+module.exports = require('./javascript/comlib.js')
+
+// export function hello(){
+//     console.log('Hello')
+// }
