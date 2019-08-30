@@ -4,14 +4,28 @@ var iterator = (function(it){
     // 位置迭代器定义
     it.index = function(prefix=[]){
 
+        var _prefix = []
+
+        if( Object.prototype.toString.call(prefix) === '[object Array]' )
+            _prefix = prefix.slice()
+        else if( typeof prefix === "string" ){
+            _prefix = prefix.match(/\d+/g)
+            for( let i=0; i<_prefix.length; i++ )
+                _prefix[i] = parseInt(_prefix[i])
+        }
+
         return {
-            idx : prefix.slice(), //防止指针传递问题
+            idx : _prefix, //防止指针传递问题
             lvl : function(){return this.idx.length},
 
             next : function(){
                 // var nprefix = prefix.slice()
                 this.idx[this.idx.length-1] += 1
                 return {value:comlib.iterator.index(this.idx), done:false}
+            },
+
+            toString: function(){
+                return "[" + _prefix.toString() + "]"
             },
 
             [Symbol.iterator] : function(){

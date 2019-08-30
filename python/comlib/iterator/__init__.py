@@ -1,6 +1,29 @@
 """
 """
 
+########################################################################################################
+########  index
+########################################################################################################
+class index:
+    def __init__(self, prefix=[]):
+        if isinstance(prefix, list):
+            self.idx = prefix[:]
+        elif isinstance(prefix, str):
+            self.idx = []        # TBD
+
+    def lvl(self): return len(self.idx)
+
+    def __next__(self):
+        self.idx[-1] += 1
+        return index(self.idx)
+
+    def __str__(self):
+        return str(self.idx)
+
+    def __iter__(self):
+        return index(self.idx + [-1])
+
+
 
 PRE,POST,DONE = 0,1,2
 
