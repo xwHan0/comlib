@@ -11,12 +11,14 @@ setup(
     url='',
     packages=[
         'comlib', 
+        'comlib.iterator',
          'comlib.ex',
          'comlib.mapreduce',
          'comlib.mapreduce.tree',
     ],
     package_dir={
         'comlib':'comlib',
+        'comlib':'comlib/iterator',
         'comlib.ex':'comlib/ex',
         'comlib.mapreduce':'comlib/mapreduce',
         'comlib.mapreduce.tree':'comlib/mapreduce/tree',

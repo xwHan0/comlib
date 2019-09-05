@@ -1,6 +1,8 @@
 """
 """
 
+import re
+
 ########################################################################################################
 ########  index
 ########################################################################################################
@@ -9,7 +11,9 @@ class index:
         if isinstance(prefix, list):
             self.idx = prefix[:]
         elif isinstance(prefix, str):
-            self.idx = []        # TBD
+            patt = re.compile(r'\d+')
+            rst = patt.findall(prefix)
+            self.idx = [int(n) for n in rst]        # TBD
 
     def lvl(self): return len(self.idx)
 
@@ -123,7 +127,7 @@ class tree:
                 except StopIteration: # IndexError for empty-stack
                     pass
     
-                return IterTreeResult(node.value, False, PRE, self.stack)
+                return IterTreeResult(node.value, False, POST, self.stack)
     
             elif node.sta == DONE:
                     

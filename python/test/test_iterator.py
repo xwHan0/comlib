@@ -1,6 +1,38 @@
 import sys, os
 sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), './'))) )
 
+print(sys.path)
+
+
+from comlib.iterator import tree,index
+
+class TestTree:
+
+    def test_tree_basic(self):
+        """数组全遍历"""
+        a = [10,20,30]
+        rst = []
+        for _ in range(5):
+            rst += [n.value[0] for n in tree(a)]
+        assert rst == [[10,20,30], 10, 10, 20, 20, 30, 30, [10,20,30]]*5
+
+    def test_array_basic(self):
+        """基本数据遍历"""
+        a = [10,20,30]
+        rst = []
+        for _ in range(5):
+            rst += [n.value[0] for n in tree(a) if n.status==0][1:]
+        assert rst == [10, 20, 30]*5
+
+
+class TestIndex:
+    def test_index_basic(self):
+        """基本的index测试"""
+        a = [10,20,[30,40],50]
+        rst = [n.value[1].idx for n in tree(a, index()) if n.status==0]
+        assert rst == [[], [0], [1],[2],[2,0],[2,1],[3]]
+
+
 from comlib import Qmar
 from comlib import Pred, Proc
 from comlib.mapreduce import Match, Child
@@ -24,14 +56,14 @@ node0 = node(100, [node(200),node(300)])
 
 
 class TestBasic:
-    def test_1d_array(self):
-        """简单数组测试"""
-        a = [10,20,30,40]
-        que = Qmar(a).skip().all()
-        r =[]
-        for _ in range(5):
-            r += [x for x in que]
-        assert r == [10,20,30,40]*5
+    # def test_1d_array(self):
+    #     """简单数组测试"""
+    #     a = [10,20,30,40]
+    #     que = Qmar(a).skip().all()
+    #     r =[]
+    #     for _ in range(5):
+    #         r += [x for x in que]
+    #     assert r == [10,20,30,40]*5
 
     def test_func_pred(self):
         """简单条件匹配测试"""
@@ -132,27 +164,27 @@ def reduce_proc(last, next):
 
 
 #########################################################################################
-class MyQMar(Match, Child):
-    def __init__(self, v, sub=[]):
-        super().__init__(pred=Match.NONE, pre=Match.NONE)
-        self.v = v
-        self.subs = sub
+# class MyQMar(Match, Child):
+#     def __init__(self, v, sub=[]):
+#         super().__init__(pred=Match.NONE, pre=Match.NONE)
+#         self.v = v
+#         self.subs = sub
 
-    def sub(self, *datum):
-        return self.subs
+#     def sub(self, *datum):
+#         return self.subs
 
-    def match(self,*datum, stack=[]):
-        return datum[0].v % 2 == 0
+#     def match(self,*datum, stack=[]):
+#         return datum[0].v % 2 == 0
 
-    def pre(self, *datum, stack=[]):
-        return datum[0].v + 100
+#     def pre(self, *datum, stack=[]):
+#         return datum[0].v + 100
 
 
-class TestQMar:
-    def test_common_qmar(self):
-        node = MyQMar(0, [MyQMar(i) for i in range(1,5)])
-        r = [x for x in Qmar(node).all()]
-        assert r == [100,102,104]
+# class TestQMar:
+#     def test_common_qmar(self):
+#         node = MyQMar(0, [MyQMar(i) for i in range(1,5)])
+#         r = [x for x in Qmar(node).all()]
+#         assert r == [100,102,104]
 
 
 class TestPerformance:
