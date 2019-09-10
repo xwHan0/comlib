@@ -4,11 +4,21 @@
 
 # Usage
 ```python
-    ite = comlib.iterator.tree(*trees)
+    ite = comlib.iterator.tree(*trees, dir="down")
 ```
 
 ## Parameter
-树结构列表
+- trees: 树结构列表
+- dir: 遍历方向
+  - 支持两种格式
+    - [string]: 遍历方向字符串。
+    - [list]: 遍历方向字符串列表。
+  - 遍历方向字符串
+    - "up": 深度优先，从子节点遍历到父节点
+    - "down": 深度优先，从父节点遍历到子节点
+    - "updown": 深度优先，先从子节点收拢到父节点，然后再从父节点遍历到子节点
+    - "downup": 深度优先，先从父节点遍历到子节点，然后再从子节点回归到父节点
+    - "wide": 广度优先
 
 ## Return
 tree函数返回一个树结构迭代器。该迭代器的'next'函数返回一个<span id='rtnobj'>包含如下成员的对象</span>：

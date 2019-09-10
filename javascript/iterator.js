@@ -97,6 +97,7 @@ var iterator = (function(it){
         ]
 
 
+
         var tree = this
         // 获取子项迭代器
         var _get_child_iter_ = function(child, matches){
@@ -135,62 +136,101 @@ var iterator = (function(it){
             return rst
         }
 
-        // 返回对象接口
-        return {
-
-            //--------  实例变量定义
+        //----------------------  返回对象定义  --------------------
+        var obj = {
             stack : [{value:arguments, sta:PRE}],    //迭代堆栈
             matches : DEFAULT_MATCHES,
             pred : null,
+            dirs: [],
+            [Symbol.iterator] : function(){return this},
+        }
 
-            //----------------------  迭代核心代码  --------------------------
-            next : function(){
-                for( let i=0; i<ITIMES; i++ ){
-                    //获取堆栈的顶节点，作为当前处理节点
-                    let node = this.stack[this.stack.length-1]
+        obj.next = function(){
+            for(dir of self.dirs)
+                return dir()
+        }
 
-                    //TBD: node一定存在？
-                    switch( node.sta ){
-                        case PRE:
-                            //获取子节点迭代器集合
-                            if( node.children = _get_children_iters_(node.value, this.matches) ){
-                                //获取所有迭代器的第一个子节点
-                                if( nxts = _get_next_elements_(node.children) ){
-                                    //把子节点压入堆栈
-                                    this.stack.push({value:nxts, sta:PRE})
-                                }
+        obj.down = function(down=true, up=false){
+            for( let i=0; i<ITIMES; i++ ){
+                //获取堆栈的顶节点，作为当前处理节点
+                let node = this.stack[this.stack.length-1]
+
+                //TBD: node一定存在？
+                switch( node.sta ){
+                    case PRE:
+                        //获取子节点迭代器集合
+                        if( node.children = _get_children_iters_(node.value, this.matches) ){
+                            //获取所有迭代器的第一个子节点
+                            if( nxts = _get_next_elements_(node.children) ){
+                                //把子节点压入堆栈
+                                this.stack.push({value:nxts, sta:PRE})
                             }
-                            //修改节点状态
-                            node.sta = POST
-                            //返回结果
+                        }
+                        //修改节点状态
+                        node.sta = POST
+                        //返回结果
+                        if(down):
                             return {value:node.value, done:false, status:PRE, stack:this.stack}
-                        
-                        case POST:
-                            if( this.stack.length == 1 ){
-                                node.sta = DONE     //已经到了根节点
-                            }else{
-                                node.sta = PRE  //复位状态，供下一次迭代使用
-                                this.stack.pop()    //当前节点出栈
-                                if( nxts = _get_next_elements_(this.stack[this.stack.length-1].children) ){   //还需要继续迭代父元素的下一个
-                                    //处理下一个兄弟节点
-                                    this.stack.push({value:nxts, status:PRE})
-                                }
-                            }
-                            return {value:node.value, done:false, status:POST, stack:this.stack}
-                        
-                        case DONE:
+                    
+                    case POST:
+                        if( this.stack.length == 1 ){
+                            node.sta = DONE     //已经到了根节点
+                        }else{
                             node.sta = PRE  //复位状态，供下一次迭代使用
-                            return {done:true}
-                        
-                        default:
-                            throw "Please do NOT modify stack[x].status property!"
+                            this.stack.pop()    //当前节点出栈
+                            if( nxts = _get_next_elements_(this.stack[this.stack.length-1].children) ){   //还需要继续迭代父元素的下一个
+                                //处理下一个兄弟节点
+                                this.stack.push({value:nxts, status:PRE})
+                            }
+                        }
+                        if(up)
+                            return {value:node.value, done:false, status:POST, stack:this.stack}
+                    
+                    case DONE:
+                        node.sta = PRE  //复位状态，供下一次迭代使用
+                        return {done:true}
+                    
+                    default:
+                        throw "Please do NOT modify stack[x].status property!"
+                }
+            }
+        }
+
+        obj.up = function(){return obj.down(false,true)}
+        obj.downup = function(){return obj.down(true,true)}
+
+        obj.wide = function(){
+            if( this.stack.length == 0 )
+                return {done: true}
+
+            let node = this.stack.shift()
+            if( node.children = _get_children_iters_(node.value, this.matches) ){
+                for( child of node.children ){
+                    //获取所有迭代器的第一个子节点
+                    if( nxts = _get_next_elements_(child) ){
+                        //把子节点压入堆栈
+                        this.stack.push({value:nxts, sta:PRE})
                     }
                 }
-            },
-
-            //Javascript可迭代协议
-            [Symbol.iterator] : function(){return this}
+            }
+            return {value:node.value, done:false, status:PRE, stack:this.stack}
         }
+
+        var dir = "down"
+        var dirs = ( Object.prototype.toString.call(dir) === '[object Array]' ) ? dir : [dir]
+        for( dir of dirs ){
+            if(dir == "up") obj.dirs.push(obj.up)
+            else if(dir == "down") obj.dirs.push(obj.down)
+            else if(dir == "downup") obj.dirs.push(obj.downup)
+            else if(dir == "updown"){
+                obj.dirs.push(obj.up)
+                obj.dirs.push(obj.down)
+            }
+            else if(dir == "wide") obj.dirs.push(obj.wide)
+        }
+
+        // 返回对象接口
+        return obj
     }
 
     return it

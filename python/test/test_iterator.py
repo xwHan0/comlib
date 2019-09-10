@@ -14,7 +14,7 @@ class TestTree:
         rst = []
         for _ in range(5):
             rst += [n.value[0] for n in tree(a)]
-        assert rst == [[10,20,30], 10, 10, 20, 20, 30, 30, [10,20,30]]*5
+        assert rst == [[10,20,30], 10, 20, 30]*5
 
     def test_array_basic(self):
         """基本数据遍历"""
