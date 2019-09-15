@@ -35,35 +35,35 @@ var iterator = (function(it){
     }
 
     // 过滤器定义
-    it.filter = function(arguments){
+    // it.filter = function(arguments){
 
-        var iters = Array.from(arguments)
-        var pred = iters.shift()
+    //     var iters = Array.from(arguments)
+    //     var pred = iters.shift()
 
-        var next_elements = function(iters){
-            var rst = []
-            for( let iter of iters ){
-                var ele = iter.next()
-                if( ele.done )
-                    return null
-                else
-                    rst.push(ele.value)
-            }
-            return rst
-        }
+    //     var next_elements = function(iters){
+    //         var rst = []
+    //         for( let iter of iters ){
+    //             var ele = iter.next()
+    //             if( ele.done )
+    //                 return null
+    //             else
+    //                 rst.push(ele.value)
+    //         }
+    //         return rst
+    //     }
 
-        return {
-            next : function(){
-                do{
-                    var nxts = next_elements(iters)
-                }while(nxts && !pred(nxts))
+    //     return {
+    //         next : function(){
+    //             do{
+    //                 var nxts = next_elements(iters)
+    //             }while(nxts && !pred(nxts))
                 
-                return {value:nxts, done: nxts==null}
-            },
-            //Javascript Iterable Protocol
-            [Symbol.iterator] : function(){return this},
-        }
-    }
+    //             return {value:nxts, done: nxts==null}
+    //         },
+    //         //Javascript Iterable Protocol
+    //         [Symbol.iterator] : function(){return this},
+    //     }
+    // }
 
     // 核心类定义
     it.tree = function(args){
@@ -169,7 +169,7 @@ var iterator = (function(it){
                         //修改节点状态
                         node.sta = POST
                         //返回结果
-                        if(down):
+                        if(down)
                             return {value:node.value, done:false, status:PRE, stack:this.stack}
                     
                     case POST:
@@ -237,8 +237,8 @@ var iterator = (function(it){
 }(iterator||{}));
 
 
-module.exports = iterator
-
+// module.exports = iterator
+export {iterator}
 
 
 

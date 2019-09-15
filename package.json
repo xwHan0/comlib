@@ -2,7 +2,7 @@
   "name": "comlib",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "javascript/comlib.js",
   "directories": {
     "doc": "doc"
   },

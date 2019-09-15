@@ -26,7 +26,11 @@ var datetime = function(t){
         return fmt
     }
 
-    return new Date(t)
+    if( t === undefined )
+        return new Date()
+    else
+        return new Date(t)
 }
 
-module.exports = datetime
+// module.exports = datetime
+export {datetime}
