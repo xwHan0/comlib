@@ -11,8 +11,8 @@
 - trees: 树结构列表
 - dir: 遍历方向
   - 支持两种格式
-    - [string]: 遍历方向字符串。
-    - [list]: 遍历方向字符串列表。
+    - string: 遍历方向字符串。
+    - list: 遍历方向字符串列表。
   - 遍历方向字符串
     - "up": 深度优先，从子节点遍历到父节点
     - "down": 深度优先，从父节点遍历到子节点
@@ -38,9 +38,62 @@ tree函数返回一个树结构迭代器。该迭代器的'next'函数返回一�
   - True: 当前迭代已经超出迭代范围，迭代结束
   - False: 正常迭代元素
 
+# Method
+
+**mtree**
+
+忽略第一个元素后，返回迭代器的当前值。
+
 # Language Special
 不同计算机语言的实现版本略有不同
 |Language   |iter                                                   |next    |
 |----       |----                                                   |----    |
 |Javascript |实现了[Symbol.iterator]可迭代协议                       |实现了迭代器的.next方法，其返回结果[参考这里](#rtnobj)|
 |python     |实现了.__iter__迭代协议                                 |实现了.__next__方法。迭代结束抛出StopException异常|
+
+## javascript
+**for**
+```javascript
+import comlib from 'comlib'
+
+arr = [1,[2,3],4,5,[6,7]]
+for( a of comlib.iterator.tree(arr) ){
+    console.log(a[0])
+}
+```
+
+**next**
+```javascript
+import comlib from 'comlib'
+
+arr = [1,[2,3],4,5,[6,7]]
+ite = comlib.iterator.tree(arr)[...]
+while( (nxt=ite.next()).done == false ){
+    console.log(nxt.value)
+}
+```
+
+## python
+**for**
+```python
+from comlib.iterator import tree
+
+arr = [1,[2,3],4,5,[6,7]]
+for a in tree(arr):
+    print(a.value[0])
+```
+
+**next**
+```python
+from comlib.iterator import tree
+
+arr = [1,[2,3],4,5,[6,7]]
+ite = iter(tree(arr))
+
+while:
+    try:
+        nxt = next(ite)
+        print(nxt.value[0])
+    catch StopException:
+        ...
+```

@@ -30,6 +30,7 @@ class index:
 
 
 PRE,POST,DONE = 0,1,2
+ITIMES = 999999
 
 class IterTreeResult:
      def __init__(self, value, done, status, stack):
@@ -57,7 +58,6 @@ DEFAULT_MATCHES = [
 
 
 class tree:
-    ITIMES = 999999
 
     def __init__(self, *value, dir="down"):
         self.stack = [IterTreeNode(value)]
@@ -96,10 +96,15 @@ class tree:
         for dir in self.dirs:
             return dir()
 
-    def down( self, down=True, up=False ):
+    def mtree(self):
+        self.down(False, False, 1)
+        self.stack[-1].sta = DONE
+        return self
+
+    def down( self, down=True, up=False, it_num=ITIMES ):
         """深度优先遍历，从父节点遍历到子节点"""
         
-        for _ in range(tree.ITIMES):
+        for _ in range(it_num):
                 
             # 获取当前处理的节点
             node = self.stack[-1]

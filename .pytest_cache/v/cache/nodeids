@@ -14,7 +14,6 @@
   "python/test/test_iterator.py::TestPerformance::()::test_1d_array",
   "python/test/test_iterator_operator.py::TestInterpose::()::test_interpose",
   "python/test/test_iterator_operator.py::TestDeq::()::test_deq",
-  "python/test/test_itertree.py::TestBasic::()::test_1d_array",
   "python/test/test_math.py::TestMath::()::test_gcd_null",
   "python/test/test_math.py::TestMath::()::test_gcd_one",
   "python/test/test_math.py::TestMath::()::test_gcd_two",

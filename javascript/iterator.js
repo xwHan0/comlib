@@ -150,8 +150,14 @@ var iterator = (function(it){
                 return dir()
         }
 
-        obj.down = function(down=true, up=false){
-            for( let i=0; i<ITIMES; i++ ){
+        obj.mtree = function(){
+            this.down(false, false, 1)
+            this.stack[this.stack.length-1].sta = DONE
+            return this
+        }
+
+        obj.down = function(down=true, up=false, it_num=ITIMES){
+            for( let i=0; i<it_num; i++ ){
                 //获取堆栈的顶节点，作为当前处理节点
                 let node = this.stack[this.stack.length-1]
 
