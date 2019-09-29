@@ -23,10 +23,6 @@
 ## Return
 tree函数返回一个树结构迭代器。该迭代器的'next'函数返回一个<span id='rtnobj'>包含如下成员的对象</span>：
 - <span id='rtnvalue'>value</span>: 当前迭代元素列表(或者元组)
-- <span id='rtnstatus'>status</span>: 当前迭代状态。包含
-  - PRE(0): 从父元素深入到当前元素时
-  - POST(1): 从子元素返回当前元素时
-  - DONE(2): 遍历完成时
 - stack: 当前迭代堆栈
   - 栈顶元素为当前元素节点信息
   - 第二个元素为当前元素的父节点信息
@@ -37,6 +33,20 @@ tree函数返回一个树结构迭代器。该迭代器的'next'函数返回一�
 - done: 迭代结束标识
   - True: 当前迭代已经超出迭代范围，迭代结束
   - False: 正常迭代元素
+
+next返回的对象还拥有如下的方法：
+- 节点位置信息
+  - is_root(): 是否根节点判断
+  - is_leaf(): 是否叶子节点判断
+  - depth(): 返回当前节点在tree中的深度
+- <span id='rtnstatus'>节点迭代信息</span>
+  - is_pre(): 是否PRE状态判断
+  - is_post(): 是否POST状态判断
+  - is_done(): 是否DOEN状态判断
+  - iter_status(): 返回当前节点迭代信息
+    - PRE(0): 从父元素深入到当前元素时
+    - POST(1): 从子元素返回当前元素时
+    - DONE(2): 遍历完成时
 
 # Method
 

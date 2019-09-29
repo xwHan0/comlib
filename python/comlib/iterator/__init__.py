@@ -33,17 +33,40 @@ PRE,POST,DONE = 0,1,2
 ITIMES = 999999
 
 class IterTreeResult:
-     def __init__(self, value, done, status, stack):
+    def __init__(self, value, done, node, status, stack):
         self.value = value
         self.done = done
+        self.node = node
         self.status = status
         self.stack = stack
+
+    def is_root(self):
+        return len(self.stack) == 1
+        
+    def is_pre(self):
+        return self.status == PRE
+
+    def is_post(self):
+        return self.status == POST
+
+    def is_done(self):
+        return self.status == DONE
+
+    def iter_status(self):
+        return self.status
+
+    def is_leaf(self):
+        return self.node.children == None
+
+    def depth(self):
+        return len(self.stack)
 
 
 class IterTreeNode:
     def __init__(self, value, sta=PRE):
         self.value = value
         self.sta = sta
+        self.children = None
 
     
 class IterTreeMatch:
@@ -128,7 +151,7 @@ class tree:
                 node.sta = POST
                 # Return
                 if down:
-                    return IterTreeResult(node.value, False, PRE, self.stack)
+                    return IterTreeResult(node.value, False, node, PRE, self.stack)
                         
             elif node.sta == POST:
                 try:
@@ -148,7 +171,7 @@ class tree:
                     pass
     
                 if up:
-                    return IterTreeResult(node.value, False, POST, self.stack)
+                    return IterTreeResult(node.value, False, node, POST, self.stack)
     
             elif node.sta == DONE:
                     
@@ -178,6 +201,6 @@ class tree:
         except (StopIteration, TypeError): #Leaf node
             node.children = None
 
-        return IterTreeResult(node.value, False, PRE, self.stack)
+        return IterTreeResult(node.value, False, node, PRE, self.stack)
 
         

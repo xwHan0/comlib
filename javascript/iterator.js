@@ -136,6 +136,22 @@ var iterator = (function(it){
             return rst
         }
 
+        var _result_ = function(value, done, status, stack){
+            this.value = value
+            this.done = done
+            this.status = status
+            this.stack = stack
+
+            this.is_root = function(){return this.stack.length == 1}
+            this.is_leaf = function(){return this.stack[this.stack.length-1].children==null}
+            this.depth = function(){return this.stack.length}
+
+            this.is_pre = function(){return this.status == 0}
+            this.is_post = function(){return this.post == 1}
+            this.is_done = function(){return this.done == 2}
+            this.iter_status = function(){return this.status}
+        }
+
         //----------------------  返回对象定义  --------------------
         var obj = {
             stack : [{value:arguments, sta:PRE}],    //迭代堆栈
@@ -176,7 +192,7 @@ var iterator = (function(it){
                         node.sta = POST
                         //返回结果
                         if(down)
-                            return {value:node.value, done:false, status:PRE, stack:this.stack}
+                            return new _result_(node.value, false, PRE, this.stack)
                     
                     case POST:
                         if( this.stack.length == 1 ){
@@ -190,11 +206,11 @@ var iterator = (function(it){
                             }
                         }
                         if(up)
-                            return {value:node.value, done:false, status:POST, stack:this.stack}
+                            return new _result_(node.value, false, POST, this.stack)
                     
                     case DONE:
                         node.sta = PRE  //复位状态，供下一次迭代使用
-                        return {done:true}
+                        return new _result_(null, true, DONE, this.stack)
                     
                     default:
                         throw "Please do NOT modify stack[x].status property!"
@@ -207,7 +223,7 @@ var iterator = (function(it){
 
         obj.wide = function(){
             if( this.stack.length == 0 )
-                return {done: true}
+                return new _result_(null, true, PRE, this.stack) 
 
             let node = this.stack.shift()
             if( node.children = _get_children_iters_(node.value, this.matches) ){
@@ -219,7 +235,7 @@ var iterator = (function(it){
                     }
                 }
             }
-            return {value:node.value, done:false, status:PRE, stack:this.stack}
+            return new _result_(node.value, false, PRE, this.stack)
         }
 
         var dir = "down"

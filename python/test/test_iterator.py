@@ -24,6 +24,11 @@ class TestTree:
             rst += [n.value[0] for n in tree(a) if n.status==0][1:]
         assert rst == [10, 20, 30]*5
 
+    def test_array_flat(self):
+        """数组打平等效测试"""
+        a = [1,2,[3,4,[5,6,[7,8,[9,10]]]]]
+        rst = [ite.value[0] for ite in tree(a,"down") if ite.is_leaf()]
+        assert rst == [1,2,3,4,5,6,7,8,9,10]
 
 class TestIndex:
     def test_index_basic(self):
