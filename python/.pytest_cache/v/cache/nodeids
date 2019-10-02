@@ -1,3 +1,9 @@
 [
-  "test/test_iterator.py::TestTree::()::test_tree_basic"
+  "test/test_iterator.py::TestTree::()::test_tree_basic",
+  "test/test_iterator.py::TestTree::()::test_array_basic",
+  "test/test_iterator.py::TestTreeDirection::()::test_down_up",
+  "test/test_iterator.py::TestTreeDirection::()::test_down",
+  "test/test_iterator.py::TestTreeDirection::()::test_up",
+  "test/test_iterator.py::TestTreeExtFlat::()::test_all_flat",
+  "test/test_iterator.py::TestIndex::()::test_index_basic"
 ]

@@ -29,14 +29,13 @@ class index:
 
 
 
-PRE,POST,DONE = 0,1,2
+PRE,POST,DONE, Brach, LEAF = 0,1,2, 3,4
 ITIMES = 999999
 
 class IterTreeResult:
-    def __init__(self, value, done, node, status, stack):
+    def __init__(self, value, done, status, stack):
         self.value = value
         self.done = done
-        self.node = node
         self.status = status
         self.stack = stack
 
@@ -56,7 +55,7 @@ class IterTreeResult:
         return self.status
 
     def is_leaf(self):
-        return self.node.children == None
+        return self.stack[-1].children == None
 
     def depth(self):
         return len(self.stack)
@@ -96,6 +95,11 @@ class tree:
             elif dir == "downup": self.dirs.append(self.downup)
             elif dir == "wide": self.dirs.append(self.wide)
 
+        # ==== Modify
+        self.preappend = None   # 用于暂存预压入的节点
+        self.require_pop = False # 用于记录是否需要弹出上一个节点
+        # ==== End of Modify
+
     def _get_child_iter_(self, child):
         for match in self.matches:
             if match.pred(child):
@@ -128,10 +132,20 @@ class tree:
         """深度优先遍历，从父节点遍历到子节点"""
         
         for _ in range(it_num):
-                
+
+            # ==== Modify: 把预存储的节点压入栈
+            if self.require_pop:    # 需要把旧节点弹出栈
+                self.stack.pop()    # 弹出栈
+                self.require_pop = False    # 清除状态
+
+            if self.preappend: # 若有需要预入栈的节点
+                self.stack.append(self.preappend)   # 把预入栈的节点压入栈
+                self.preappend = None # 压入栈后，释放预入栈信息 
+            # ==== End of Modify
+
             # 获取当前处理的节点
             node = self.stack[-1]
-                
+
             if node.sta == PRE: # PRE处理过程
                       
                 # Next prepare
@@ -142,16 +156,41 @@ class tree:
                     if node.children:
                         # 获取下一个子节点
                         nxt_datum = [next(i) for i in node.children]
+
+                        # ==== Modify: 把原始需要压入stack的节点，先暂存到迭代器中。下次迭代前先压入
+                        # Old:
                         # Push next elements into stack
-                        self.stack.append(IterTreeNode(nxt_datum))
+                        # self.stack.append(IterTreeNode(nxt_datum))    # 注释掉
+
+                        # New:
+                        self.preappend = IterTreeNode(nxt_datum)    # 暂存
+                        node.sta = POST
+                        if down:
+                            return IterTreeResult(node.value, False, PRE, self.stack)
+                        else:
+                            continue    # 否则执行到了Leaf节点
+                        # ==== End of Modify
+
                 except (StopIteration,TypeError):   #Leaf node
                     node.children = None
                         
-                # Modify top element status of stack
-                node.sta = POST
-                # Return
-                if down:
-                    return IterTreeResult(node.value, False, node, PRE, self.stack)
+                # ==== Modify
+                # Old:
+                # node.sta = POST # Modify top element status of stack
+                # # Return
+                # if down:
+                #     return IterTreeResult(node.value, False, node, PRE, self.stack)
+                # New:
+                # if len(self.stack) == 1:
+                    
+                try:
+                    nxt_datum = [next(i) for i in self.stack[-2].children]  # Parent element forward
+                    self.preappend = IterTreeNode(nxt_datum)    # 保存需要入栈的节点
+                except (StopIteration):
+                    pass    # 迭代到最后一个元素，直接返回到父元素
+                self.require_pop = True
+                return IterTreeResult(node.value, False, LEAF, self.stack)
+                # ==== End of Modify
                         
             elif node.sta == POST:
                 try:
@@ -160,18 +199,26 @@ class tree:
                         node.sta = DONE
                     else: # 非根节点
                         node.sta = PRE  # For next status
-                        # Pop stack
-                        self.stack.pop()
+
+                        # ==== Modify: 保存需要弹出节点的命令，和需要压入栈的新节点
+                        # Old:
+                        # self.stack.pop() # Pop stack
+                        # New:
+                        self.require_pop = True # 保存需要弹出节点状态
     
-                        # Parent element forward
-                        nxt_datum = [next(i) for i in self.stack[-1].children]
-                        self.stack.append(IterTreeNode(nxt_datum))
+                        # Old:
+                        # nxt_datum = [next(i) for i in self.stack[-1].children]  # Parent element forward
+                        # self.stack.append(IterTreeNode(nxt_datum)) # 压入新节点
+                        # New:
+                        nxt_datum = [next(i) for i in self.stack[-2].children]  # Parent element forward
+                        self.preappend = IterTreeNode(nxt_datum)    # 保存需要入栈的节点
+                        # End of Modify
     
                 except StopIteration: # IndexError for empty-stack
                     pass
     
                 if up:
-                    return IterTreeResult(node.value, False, node, POST, self.stack)
+                    return IterTreeResult(node.value, False, POST, self.stack)
     
             elif node.sta == DONE:
                     
@@ -201,6 +248,6 @@ class tree:
         except (StopIteration, TypeError): #Leaf node
             node.children = None
 
-        return IterTreeResult(node.value, False, node, PRE, self.stack)
+        return IterTreeResult(node.value, False, PRE, self.stack)
 
         
