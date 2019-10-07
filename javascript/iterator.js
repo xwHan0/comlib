@@ -136,20 +136,41 @@ var iterator = (function(it){
             return rst
         }
 
-        var _result_ = function(value, done, status, stack){
-            this.value = value
-            this.done = done
-            this.status = status
+        var _result_ = function(stack){
+            this.value = stack[-1].value
+            this.done = stack[-1].sta == DONE
             this.stack = stack
 
             this.is_root = function(){return this.stack.length == 1}
             this.is_leaf = function(){return this.stack[this.stack.length-1].children==null}
             this.depth = function(){return this.stack.length}
 
-            this.is_pre = function(){return this.status == 0}
-            this.is_post = function(){return this.post == 1}
+            this.is_pre = function(){
+                let node = this.stack[this.stack.length-1]
+                return node.children == null || node.sta == PRE
+            }
+            this.is_post = function(){
+                let node = this.stack[this.stack.length-1]
+                return node.children == null || node.sta == POST
+            }
             this.is_done = function(){return this.done == 2}
-            this.iter_status = function(){return this.status}
+            this.iter_status = function(){return this.stack[this.stack.length-1].sta}
+
+            this.v = function(func=null){
+                if( func == null ){
+                    return this.value
+                }else if( typeof func === Number ){
+                    return this.value[func]
+                }else if( Object.prototype.toString.call(func) === '[object Array]' ){
+                    var rst = []
+                    for( let f of func ){
+                        rst.push( this.value[f] )
+                    }
+                    return rst
+                }else if( typeof func === Function ){
+                    return func( this.value )
+                }
+            }
         }
 
         //----------------------  返回对象定义  --------------------
@@ -159,6 +180,10 @@ var iterator = (function(it){
             pred : null,
             dirs: [],
             [Symbol.iterator] : function(){return this},
+
+            require_pop = false,
+            goto_post = false,
+            preappend = null,
         }
 
         obj.next = function(){
@@ -174,6 +199,22 @@ var iterator = (function(it){
 
         obj.down = function(down=true, up=false, it_num=ITIMES){
             for( let i=0; i<it_num; i++ ){
+
+                if( this.require_pop ){
+                    this.stack.pop()
+                    this.require_pop = false
+                }
+
+                if( this.goto_post ){
+                    this.stack[this.stack.length-1].sta = POST
+                    this.goto_post = false
+                }
+
+                if( this.preappend ){
+                    this.stack.push(self.preappend)
+                    self.preappend = null
+                }
+
                 //获取堆栈的顶节点，作为当前处理节点
                 let node = this.stack[this.stack.length-1]
 
@@ -185,32 +226,41 @@ var iterator = (function(it){
                             //获取所有迭代器的第一个子节点
                             if( nxts = _get_next_elements_(node.children) ){
                                 //把子节点压入堆栈
-                                this.stack.push({value:nxts, sta:PRE})
+                                // this.stack.push({value:nxts, sta:PRE})
+                                this.preappend = {value:nxts, sta:PRE}
+                                this.goto_post = true
+
+                                if( down )
+                                    return new _result_(this.stack)
+                                else
+                                    continue
                             }
                         }
-                        //修改节点状态
-                        node.sta = POST
-                        //返回结果
-                        if(down)
-                            return new _result_(node.value, false, PRE, this.stack)
+
+                        // 以下仅叶子节点处理
+                        if( nxts = _get_next_elements_(this.stack[this.stack.length-2].children) ){
+                            this.preappend = {value:nxts, sta:PRE}
+                        }
+
+                        this.require_pop = true
+                        return new _result_(this.stack)
                     
                     case POST:
                         if( this.stack.length == 1 ){
                             node.sta = DONE     //已经到了根节点
                         }else{
-                            node.sta = PRE  //复位状态，供下一次迭代使用
-                            this.stack.pop()    //当前节点出栈
+                            this.require_pop = true
                             if( nxts = _get_next_elements_(this.stack[this.stack.length-1].children) ){   //还需要继续迭代父元素的下一个
                                 //处理下一个兄弟节点
-                                this.stack.push({value:nxts, status:PRE})
+                                this.preappend = {value:nxts, status:PRE}
                             }
                         }
                         if(up)
-                            return new _result_(node.value, false, POST, this.stack)
+                            return new _result_(this.stack)
                     
                     case DONE:
                         node.sta = PRE  //复位状态，供下一次迭代使用
-                        return new _result_(null, true, DONE, this.stack)
+                        return new _result_(this.stack)
                     
                     default:
                         throw "Please do NOT modify stack[x].status property!"
@@ -235,7 +285,7 @@ var iterator = (function(it){
                     }
                 }
             }
-            return new _result_(node.value, false, PRE, this.stack)
+            return new _result_(this.stack)
         }
 
         var dir = "down"

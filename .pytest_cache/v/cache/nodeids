@@ -4,6 +4,8 @@
   "python/test/test_iterator.py::TestTreeDirection::()::test_down_up",
   "python/test/test_iterator.py::TestTreeDirection::()::test_down",
   "python/test/test_iterator.py::TestTreeDirection::()::test_up",
+  "python/test/test_iterator.py::TestTreeResult::()::test_pre_status",
+  "python/test/test_iterator.py::TestTreeResult::()::test_post_status",
   "python/test/test_iterator.py::TestTreeExtFlat::()::test_all_flat",
   "python/test/test_iterator.py::TestIndex::()::test_index_basic",
   "python/test/test_iterator_operator.py::TestInterpose::()::test_interpose",

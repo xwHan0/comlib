@@ -48,6 +48,20 @@ class TestTreeDirection:
         assert rst == [10,20,30,40,50,60,[50,60],[30,40,[50,60]],[10,20,[30,40,[50,60]]]]
 
 
+class TestTreeResult:
+    def test_pre_status(self):
+        """测试结果中的is_pre"""
+        a = [1,2,[3,4,[5,6]]]
+        rst = [ite.value[0] for ite in tree(a,dir='downup') if ite.is_pre()]
+        print('Result is: ' + str(rst))
+        assert rst == [[1,2,[3,4,[5,6]]], 1, 2, [3,4,[5,6]], 3,4, [5,6], 5, 6]
+
+    def test_post_status(self):
+        """测试结果中的is_post"""
+        a = [1,2,[3,4,[5,6]]]
+        rst = [ite.value[0] for ite in tree(a,dir='downup') if ite.is_post()]
+        print('Result is: ' + str(rst))
+        assert rst == [1,2,3,4,5,6,[5,6],[3,4,[5,6]],[1,2,[3,4,[5,6]]]]
 
 class TestTreeExtFlat:
     def test_all_flat(self):

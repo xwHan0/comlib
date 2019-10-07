@@ -2,6 +2,7 @@
 """
 
 import re
+import types
 
 ########################################################################################################
 ########  index
@@ -33,32 +34,43 @@ PRE,POST,DONE, Brach, LEAF = 0,1,2, 3,4
 ITIMES = 999999
 
 class IterTreeResult:
-    def __init__(self, value, done, status, stack):
-        self.value = value
-        self.done = done
-        self.status = status
+    def __init__(self, stack):
+        self.value = stack[-1].value
+        self.done = stack[-1].sta == DONE
         self.stack = stack
 
     def is_root(self):
         return len(self.stack) == 1
         
     def is_pre(self):
-        return self.status == PRE
+        node = self.stack[-1]
+        return node.children == None or node.sta == PRE
 
     def is_post(self):
-        return self.status == POST
+        node = self.stack[-1]
+        return node.children == None or node.sta == POST or node.sta == DONE
 
     def is_done(self):
-        return self.status == DONE
+        return self.stack[-1].sta == DONE
 
     def iter_status(self):
-        return self.status
+        return self.stack[-1].sta
 
     def is_leaf(self):
         return self.stack[-1].children == None
 
     def depth(self):
         return len(self.stack)
+
+    def v(self, func=None):
+        if func == None:
+            return self.value
+        elif isinstance(func, int):
+            return self.value[func]
+        elif isinstance(func, list):
+            return [self.value[f] for f in func]
+        elif isinstance(func, types.FunctionType):
+            return func(self.value)
 
 
 class IterTreeNode:
@@ -98,6 +110,7 @@ class tree:
         # ==== Modify
         self.preappend = None   # 用于暂存预压入的节点
         self.require_pop = False # 用于记录是否需要弹出上一个节点
+        self.goto_post = False
         # ==== End of Modify
 
     def _get_child_iter_(self, child):
@@ -138,6 +151,10 @@ class tree:
                 self.stack.pop()    # 弹出栈
                 self.require_pop = False    # 清除状态
 
+            if self.goto_post:
+                self.stack[-1].sta = POST   # 修改Brach节点状态为POST。会出现重复修改的问题
+                self.goto_post = False
+
             if self.preappend: # 若有需要预入栈的节点
                 self.stack.append(self.preappend)   # 把预入栈的节点压入栈
                 self.preappend = None # 压入栈后，释放预入栈信息 
@@ -164,9 +181,10 @@ class tree:
 
                         # New:
                         self.preappend = IterTreeNode(nxt_datum)    # 暂存
-                        node.sta = POST
+                        self.goto_post = True
+                        # node.sta = POST
                         if down:
-                            return IterTreeResult(node.value, False, PRE, self.stack)
+                            return IterTreeResult(self.stack)
                         else:
                             continue    # 否则执行到了Leaf节点
                         # ==== End of Modify
@@ -179,17 +197,17 @@ class tree:
                 # node.sta = POST # Modify top element status of stack
                 # # Return
                 # if down:
-                #     return IterTreeResult(node.value, False, node, PRE, self.stack)
+                #     return IterTreeResult(node.value, False, node, self.stack)
                 # New:
                 # if len(self.stack) == 1:
                     
-                try:
+                try:    # 叶子节点处理
                     nxt_datum = [next(i) for i in self.stack[-2].children]  # Parent element forward
                     self.preappend = IterTreeNode(nxt_datum)    # 保存需要入栈的节点
                 except (StopIteration):
                     pass    # 迭代到最后一个元素，直接返回到父元素
                 self.require_pop = True
-                return IterTreeResult(node.value, False, LEAF, self.stack)
+                return IterTreeResult(self.stack)
                 # ==== End of Modify
                         
             elif node.sta == POST:
@@ -198,7 +216,7 @@ class tree:
                     if len(self.stack) == 1:
                         node.sta = DONE
                     else: # 非根节点
-                        node.sta = PRE  # For next status
+                        # node.sta = PRE  # For next status. //没有必要，因为一定会被再次压入堆栈
 
                         # ==== Modify: 保存需要弹出节点的命令，和需要压入栈的新节点
                         # Old:
@@ -218,7 +236,7 @@ class tree:
                     pass
     
                 if up:
-                    return IterTreeResult(node.value, False, POST, self.stack)
+                    return IterTreeResult(self.stack)
     
             elif node.sta == DONE:
                     
@@ -248,6 +266,6 @@ class tree:
         except (StopIteration, TypeError): #Leaf node
             node.children = None
 
-        return IterTreeResult(node.value, False, PRE, self.stack)
+        return IterTreeResult(self.stack)
 
         
