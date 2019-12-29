@@ -181,9 +181,9 @@ var iterator = (function(it){
             dirs: [],
             [Symbol.iterator] : function(){return this},
 
-            require_pop = false,
-            goto_post = false,
-            preappend = null,
+            require_pop : false,
+            goto_post : false,
+            preappend : null,
         }
 
         obj.next = function(){

@@ -81,6 +81,12 @@ def xlcm(*args):
     return lcmv
     
 
+def xmul(*args):
+    rst = args[0]
+    for v in args[1:]:
+        rst *= v
+    return rst    
+
 def sumwgt(wgt,rate):
     rates = sum(map(lambda x,y: x*y, wgt, rate))
     wgts = sum(iter(wgt))
