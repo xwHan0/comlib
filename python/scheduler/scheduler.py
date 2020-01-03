@@ -74,26 +74,41 @@ class Mask:
             self.dim_permit_gnum[i] = len(self.gcnt[i]) # 重新加载可以选择的维度量个数
             for j in range(len(self.gcnt[i])):
                 self.gcnt[i][j] = 0 # 清空选择的Grant个数
-                
-    def is_mask(self, pos):
+
+    def is_mask(self, pos, dim=0):
         """判断位置pos是否被选择过。返回(可以结束迭代标识, 当前位置是否屏蔽标识)"""
         if self.stop:
             return (True, False)
 
-        for dim in range(len(self.gnum)):   # 按维度遍历
-            if self.gcnt[dim][pos[dim]] >= self.gnum[dim][pos[dim]]:
-                return (False, True) # 只要任何一个维度Grant个数大于允许值，就判断为屏蔽
+        if isinstance(pos, list):
+            for dim in range(len(self.gnum)):   # 按维度遍历
+                if self.gcnt[dim][pos[dim]] >= self.gnum[dim][pos[dim]]:
+                    return (False, True) # 只要任何一个维度Grant个数大于允许值，就判断为屏蔽
+        elif isinstance(pos, int):
+            if self.gcnt[dim][pos] >= self.gnum[dim][pos]:
+                return (False, True)
+
         return (False, False)    # 所有维度Grant个数都小于允许值，才判断为不屏蔽
         
-    def mask(self, pos):
+    def mask(self, pos, gnum=1, dim=0):
         """屏蔽位置pos，并返回是否某一个维度已经没有Grant令牌。仲裁可以停止的标识。"""
-        for dim in range(len(self.gnum)):
-            self.gcnt[dim][pos[dim]] += 1
+
+        if isinstance(pos, list):
+            for dim in range(len(self.gnum)):
+                self.gcnt[dim][pos[dim]] += gnum
+                if self.gcnt[dim][pos[dim]] >= self.gnum[dim][pos[dim]]:    # 当前dim维度pos[dim]位置已经被屏蔽
+                    self.dim_permit_gnum[dim] -= 1
+                    if self.dim_permit_gnum[dim] == 0:
+                        self.stop = True
+                        return True # 当前dim维度的Grant令牌已经分完。可以直接结束仲裁
+        elif isinstance(pos, int):
+            self.gcnt[dim][pos] += gnum
             if self.gcnt[dim][pos[dim]] >= self.gnum[dim][pos[dim]]:    # 当前dim维度pos[dim]位置已经被屏蔽
                 self.dim_permit_gnum[dim] -= 1
                 if self.dim_permit_gnum[dim] == 0:
                     self.stop = True
                     return True # 当前dim维度的Grant令牌已经分完。可以直接结束仲裁
+ 
         return False    # 需要继续迭代搜索
 
 
@@ -136,7 +151,7 @@ class Order:
         return int(idx/self.step)
 
     def pointer(self, val):
-        self.ptr = val
+        self.ptr = val % self.step
 
     def __iter__(self):
         self.search_cnt = 0
@@ -156,11 +171,17 @@ class Order:
 
 
 class Algorithm:
-    def __init__(self, dims=[], order=[], search_num=-1, gnum=1):
+    def __init__(self, dims=[], order=None, mask=None, search_num=-1, gnum=1):
         self.dims = dims if dims!= [] else order2dim(order)
 
-        self.order = Order(self.dims, order, search_num)    # Order组件例化
-        self.mask = Mask(self.dims, gnum)   # Mask组件例化
+        self.order = order if order else Order(self.dims, order, search_num)    # Order组件例化
+
+        if mask:
+            self.mask = mask
+            self.outer_mask = True
+        else:
+            self.mask = Mask(self.dims, gnum)
+            self.outer_mask = False
 
         self.first_grant = True
         self.pointer = self.ptr = 0    # 指针和下一跳指针
@@ -170,7 +191,8 @@ class Algorithm:
     def __iter__(self):
         self.first_grant = True
         self.order.pointer(self.pointer)
-        self.mask.reset()
+        if not self.outer_mask:
+            self.mask.reset()
         self.order_ite = iter(self.order)
         return self
 
@@ -187,7 +209,7 @@ class Algorithm:
     def record(self, pos):
         self.mask.mask(pos)
         if self.first_grant:
-            self.pointer = self.ptr
+            self.pointer = self.ptr + 1
             self.first_grant = False
 
 
