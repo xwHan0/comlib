@@ -11,4 +11,3 @@ from comlib.mapreduce.pred import Pred
 from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
 
 from comlib.mapreduce.qmar import Qmar
-
