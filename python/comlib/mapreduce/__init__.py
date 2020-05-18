@@ -1,6 +1,8 @@
 """
 """
 
+from comlib.ex.math import xmin
+
 from comlib.mapreduce.match import Match
 from comlib.mapreduce.child import Child
 
@@ -119,3 +121,93 @@ class iterTree:
             else:
                 raise Exception('Invalid status of FSM!')
         
+
+
+#=================================================================================================================
+#====  Proc
+#=================================================================================================================
+class Proc:
+    def __init__(self, proc=None, **args):
+
+        # 默认参数
+        default = {
+            'index_name' : 'idx',   # 默认序号形参名称
+        }
+
+        if isinstance( proc, list ):
+            self.proc = proc
+            for p in self.proc:
+                if hasattr( p, '__call__' ):
+                    p = dict( default, **{'proc': p} )
+                    p = dict( p, **args )
+                elif isinstance( p, dict ):
+                    p = dict( default, **p )
+        elif hasattr( proc, '__call__' ):
+            p = dict( default, **{'proc': p} )
+            self.proc = [dict( p, **args )]
+        else:
+            self.proc = []
+
+
+    
+
+
+
+#=================================================================================================================
+#====  xmap
+#=================================================================================================================
+class xmap:
+    def __init__(self, proc, *iters, fillval=None, grp=None, grp_ignore=Proc(), **args):
+        self.proc = proc
+        self.iters = iters
+        self.fillval = fillval
+        self.grp = grp
+        self.grp_ignore = grp_ignore
+        self.args = args
+
+    def __iter__(self):
+        self._nxt_ = [iter(n) for n in iters]
+        self._grp_nxt_ = iter(self.grp)
+        self._idx_ = 0  # 序号
+        return self
+
+    def __next__(self):
+        grp = next( self._grp_nxt_ )
+        procs = self.proc.get( grp, self.grp_ignore )
+
+        nxt, first = [], true
+        for n in self._nxt_:
+            try:
+                nxt.append( next(n) )
+            except StopIteration:
+                if first: raise StopIteration()
+                nxt.append( None )
+            first = False
+
+
+        rst = []
+        for proc in procs:
+            proc_arg_num = proc.__code__.co_argcount
+            if proc_arg_num == 0:
+                proc_nxt = []
+                for i in range(len(self.iters)):
+                    if nxt[i] == None:
+                        proc_nxt.append( proc['default'][i-1] )
+                    else:
+                        proc_nxt.append( nxt[i] )
+                if proc['index_name'] in proc.__code__.co_varname:
+                    rst.append( *proc_nxt, **{proc['index_name']: self._idx_} )
+                else:
+                    rst.append( *proc_nxt )
+            elif proc_arg_num == 1:
+                rst.append( proc( nxt[0] ) )
+            elif proc_arg_num == 2:
+                if len( self.iters ) == 1:
+                    rst.append( proc['proc']( nxt[0], self._idx_ ) )
+                else:
+                    rst.append( proc['proc']( nxt[0], proc['default'][0] if nxt[1]==None else nxt[1] ) )
+
+        self._idx_ += 1     # 序号递增
+
+        return rst
+
