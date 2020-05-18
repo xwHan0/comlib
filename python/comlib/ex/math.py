@@ -1,4 +1,9 @@
 import comlib.ex.__private__ as lib
+import math
+
+def xceil(a, b=1):
+    if a % b == 0: return 0
+    return int( math.ceil( a / b ) * b )
 
 def xmin(*args):
     """寻找{args}列表中的最小值。
