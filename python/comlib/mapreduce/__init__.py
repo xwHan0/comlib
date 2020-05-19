@@ -154,17 +154,7 @@ class Proc:
                 return self.proc( *nxt, **self.glb_param )
             else:
                 return self.proc( *nxt[:self.itn], **self.glb_param )
-            
-        
-
-class Procs:
-    def __init__(self, proc=None, **args):
-
-        # 默认参数
-        default = {
-            'index_name' : 'idx',   # 默认序号形参名称
-        }
-        
+         
         
 def gen_procs( proc=None, **args ):
 
@@ -188,29 +178,46 @@ def gen_procs( proc=None, **args ):
 
 
     
-
+class Group:
+    def __init__( self, proc=None, **args ):
+        self.proc = {}
+        if isinstance( proc, dict ):
+            for p in proc:
+                self.proc[p] = gen_procs( proc[p], **args )
+        else:
+            self.proc = gen_procs( proc, **args )
+            
+        self.criteria = args.get( 'criteria', None )
+        
+    def reset( self ):
+        self.cri_nxt = iter( self.criteria )
+        
+    def run( self, nxt, stop ):
+        if self.criteria == None:
+            return [proc.run( nxt, stop ) for proc in self.proc]
+        
+        cls = next( self.cri_nxt )
+        procs = self.proc.get( cls, self.proc.get('else', None)  )
+        if procs:
+            return [proc.run( nxt, stop ) for proc in procs]
+        else:
+            return None
 
 
 #=================================================================================================================
 #====  xmap
 #=================================================================================================================
 class xmap:
-    def __init__(self, proc, *iters, grp=None, grp_ignore=Proc(), **args):
-        self.proc = gen_procs( proc, **args )
+    def __init__(self, proc, *iters, **args):
+        self.proc = Group( proc, **args )
         self.iters = iters
-        self.grp = grp
-        self.grp_ignore = grp_ignore
-        self.args = args
 
     def __iter__(self):
-        self._nxt_ = [iter(n) for n in iters]
-        self._grp_nxt_ = iter(self.grp)
+        self._nxt_ = [iter(n) for n in self.iters]
+        self.proc.reset()
         return self
 
     def __next__(self):
-        #grp = next( self._grp_nxt_ )
-        #procs = self.proc.get( grp, self.grp_ignore )
-        procs = self.proc
 
         nxt, stop = [next(self._nxt_[0])], [False]
 
@@ -222,5 +229,6 @@ class xmap:
                 nxt.append( None )
                 stop.append( True )
 
-        rst = [proc.run( nxt, stop ) for proc in procs]
+        rst = self.proc.run( nxt, stop )
+        if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
