@@ -127,6 +127,39 @@ class iterTree:
 #====  Proc
 #=================================================================================================================
 class Proc:
+    def __init__(self, proc, default=None, itn=1, **kargs):
+        proc_param_tuple = proc.__code__.co_varnames[:proc.__code__.co_argcount]
+        
+        # 
+        self.glb_param = {}
+        for param in proc_param_tuple:
+            if param in kargs:
+                self.glb_param[param] = kargs[param]
+        
+        self.proc = proc
+        self.default = default
+        self.itn = itn
+        
+    def proc(self, nxt, stop):
+        if self.default != None:
+            for i in range(len(nxt)):
+                nxt[i] = self.default[i] if stop[i] else nxt[i]
+        args_num = self.proc.__code__.co_argcount
+        if args_num == 0:
+            return self.proc( *nxt )
+        else args_num == 1:
+            return self.proc( nxt[0] )
+        elif self.itn <= args_num:
+            if self.itn == 0:
+                return self.proc( *nxt, **self.glb_param )
+            else:
+                return self.proc( *nxt[:self.itn], **self.glb_param )
+        else:
+            raise Exception('Define parameter number is larger than ')
+            
+        
+
+class Procs:
     def __init__(self, proc=None, **args):
 
         # 默认参数
