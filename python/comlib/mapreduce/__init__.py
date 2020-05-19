@@ -138,24 +138,22 @@ class Proc:
         
         self.proc = proc
         self.default = default
-        self.itn = itn
+        self.itn = xmin( itn, self.proc.__code__.co_argcount )
         
-    def proc(self, nxt, stop):
+    def run(self, nxt, stop):
         if self.default != None:
             for i in range(len(nxt)):
                 nxt[i] = self.default[i] if stop[i] else nxt[i]
         args_num = self.proc.__code__.co_argcount
         if args_num == 0:
             return self.proc( *nxt )
-        else args_num == 1:
+        elif args_num == 1:
             return self.proc( nxt[0] )
-        elif self.itn <= args_num:
+        else:
             if self.itn == 0:
                 return self.proc( *nxt, **self.glb_param )
             else:
                 return self.proc( *nxt[:self.itn], **self.glb_param )
-        else:
-            raise Exception('Define parameter number is larger than ')
             
         
 
@@ -166,20 +164,27 @@ class Procs:
         default = {
             'index_name' : 'idx',   # 默认序号形参名称
         }
+        
+        
+def gen_procs( proc=None, **args ):
 
-        if isinstance( proc, list ):
-            self.proc = proc
-            for p in self.proc:
-                if hasattr( p, '__call__' ):
-                    p = dict( default, **{'proc': p} )
-                    p = dict( p, **args )
-                elif isinstance( p, dict ):
-                    p = dict( default, **p )
-        elif hasattr( proc, '__call__' ):
-            p = dict( default, **{'proc': p} )
-            self.proc = [dict( p, **args )]
-        else:
-            self.proc = []
+    if isinstance( proc, list ):
+        rst = []
+        for p in proc:
+            if hasattr( p, '__call__' ):
+                rst.append( Proc( p, args.get('default', None), args.get('itn', 0), **args  ) )
+            elif isinstance( p, dict ):
+                rst.append( Proc( 
+                    p.get( 'proc', None ),
+                    default = args.get('itn', p.get('default', None)),
+                    itn = args.get('itn', p.get('itn', 0)),
+                    **dict( p, **args)
+                ) )
+        return rst
+    elif hasattr( proc, '__call__' ):
+        return [Proc( proc, args.get('default', None), args.get('itn', 0), **args )]
+    else:
+        return []
 
 
     
@@ -190,10 +195,9 @@ class Procs:
 #====  xmap
 #=================================================================================================================
 class xmap:
-    def __init__(self, proc, *iters, fillval=None, grp=None, grp_ignore=Proc(), **args):
-        self.proc = proc
+    def __init__(self, proc, *iters, grp=None, grp_ignore=Proc(), **args):
+        self.proc = gen_procs( proc, **args )
         self.iters = iters
-        self.fillval = fillval
         self.grp = grp
         self.grp_ignore = grp_ignore
         self.args = args
@@ -201,46 +205,22 @@ class xmap:
     def __iter__(self):
         self._nxt_ = [iter(n) for n in iters]
         self._grp_nxt_ = iter(self.grp)
-        self._idx_ = 0  # 序号
         return self
 
     def __next__(self):
-        grp = next( self._grp_nxt_ )
-        procs = self.proc.get( grp, self.grp_ignore )
+        #grp = next( self._grp_nxt_ )
+        #procs = self.proc.get( grp, self.grp_ignore )
+        procs = self.proc
 
-        nxt, first = [], true
-        for n in self._nxt_:
+        nxt, stop = [next(self._nxt_[0])], [False]
+
+        for n in self._nxt_[1:]:
             try:
                 nxt.append( next(n) )
+                stop.append( False )
             except StopIteration:
-                if first: raise StopIteration()
                 nxt.append( None )
-            first = False
+                stop.append( True )
 
-
-        rst = []
-        for proc in procs:
-            proc_arg_num = proc.__code__.co_argcount
-            if proc_arg_num == 0:
-                proc_nxt = []
-                for i in range(len(self.iters)):
-                    if nxt[i] == None:
-                        proc_nxt.append( proc['default'][i-1] )
-                    else:
-                        proc_nxt.append( nxt[i] )
-                if proc['index_name'] in proc.__code__.co_varname:
-                    rst.append( *proc_nxt, **{proc['index_name']: self._idx_} )
-                else:
-                    rst.append( *proc_nxt )
-            elif proc_arg_num == 1:
-                rst.append( proc( nxt[0] ) )
-            elif proc_arg_num == 2:
-                if len( self.iters ) == 1:
-                    rst.append( proc['proc']( nxt[0], self._idx_ ) )
-                else:
-                    rst.append( proc['proc']( nxt[0], proc['default'][0] if nxt[1]==None else nxt[1] ) )
-
-        self._idx_ += 1     # 序号递增
-
-        return rst
-
+        rst = [proc.run( nxt, stop ) for proc in procs]
+        return rst if len(rst) > 1 else rst[0]
