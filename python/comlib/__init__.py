@@ -12,4 +12,4 @@ from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
 
 from comlib.mapreduce.qmar import Qmar
 
-from comlib.mapreduce import xmap
+from allreduce import xmap
