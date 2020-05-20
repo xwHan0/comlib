@@ -178,7 +178,7 @@ def gen_actions( action=None, **args ):
     elif hasattr( action, '__call__' ):
         return [Action( action, args.get('default', None), args.get('itn', 0), **args )]
     else:
-        return []
+        return [action]
 
 
     
