@@ -12,4 +12,8 @@ from comlib.mapreduce.proc import Proc, ProcMap, ProcReduce, ProcIter
 
 from comlib.mapreduce.qmar import Qmar
 
-from allreduce import xmap
+
+from comlib.ex.math import xmin,xmax,xceil
+
+from comlib.allreduce import xmap,xrange
+

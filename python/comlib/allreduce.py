@@ -1,7 +1,15 @@
 """
+常用高阶函数迭代器库。
 """
 
-from comlib.ex.math import xmin
+class XIterator:
+    def apply( self, action, *iters, **kargs ):
+        pass
+        
+    def xmap( self, action, *iters, **kargs ):
+        return xmap( action, self, *iters, **kargs )
+        
+    def to_list(self): return list(self)
 
 
 
@@ -11,7 +19,7 @@ from comlib.ex.math import xmin
 class Action:
     def __init__(self, action, **kargs):
 
-        self.action, self.default = action, kargs.get('default', None)
+        self.action = action
 
         if hasattr( action, '__call__' ):
             # 生成action处理所需的额外参数
@@ -19,41 +27,33 @@ class Action:
             for param in action.__code__.co_varnames[:action.__code__.co_argcount]:
                 if param in kargs:
                     self.glb_param[param] = kargs[param]
-            
-            self.itn = xmin( kargs.get('itn', 0), self.action.__code__.co_argcount )
         
-    def run(self, nxt, stop):
+    def run(self, nxt):
 
         if hasattr( self.action, '__call__' ):
-            if self.default != None:
-                for i in range(len(nxt)):
-                    nxt[i] = self.default[i] if stop[i] else nxt[i]
             args_num = self.action.__code__.co_argcount
             if args_num == 0:
                 return self.action( *nxt )
             elif args_num == 1:
                 return self.action( nxt[0] )
             else:
-                if self.itn == 0:
-                    return self.action( *nxt, **self.glb_param )
-                else:
-                    return self.action( *nxt[:self.itn], **self.glb_param )
+                return self.action( *nxt[:args_num], **self.glb_param )
         else:
             return self.action
          
         
-def gen_actions( action=None, **args ):
+def gen_actions( action, **args ):
 
     if isinstance( action, list ):
         rst = []
         for p in action:
             if hasattr( p, '__call__' ):
                 rst.append( Action( p,  **args  ) )
-            elif isinstance( p, dict ):
-                rst.append( Action( 
-                    p.get( 'action', None ),
-                    **dict( p, **args)
-                ) )
+            #elif isinstance( p, dict ):
+             #   rst.append( Action( 
+             #       p.get( 'action', None ),
+             #       **dict( p, **args)
+            #    ) )
         return rst
     elif hasattr( action, '__call__' ):
         return [Action( action, **args )]
@@ -63,7 +63,7 @@ def gen_actions( action=None, **args ):
 
     
 class Group:
-    def __init__( self, action=None, **args ):
+    def __init__( self, action, **args ):
         self.action = {}
         if isinstance( action, dict ):
             for p in action:
@@ -77,22 +77,55 @@ class Group:
         if self.criteria:
             self.cri_nxt = iter( self.criteria )
         
-    def run( self, nxt, stop ):
+    def run( self, nxt ):
         if self.criteria == None:
-            return [action.run( nxt, stop ) for action in self.action]
+            return [action.run( nxt ) for action in self.action]
         
         cls = next( self.cri_nxt )
         procs = self.action.get( cls, self.action.get('else', None)  )
         if procs:
-            return [proc.run( nxt, stop ) for proc in procs]
+            return [proc.run( nxt ) for proc in procs]
         else:
             return None
+
+
+class xrange(XIterator):
+    def __init__(self, begin=0, end=None, step=1, typ='unlimmitted'):
+        self.begin, self.end, self.step = begin, end, step
+        
+        self.typ = 'unlimmitted' if end==None else typ
+        
+        if self.typ == 'roundrobin':
+            if self.step > 0 and begin > end:
+                self.begin, self.end = end, begin
+            elif self.step < 0 and begin < end:
+                self.begin, self.end = end, begin
+        
+    def __iter__(self):
+        self._nxt_ = self.begin
+        
+    def __next__(self):
+        if self.end == None: return self._nxt_ + self.step
+        
+        self._nxt_ += self.step
+        if self.typ == 'unlimmitted':
+            if self.end > self.begin:
+                if self._nxt_ >= self.end: raise StopIteration()
+            else:
+                if self._nxt_ <= self.end: raise StopIteration()
+        elif self.typ == 'roundrobin':
+            if self.step > 0:
+                if self._nxt_ >= self.end: self._nxt_ = self.begin
+            else:
+                if self._nxt_ <= self.end: self._nxt_ = self.begin
+        
+        return self._nxt_
 
 
 #=================================================================================================================
 #====  xmap
 #=================================================================================================================
-class xmap:
+class xmap(XIterator):
     def __init__(self, action, *iters, **args):
         """
         返回一个xmap迭代器。
@@ -108,8 +141,6 @@ class xmap:
           * 当该迭代器为空时，返回一个支持proc的延时函数，该函数接收一个列表参数。(Delay Execute特性)
         * criteria: {None(default) | list} -- 分组条件
           * 参见'high order function.html'
-        * default: {None(default) | list} -- 迭代器填充值
-        * itn: {integer} -- 迭代参数个数
         * others: -- proc处理所需的参数列表
             
         Returns:
@@ -127,18 +158,10 @@ class xmap:
 
     def __next__(self):
 
-        nxt, stop = [next(self._nxt_[0])], [False]
+        nxt = [next(n) for n in self._nxt_]
 
-        for n in self._nxt_[1:]:
-            try:
-                nxt.append( next(n) )
-                stop.append( False )
-            except StopIteration:
-                nxt.append( None )
-                stop.append( True )
-
-        rst = self.action.run( nxt, stop )
+        rst = self.action.run( nxt )
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
-    def to_list(self): return list(self)
+    
