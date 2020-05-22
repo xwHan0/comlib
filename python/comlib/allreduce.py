@@ -3,8 +3,8 @@
 """
 
 class XIterator:
-    def apply( self, action, *iters, **kargs ):
-        pass
+    def apply( self, action, *args, **kargs ):
+        return action( *args, self **kargs )
         
     def xmap( self, action, *iters, **kargs ):
         return xmap( action, self, *iters, **kargs )
@@ -164,4 +164,7 @@ class xmap(XIterator):
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
+    
+def xapply( action, *args, **kargs ):
+    return action( *args, **kargs )
     
