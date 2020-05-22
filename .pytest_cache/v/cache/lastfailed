@@ -1,0 +1,3 @@
+{
+  "python/test/test_allreduce.py::Test_xapply::()::test_iter_apply": true
+}

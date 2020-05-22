@@ -1,6 +1,11 @@
 """
 常用高阶函数迭代器库。
 """
+from types import FunctionType
+    
+def xapply( action, *args, **kargs ):
+    return action( *args, **kargs )
+    
 
 class XIterator:
     def apply( self, action, *args, **kargs ):
@@ -24,19 +29,28 @@ class Action:
         if hasattr( action, '__call__' ):
             # 生成action处理所需的额外参数
             self.glb_param = {}
-            for param in action.__code__.co_varnames[:action.__code__.co_argcount]:
+            if type(action) is FunctionType: # 普通函数处理
+                params = action.__code__.co_varnames[:action.__code__.co_argcount]
+            else:   # 类函数处理
+                params = action.__init__.__code__.co_varnames[:action.__init__.__code__.co_argcount]
+
+            for param in params:
                 if param in kargs:
                     self.glb_param[param] = kargs[param]
         
     def run(self, nxt):
 
         if hasattr( self.action, '__call__' ):
-            args_num = self.action.__code__.co_argcount
-            if args_num == 0:
-                return self.action( *nxt )
-            elif args_num == 1:
-                return self.action( nxt[0] )
+            if type(self.action) is FunctionType:
+                args_num = self.action.__code__.co_argcount
+                if args_num == 0:
+                    return self.action( *nxt )
+                elif args_num == 1:
+                    return self.action( nxt[0] )
+                else:
+                    return self.action( *nxt[:args_num], **self.glb_param )    
             else:
+                args_num = self.action.__init__.__code__.co_argcount
                 return self.action( *nxt[:args_num], **self.glb_param )
         else:
             return self.action
@@ -90,12 +104,12 @@ class Group:
 
 
 class xrange(XIterator):
-    def __init__(self, begin=0, end=None, step=1, typ='unlimmitted'):
+    def __init__(self, begin=0, end=None, step=1, mode='unlimmitted'):
         self.begin, self.end, self.step = begin, end, step
         
-        self.typ = 'unlimmitted' if end==None else typ
+        self.mode = 'unlimmitted' if end==None else mode
         
-        if self.typ == 'roundrobin':
+        if self.mode == 'roundrobin':
             if self.step > 0 and begin > end:
                 self.begin, self.end = end, begin
             elif self.step < 0 and begin < end:
@@ -108,12 +122,12 @@ class xrange(XIterator):
         if self.end == None: return self._nxt_ + self.step
         
         self._nxt_ += self.step
-        if self.typ == 'unlimmitted':
+        if self.mode == 'unlimmitted':
             if self.end > self.begin:
                 if self._nxt_ >= self.end: raise StopIteration()
             else:
                 if self._nxt_ <= self.end: raise StopIteration()
-        elif self.typ == 'roundrobin':
+        elif self.mode == 'roundrobin':
             if self.step > 0:
                 if self._nxt_ >= self.end: self._nxt_ = self.begin
             else:
@@ -164,7 +178,3 @@ class xmap(XIterator):
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
-    
-def xapply( action, *args, **kargs ):
-    return action( *args, **kargs )
-    
