@@ -1,9 +1,0 @@
-{
-  "python/test/test_iterator.py::TestIndex": true,
-  "python/test/test_iterator.py::TestTree": true,
-  "python/test/test_iterator.py::TestTreeDirection": true,
-  "python/test/test_iterator.py::TestTreeExtFlat": true,
-  "python/test/test_iterator.py::TestTreeResult": true,
-  "python/test/test_iterator_operator.py::TestDeq": true,
-  "python/test/test_iterator_operator.py::TestInterpose": true
-}
