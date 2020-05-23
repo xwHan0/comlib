@@ -26,13 +26,19 @@ class Action:
 
         self.action = action
 
-        if hasattr( action, '__call__' ):
+        if type(self.action) is types.FunctionType:
+            self._action_mode = 0  # Function
+            actor = self.acton
+        elif hasattr( action, '__call__' ):
+            self._action_mode = 1 # Clas
+            actor = self.action.__init__
+        else:
+            self._action_mode = 2
+            
+        if self._action_mode < 2:
             # 生成action处理所需的额外参数
             self.glb_param = {}
-            if type(action) is FunctionType: # 普通函数处理
-                params = action.__code__.co_varnames[:action.__code__.co_argcount]
-            else:   # 类函数处理
-                params = action.__init__.__code__.co_varnames[:action.__init__.__code__.co_argcount]
+            params = actor.__code__.co_varnames[:action.__code__.co_argcount]
 
             for param in params:
                 if param in kargs:
@@ -40,34 +46,31 @@ class Action:
         
     def run(self, nxt):
 
-        if hasattr( self.action, '__call__' ):
-            if type(self.action) is FunctionType:
-                args_num = self.action.__code__.co_argcount
-                if args_num == 0:
-                    return self.action( *nxt )
-                elif args_num == 1:
-                    return self.action( nxt[0] )
-                else:
-                    return self.action( *nxt[:args_num], **self.glb_param )    
+        if self._action_mode == 0:
+            args_num = self.action.__code__.co_argcount
+            if args_num == 0:
+                return self.action( *nxt, **self.glb_param )
             else:
-                args_num = self.action.__init__.__code__.co_argcount
-                return self.action( *nxt[:args_num], **self.glb_param )
+                return self.action( *nxt[:args_num], **self.glb_param )    
+        elif self._action_mode == 1:
+            args_num = self.action.__init__.__code__.co_argcount
+            if args_num == 1:
+                return self.action( *nxt, **self.glb_param )
+            else:
+                return self.action( *nxt[:args_num-1], **self.glb_param )    
         else:
             return self.action
          
         
 def gen_actions( action, **args ):
 
+    #if isinstance( action, tuple ) and len( action ) > 1 and hasattr( action, '__call__' ):
+      #  return [Action(*action)]
     if isinstance( action, list ):
         rst = []
         for p in action:
             if hasattr( p, '__call__' ):
                 rst.append( Action( p,  **args  ) )
-            #elif isinstance( p, dict ):
-             #   rst.append( Action( 
-             #       p.get( 'action', None ),
-             #       **dict( p, **args)
-            #    ) )
         return rst
     elif hasattr( action, '__call__' ):
         return [Action( action, **args )]

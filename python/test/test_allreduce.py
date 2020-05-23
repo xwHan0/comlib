@@ -4,7 +4,7 @@ sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 print(sys.path)
 
 
-from comlib import xmap
+from comlib import xmap, xrange
 import comlib
 
 def add10(x): return x+10
@@ -30,6 +30,11 @@ class Test_xmap:
     def test_multi_result(self):
         # 支持多结果返回
         assert xmap([add10, add20], [1,2,3,4]).to_list() == [[11,21],[12,22],[13,23],[14,24]]
+
+
+class Test_xrange:
+    def test_basic(self):
+        assert xrange(10,17).to_list() == [10,11,12,13,14,15,16]
 
 
 class Test_xapply:
