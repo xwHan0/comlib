@@ -2,6 +2,7 @@
 常用高阶函数迭代器库。
 """
 from types import FunctionType
+from comlib import xmin
     
 def xapply( action, *args, **kargs ):
     return action( *args, **kargs )
@@ -22,61 +23,62 @@ class XIterator:
 #====  Proc
 #=================================================================================================================
 class Action:
-    def __init__(self, action, **kargs):
+    def __init__(self, action, itn=0, ext_bys=False, ext_kargs={},  **kargs):
 
-        self.action = action
+        self.action, self.itn = action, itn
 
-        if type(self.action) is types.FunctionType:
+        if type(self.action) is FunctionType:
             self._action_mode = 0  # Function
-            actor = self.acton
+            actor = self.action
         elif hasattr( action, '__call__' ):
-            self._action_mode = 1 # Clas
+            self._action_mode = 1 # Class
             actor = self.action.__init__
         else:
             self._action_mode = 2
             
         if self._action_mode < 2:
             # 生成action处理所需的额外参数
+            
             self.glb_param = {}
-            params = actor.__code__.co_varnames[:action.__code__.co_argcount]
+            if ext_bys:
+                self.glb_param = dict( ext_kargs, **kargs )
+            else:
+                params = actor.__code__.co_varnames[:action.__code__.co_argcount]
 
-            for param in params:
-                if param in kargs:
-                    self.glb_param[param] = kargs[param]
+                for param in params:
+                    if param in ext_kargs:
+                        self.glb_param[param] = ext_kargs[param]
+                self.glb_param = dict( self.glb_param, **kargs )
         
     def run(self, nxt):
 
-        if self._action_mode == 0:
+        if self._action_mode > 1: return self.action
+
+        if self.itn > 0:
+            args_num = xmin( self.itn, len(nxt ) )
+        elif self._action_mode == 0:
             args_num = self.action.__code__.co_argcount
-            if args_num == 0:
-                return self.action( *nxt, **self.glb_param )
-            else:
-                return self.action( *nxt[:args_num], **self.glb_param )    
         elif self._action_mode == 1:
-            args_num = self.action.__init__.__code__.co_argcount
-            if args_num == 1:
-                return self.action( *nxt, **self.glb_param )
-            else:
-                return self.action( *nxt[:args_num-1], **self.glb_param )    
-        else:
-            return self.action
-         
+            args_num = self.action.__init__.__code__.co_argcount - 1
         
-def gen_actions( action, **args ):
+        if args_num == 1:
+            return self.action( *nxt, **self.glb_param )
+        else:
+            return self.action( *nxt[:args_num-1], **self.glb_param )    
+        
+        
+def gen_actions( action, ext_kargs ):
 
-    #if isinstance( action, tuple ) and len( action ) > 1 and hasattr( action, '__call__' ):
-      #  return [Action(*action)]
-    if isinstance( action, list ):
-        rst = []
-        for p in action:
-            if hasattr( p, '__call__' ):
-                rst.append( Action( p,  **args  ) )
-        return rst
-    elif hasattr( action, '__call__' ):
-        return [Action( action, **args )]
-    else:
-        return [action]
-
+    if not isinstance( action, list ):
+        action = [action]
+        
+    rst = []
+    for p in action:
+        if hasattr( p, '__call__' ):
+            rst.append( Action( p,  ext_kargs=ext_kargs  ) )
+        elif isinstance( p, Action ):
+            rst.append( p )
+    return rst
 
     
 class Group:
@@ -183,3 +185,17 @@ class xmap(XIterator):
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
+
+
+def mapa(action, *iters, **kargs):
+    return xmap( action, *iters, **kargs ).to_list()
+    
+    
+@classmethod
+def xmap(cls, action, *iters, **kargs):
+    return xmap( action, *iters, cls, **kargs )
+    
+list.xmap = xmap
+    
+    
+    
