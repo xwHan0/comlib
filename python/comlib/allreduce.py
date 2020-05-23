@@ -14,13 +14,16 @@ class XIterator:
         
     def xmap( self, action, *iters, **kargs ):
         return xmap( action, self, *iters, **kargs )
+
+    def xreduce( self, action, *iters, init=None, **kargs ):
+        return xreduce( action, self, *iters, init=init, **kargs )
         
     def to_list(self): return list(self)
 
 
 
 #=================================================================================================================
-#====  Proc
+#====  Action
 #=================================================================================================================
 class Action:
     def __init__(self, action, itn=0, ext_bys=False, ext_kargs={},  **kargs):
@@ -65,6 +68,9 @@ class Action:
             return self.action( *nxt, **self.glb_param )
         else:
             return self.action( *nxt[:args_num], **self.glb_param )    
+
+    def run2(self, last, curr):
+        return self.action( last, curr, **self.glb_param )
         
         
 def gen_actions( action, ext_kargs ):
@@ -107,6 +113,9 @@ class Group:
         else:
             return None
 
+#######################################################################################################
+####  Range
+#######################################################################################################
 
 class xrange(XIterator):
     def __init__(self, begin=0, end=None, step=1, mode='unlimmitted'):
@@ -186,6 +195,34 @@ class xmap(XIterator):
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
+
+#############################################################################################################
+####  Reduce
+#############################################################################################################
+def xreduce( action, *iters, init=None, **kargs ):
+    # 初始化变量
+    actions = gen_actions( action, ext_kargs = kargs )
+    nxts = [iter(ite) for ite in iters]
+    rst_num = len( actions )
+    in_num = len( nxts )
+    
+    try:
+        if init == None:
+            last = [[next(n) for n in nxts]] * rst_num
+            if in_num == 1: last = [ele[0] for ele in last]
+        else:
+            last = [init] * rst_num
+
+        while True:
+            curr = [next(n) for n in nxts]
+            if len( curr ) == 1: curr = curr[0]
+            last = [actions[i].run2(curr, last[i]) for i in range( rst_num )]
+
+    except StopIteration:
+        pass
+
+    return last if len(last) > 1 else last[0]
+
 
 
 def mapa(action, *iters, **kargs):

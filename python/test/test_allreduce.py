@@ -4,7 +4,7 @@ sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 print(sys.path)
 
 
-from comlib import xmap, xrange,xapply
+from comlib import xmap, xrange,xapply,mapa,xreduce
 import comlib
 
 def add10(x): return x+10
@@ -18,6 +18,7 @@ class Test_xmap:
     def test_basic(self):
         # 基本操作
         assert xmap(add10, [1,2,3,4]).to_list() == [11,12,13,14]
+        assert mapa(add10, [1,2,3,4]) == [11,12,13,14]
         # 支持多迭代器输入
         assert xmap(add_2, [1,2,3,4],[10,20,30,40]).to_list() == [11,22,33,44]
         # 支持无限迭代器输入
@@ -37,10 +38,25 @@ class Test_xrange:
         assert xrange(10,17).to_list() == [10,11,12,13,14,15,16]
 
 
-# class Test_xapply:
-#     def test_basic(self):
-#         # 基本操作
-#         assert comlib.allreduce.xapply(xmap, add10, [1,2,3,4]).to_list() == [11,12,13,14]
+def max_2(a, b): return a if a > b else b
 
-#     def test_iter_apply(self):
-#         assert comlib.allreduce.xapply(xmap,xmap,add10, [[1,2,3],[10,20,30],[100,200,300]]).to_list() == [[11,12,13],[20,30,40],[110,210,310]]
+class Test_xreduce:
+    def test_basic(self):
+        assert xreduce(add_2, [1,2,3,4,5]) == 15
+        assert xreduce( max_2, [1,2,3,4,5,4,3,2,1], init=4 ) == 5
+
+    def test_multi_result(self):
+        assert xreduce( [add_2, max_2], [1,5,3,2,4] ) == [15, 5]
+
+
+
+class Test_xapply:
+    def test_basic(self):
+        # 基本操作
+        assert xapply(xmap, add10, [1,2,3,4]).to_list() == [11,12,13,14]
+
+
+
+class Test_mix:
+    def test_map_map(self):
+        assert xmap(mapa,add10, [[1,2,3],[10,20,30],[100,200,300]]).to_list() == [[11,12,13],[20,30,40],[110,210,310]]
