@@ -2,7 +2,7 @@ import comlib.ex.__private__ as lib
 import math
 
 def xceil(a, b=1):
-    if a % b == 0: return 0
+    if a % b == 0: return a
     return int( math.ceil( a / b ) * b )
 
 def xmin(*args):
