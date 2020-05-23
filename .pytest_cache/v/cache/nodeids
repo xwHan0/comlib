@@ -1,0 +1,3 @@
+[
+  "python/test/test_allreduce.py::Test_xrange::()::test_basic"
+]

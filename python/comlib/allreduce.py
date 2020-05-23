@@ -61,10 +61,10 @@ class Action:
         elif self._action_mode == 1:
             args_num = self.action.__init__.__code__.co_argcount - 1
         
-        if args_num == 1:
+        if args_num == 0:
             return self.action( *nxt, **self.glb_param )
         else:
-            return self.action( *nxt[:args_num-1], **self.glb_param )    
+            return self.action( *nxt[:args_num], **self.glb_param )    
         
         
 def gen_actions( action, ext_kargs ):
@@ -86,9 +86,9 @@ class Group:
         self.action = {}
         if isinstance( action, dict ):
             for p in action:
-                self.action[p] = gen_actions( action[p], **args )
+                self.action[p] = gen_actions( action[p], args )
         else:
-            self.action = gen_actions( action, **args )
+            self.action = gen_actions( action, args )
             
         self.criteria = args.get( 'criteria', None )
         
@@ -128,7 +128,6 @@ class xrange(XIterator):
         if self.end == None: return self._nxt_ + self.step
         
         rst = self._nxt_
-        self._nxt_ += self.step
         if self.mode == 'unlimmitted':
             if self.end > self.begin:
                 if self._nxt_ >= self.end: raise StopIteration()
@@ -139,6 +138,8 @@ class xrange(XIterator):
                 if self._nxt_ >= self.end: self._nxt_ = self.begin
             else:
                 if self._nxt_ <= self.end: self._nxt_ = self.begin
+        
+        self._nxt_ += self.step
         
         return rst
 
@@ -191,11 +192,11 @@ def mapa(action, *iters, **kargs):
     return xmap( action, *iters, **kargs ).to_list()
     
     
-@classmethod
-def xmap(cls, action, *iters, **kargs):
-    return xmap( action, *iters, cls, **kargs )
+# @classmethod
+# def xmap_(cls, action, *iters, **kargs):
+#     return xmap( action, *iters, cls, **kargs )
     
-list.xmap = xmap
+# list.xmap = xmap_
     
     
     
