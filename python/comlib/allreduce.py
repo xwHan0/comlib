@@ -117,10 +117,12 @@ class xrange(XIterator):
         
     def __iter__(self):
         self._nxt_ = self.begin
+        return self
         
     def __next__(self):
         if self.end == None: return self._nxt_ + self.step
         
+        rst = self._nxt_
         self._nxt_ += self.step
         if self.mode == 'unlimmitted':
             if self.end > self.begin:
@@ -133,7 +135,7 @@ class xrange(XIterator):
             else:
                 if self._nxt_ <= self.end: self._nxt_ = self.begin
         
-        return self._nxt_
+        return rst
 
 
 #=================================================================================================================
