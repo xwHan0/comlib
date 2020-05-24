@@ -4,9 +4,6 @@
 from types import FunctionType
 from comlib import xmin
     
-def xapply( action, *args, **kargs ):
-    return action( *args, **kargs )
-    
 
 class XIterator:
     def apply( self, action, *args, **kargs ):
@@ -19,7 +16,6 @@ class XIterator:
         return xreduce( action, self, *iters, init=init, **kargs )
         
     def to_list(self): return list(self)
-
 
 
 #=================================================================================================================
@@ -153,6 +149,13 @@ class xrange(XIterator):
         return rst
 
 
+
+
+
+
+
+
+
 #=================================================================================================================
 #====  xmap
 #=================================================================================================================
@@ -226,14 +229,36 @@ def xreduce( action, *iters, init=None, **kargs ):
 
 
 def mapa(action, *iters, **kargs):
-    return xmap( action, *iters, **kargs ).to_list()
+    return list(xmap( action, *iters, **kargs ))
     
     
-# @classmethod
-# def xmap_(cls, action, *iters, **kargs):
-#     return xmap( action, *iters, cls, **kargs )
-    
-# list.xmap = xmap_
-    
-    
-    
+#############################################################################################################
+####  Apply
+#############################################################################################################
+def apply_core( actions, args, kargs ):
+    """
+    Constraint-001: 当actions仅包含一个元素时，该action必须满足格式：(*args, **kargs)
+    Constraint-002: 当actions包含多个元素时，非最后一个action元素必须满足格式：(action, *args, **kargs)
+    """
+    action_num = len( actions )
+
+    # 0阶处理：直接返回数据
+    if action_num == 0: return args
+        
+    # 1阶处理：返回处理的结果
+    # Issue: 该1阶处理函数是否有该调用格式？这里貌似多了一个协议接口定义
+    if action_num == 1: return actions[0]( *args, **kargs )
+
+    # 2阶函数，直接求解该2阶函数的解
+    if action_num == 2: return actions[0]( actions[1], *args, **kargs )
+
+    # 高于2阶函数，逐阶降阶处理
+    def _sub_(*s): return apply_core(actions[1:], s, kargs)
+    return actions[0]( _sub_, *args, **kargs )
+
+def xapply( actions, *args, **kargs ):
+
+    if not isinstance( actions, (list, tuple) ):
+        actions = [actions]
+
+    return apply_core( actions, args, kargs )

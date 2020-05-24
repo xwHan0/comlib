@@ -53,10 +53,7 @@ class Test_xreduce:
 class Test_xapply:
     def test_basic(self):
         # 基本操作
-        assert xapply(xmap, add10, [1,2,3,4]).to_list() == [11,12,13,14]
+        assert xapply((xmap, add10), [1,2,3,4]).to_list() == [11,12,13,14]
 
-
-
-class Test_mix:
-    def test_map_map(self):
-        assert xmap(mapa,add10, [[1,2,3],[10,20,30],[100,200,300]]).to_list() == [[11,12,13],[20,30,40],[110,210,310]]
+    def test_3stage(self):
+        assert xapply((mapa, mapa,add10), [[1,2,3],[10,20,30],[100,200,300]]) == [[11,12,13],[20,30,40],[110,210,310]]
