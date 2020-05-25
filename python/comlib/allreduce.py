@@ -21,9 +21,12 @@ class XIterator:
 #=================================================================================================================
 #====  Action
 #=================================================================================================================
-class Actions:
-    def __init__( self, action, kargs, args_required_num=0 ):
-        self.action = action
+class Proc:
+    """
+    allreduce内部处理接口协议。转化外部函数的形参格式到内部处理格式。
+    """
+    def __init__( self, proc, kargs={}, args_required_num=0 ):
+        self.proc = proc
         self.kargs = kargs
         self.args_required_num = args_required_num
         
@@ -31,7 +34,7 @@ class Actions:
         if self.args_required_num > 0:
             args = args[:self.args_required_num]
         
-        return self.action( *args, **self.kargs )
+        return self.proc( *args, **self.kargs )
 
 
 class Action:
@@ -250,6 +253,7 @@ def mapa(action, *iters, **kargs):
 #############################################################################################################
 def apply( actions, args, **kargs ):
     """
+    高阶函数降级处理。
     Constraint-001: 当actions仅包含一个元素时，该action必须满足格式：(*args, **kargs)
     Constraint-002: 当actions包含多个元素时，非最后一个action元素必须满足格式：(action, *args, **kargs)
     """
