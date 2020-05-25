@@ -21,6 +21,19 @@ class XIterator:
 #=================================================================================================================
 #====  Action
 #=================================================================================================================
+class Actions:
+    def __init__( self, action, kargs, args_required_num=0 ):
+        self.action = action
+        self.kargs = kargs
+        self.args_required_num = args_required_num
+        
+    def __call__( self, *args, **kargs ):
+        if self.args_required_num > 0:
+            args = args[:self.args_required_num]
+        
+        return self.action( *args, **self.kargs )
+
+
 class Action:
     def __init__(self, action, itn=0, ext_bys=False, ext_kargs={},  **kargs):
 
@@ -235,7 +248,7 @@ def mapa(action, *iters, **kargs):
 #############################################################################################################
 ####  Apply
 #############################################################################################################
-def apply_core( actions, args, kargs ):
+def apply( actions, args, **kargs ):
     """
     Constraint-001: 当actions仅包含一个元素时，该action必须满足格式：(*args, **kargs)
     Constraint-002: 当actions包含多个元素时，非最后一个action元素必须满足格式：(action, *args, **kargs)
@@ -253,7 +266,7 @@ def apply_core( actions, args, kargs ):
     if action_num == 2: return actions[0]( actions[1], *args, **kargs )
 
     # 高于2阶函数，逐阶降阶处理
-    def _sub_(*s): return apply_core(actions[1:], s, kargs)
+    def _sub_(*s): return apply(actions[1:], s, **kargs)
     return actions[0]( _sub_, *args, **kargs )
 
 def xapply( actions, *args, **kargs ):
@@ -261,4 +274,20 @@ def xapply( actions, *args, **kargs ):
     if not isinstance( actions, (list, tuple) ):
         actions = [actions]
 
-    return apply_core( actions, args, kargs )
+    return apply( actions, args, **kargs )
+    
+def wapply( *args, **kargs ):
+    action_num = kargs.get( 'anum', 0 )
+    del kargs['anum']
+    
+    if action_num == 0:
+        for i in range( len(args) ):
+            if not hasattr( args[i], '__call__' ):
+                break
+        actions = args[:i]
+        args = args[i:]
+    else:
+        actions = args[:action_num]
+        args = args[action_num:]
+        
+    return apply( actions, args, **kargs )
