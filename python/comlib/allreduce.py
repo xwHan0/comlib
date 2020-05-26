@@ -25,8 +25,12 @@ class Proc:
     """
     allreduce内部处理接口协议。转化外部函数的形参格式到内部处理格式。
     """
-    def __init__( self, proc, kargs={}, args_required_num=0 ):
-        self.proc = proc
+    def __init__( self, action, kargs={}, args_required_num=0 ):
+
+        if isinstance( action, Proc ):
+            self = action
+
+        self.action = action
         self.kargs = kargs
         self.args_required_num = args_required_num
         
@@ -34,7 +38,18 @@ class Proc:
         if self.args_required_num > 0:
             args = args[:self.args_required_num]
         
-        return self.proc( *args, **self.kargs )
+        return self.action( *args, **self.kargs )
+
+
+class Actions:
+    def __init__(self, actions):
+        if not isinstance( actions, list ):
+            actions = [actions]
+        self.actions = [Proc(a) for a in actions]
+
+    def __call__( self, *args, **kargs ):
+        rst = [action( *args, **kargs ) for action in self.actions]
+        return rst[0] if len( rst )==1 else rst        
 
 
 class Action:
