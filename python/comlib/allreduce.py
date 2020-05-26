@@ -35,6 +35,9 @@ class Proc:
         self.args_required_num = args_required_num
         
     def __call__( self, *args, **kargs ):
+        if not hasattr( self.action, '__call__' ):
+            return self.action
+
         if self.args_required_num > 0:
             args = args[:self.args_required_num]
         
