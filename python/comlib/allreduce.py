@@ -44,14 +44,50 @@ class Proc:
         return self.action( *args, **self.kargs )
 
 
-class Actions:
-    def __init__(self, actions):
-        if not isinstance( actions, list ):
-            actions = [actions]
-        self.actions = [Proc(a) for a in actions]
+class groupby:
+    def __init__( self, criteria = None, actions = None, else_action=None ):
+        
+        if criteria == None:
+            self.criteria_mode = 0
+        elif isinstance( criteria, list ):
+            self.criteria_mode = 1
+        elif hasattr( criteria, '__call__' ):
+            self.criteria_mode = 2
+        else:
+            raise( 'Argument criteria is not beside [None, list, callbak]' )
+        self.criteria = criteria
+        
+        self.actions = self.set_actions( actions ) if actions else None
+        self.else_action = [Proc( else_action )]
+
+    def set_actions( self, actions ):
+        
+        if not isinstance( actions, dict ):
+            actions = {True: actions}
+        
+        for k in actions:
+            action = actions[k]
+            if not isinstance( action, list ):
+                action = [action]
+            actions[k] = [Proc( a ) for a in action]
+            
+        return actions
+        
+    def reset( self ):
+        if self.criteria_mode == 1:
+            self._criteria_nxt_ = iter( self.criteria )
 
     def __call__( self, *args, **kargs ):
-        rst = [action( *args, **kargs ) for action in self.actions]
+        
+        if self.criteria_mode == 1: #list
+            key = next( self._criteria_nxt_  )
+        elif self.criteria_mode == 2: #callable
+            key = self.criteria(*args, **kargs )
+        else:
+            key = True
+        actions = self.actions.get( key, self.else_action )
+        
+        rst = [action( *args, **kargs ) for action in actions]
         return rst[0] if len( rst )==1 else rst        
 
 
