@@ -59,6 +59,7 @@ class groupby:
         
         self.actions = self.set_actions( actions ) if actions else None
         self.else_action = [Proc( else_action )]
+        self.key = None
 
     def set_actions( self, actions ):
         
@@ -80,12 +81,12 @@ class groupby:
     def __call__( self, *args, **kargs ):
         
         if self.criteria_mode == 1: #list
-            key = next( self._criteria_nxt_  )
+            self.key = next( self._criteria_nxt_  )
         elif self.criteria_mode == 2: #callable
-            key = self.criteria(*args, **kargs )
+            self.key = self.criteria(*args, **kargs )
         else:
-            key = True
-        actions = self.actions.get( key, self.else_action )
+            self.key = True
+        actions = self.actions.get( self.key, self.else_action )
         
         rst = [action( *args, **kargs ) for action in actions]
         return rst[0] if len( rst )==1 else rst        
