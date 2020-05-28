@@ -53,7 +53,7 @@ class Actions:
         
         if not isinstance( actions, list ):
             actions = [actions]
-        actions[k] = [Proc( a ) for a in actions]
+        actions = [Proc( a ) for a in actions]
             
         return actions
 
