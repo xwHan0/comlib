@@ -1,3 +1,0 @@
-{
-  "python/test/test_allreduce.py::Test_xreduce::()::test_aggregate_function": true
-}

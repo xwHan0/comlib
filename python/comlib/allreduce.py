@@ -9,11 +9,14 @@ class XIterator:
     def apply( self, action, *args, **kargs ):
         return action( *args, self, **kargs )
         
-    def xmap( self, action, *iters, **kargs ):
+    def map( self, action, *iters, **kargs ):
         return xmap( action, self, *iters, **kargs )
 
-    def xreduce( self, action, *iters, init=None, **kargs ):
+    def reduce( self, action, *iters, init=None, **kargs ):
         return xreduce( action, self, *iters, init=init, **kargs )
+
+    def flatten(self):
+        return [x for y in self for x in y]
         
     def to_list(self): return list(self)
 
@@ -21,14 +24,11 @@ class XIterator:
 #=================================================================================================================
 #====  Action
 #=================================================================================================================
-class Proc:
+class Action:
     """
     allreduce内部处理接口协议。转化外部函数的形参格式到内部处理格式。
     """
-    def __init__( self, action, kargs={}, args_required_num=0 ):
-
-        if isinstance( action, Proc ):
-            self = action
+    def __init__( self, action, args_required_num=0, **kargs ):
 
         self.action = action
         self.kargs = kargs
@@ -45,15 +45,15 @@ class Proc:
 
 
 class Actions:
-    def __init__( self, actions = None ):
+    def __init__( self, actions = None, kargs={} ):
         
-        self.actions = self.set_actions( actions ) if actions else None
+        self.actions = self.set_actions( actions, kargs=kargs ) if actions else None
 
-    def set_actions( self, actions ):
+    def set_actions( self, actions, kargs = {} ):
         
         if not isinstance( actions, list ):
             actions = [actions]
-        actions = [Proc( a ) for a in actions]
+        actions = [a if isinstance(a, Action) else Action( a, **kargs ) for a in actions]
             
         return actions
 
@@ -61,94 +61,6 @@ class Actions:
         
         return [action( *args, **kargs ) for action in self.actions]
 
-
-class Action:
-    def __init__(self, action, itn=0, ext_bys=False, ext_kargs={},  **kargs):
-
-        self.action, self.itn = action, itn
-
-        if type(self.action) is FunctionType:
-            self._action_mode = 0  # Function
-            actor = self.action
-        elif hasattr( action, '__call__' ):
-            self._action_mode = 1 # Class
-            actor = self.action.__init__
-        else:
-            self._action_mode = 2
-            
-        if self._action_mode < 2:
-            # 生成action处理所需的额外参数
-            
-            self.glb_param = {}
-            if ext_bys:
-                self.glb_param = dict( ext_kargs, **kargs )
-            else:
-                params = actor.__code__.co_varnames[:action.__code__.co_argcount]
-
-                for param in params:
-                    if param in ext_kargs:
-                        self.glb_param[param] = ext_kargs[param]
-                self.glb_param = dict( self.glb_param, **kargs )
-        
-    def run(self, nxt):
-
-        if self._action_mode > 1: return self.action
-
-        if self.itn > 0:
-            args_num = xmin( self.itn, len(nxt ) )
-        elif self._action_mode == 0:
-            args_num = self.action.__code__.co_argcount
-        elif self._action_mode == 1:
-            args_num = self.action.__init__.__code__.co_argcount - 1
-        
-        if args_num == 0:
-            return self.action( *nxt, **self.glb_param )
-        else:
-            return self.action( *nxt[:args_num], **self.glb_param )    
-
-    def run2(self, last, curr):
-        return self.action( last, curr, **self.glb_param )
-        
-        
-def gen_actions( action, ext_kargs ):
-
-    if not isinstance( action, list ):
-        action = [action]
-        
-    rst = []
-    for p in action:
-        if hasattr( p, '__call__' ):
-            rst.append( Action( p,  ext_kargs=ext_kargs  ) )
-        elif isinstance( p, Action ):
-            rst.append( p )
-    return rst
-
-    
-class Group:
-    def __init__( self, action, **args ):
-        self.action = {}
-        if isinstance( action, dict ):
-            for p in action:
-                self.action[p] = gen_actions( action[p], args )
-        else:
-            self.action = gen_actions( action, args )
-            
-        self.criteria = args.get( 'criteria', None )
-        
-    def reset( self ):
-        if self.criteria:
-            self.cri_nxt = iter( self.criteria )
-        
-    def run( self, nxt ):
-        if self.criteria == None:
-            return [action.run( nxt ) for action in self.action]
-        
-        cls = next( self.cri_nxt )
-        procs = self.action.get( cls, self.action.get('else', None)  )
-        if procs:
-            return [proc.run( nxt ) for proc in procs]
-        else:
-            return None
 
 #######################################################################################################
 ####  Range
@@ -201,7 +113,7 @@ class xrange(XIterator):
 #====  xmap
 #=================================================================================================================
 class xmap(XIterator):
-    def __init__(self, action, *iters, **args):
+    def __init__(self, action, *iters, **kargs):
         """
         返回一个xmap迭代器。
 
@@ -223,22 +135,29 @@ class xmap(XIterator):
         * 返回的是迭代器，需要使用list(return-value)来转化为链表。
         * next迭代返回一个列表结果；当列表中仅包含一个元素时，返回该元素
         """
-        self.action = Group( action, **args )
+        # self.action = Group( action, **args )
+        self.action = Actions( action, kargs=kargs )
         self.iters = iters
 
     def __iter__(self):
         self._nxt_ = [iter(n) for n in self.iters]
-        self.action.reset()
+        # self.action.reset()
         return self
 
     def __next__(self):
 
         nxt = [next(n) for n in self._nxt_]
 
-        rst = self.action.run( nxt )
+        # rst = self.action.run( nxt )
+        rst = self.action( *nxt )
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
+
+
+def mapa(action, *iters, **kargs):
+    return list(xmap( action, *iters, **kargs ))
+
 
 #############################################################################################################
 ####  Reduce
@@ -267,9 +186,6 @@ def xreduce( action, *iters, init=None, **kargs ):
     return last if len(last) > 1 else last[0]
 
 
-
-def mapa(action, *iters, **kargs):
-    return list(xmap( action, *iters, **kargs ))
     
     
 #############################################################################################################

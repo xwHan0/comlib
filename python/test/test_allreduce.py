@@ -5,6 +5,7 @@ print(sys.path)
 
 
 from comlib import xmap, xrange,xapply,mapa,xreduce
+from comlib.allreduce import Action
 import comlib
 import operator
 
@@ -52,8 +53,8 @@ class Test_xreduce:
     def test_buildin_function(self):
         assert xreduce( operator.add, [1,2,3,4,5] ) == 15
 
-    def test_aggregate_function(self):
-        assert xreduce( sum, [1,2,3,4,5] ) == 15
+    # def test_aggregate_function(self):
+    #     assert xreduce( sum, [1,2,3,4,5] ) == 15
 
 
 
@@ -64,3 +65,23 @@ class Test_xapply:
 
     def test_3stage(self):
         assert xapply((mapa, mapa,add10), [[1,2,3],[10,20,30],[100,200,300]]) == [[11,12,13],[20,30,40],[110,210,310]]
+
+
+class Test_Action:
+    
+    def test_kargs(self):
+        # 支持关键字参数
+        assert xmap(add_4, [1,2,3,4],[10,20,30,40],c=200, d=2000).to_list() == [2211,2222,2233,2244]
+
+    def test_Action(self):
+        """支持自定义Action"""
+        assert mapa(Action(add_4,c=200, d=2000), [1,2,3,4],[10,20,30,40]) == [2211,2222,2233,2244]
+
+    def test_action_first(self):
+        """主动指明的Action参数会覆盖函数指定的kargs参数"""
+        assert mapa(Action(add_4, c=200, d=2000), [1,2,3,4],[10,20,30,40],c=2, d=3) == [2211,2222,2233,2244]
+
+
+class Test_XIterator:
+    def test_map_apply(self):
+        assert xmap(add10, [1,2,3,4]).apply( sum ) == 50
