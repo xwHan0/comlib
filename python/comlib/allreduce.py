@@ -7,7 +7,7 @@ from comlib import xmin
 
 class XIterator:
     def apply( self, action, *args, **kargs ):
-        return action( *args, self **kargs )
+        return action( *args, self, **kargs )
         
     def xmap( self, action, *iters, **kargs ):
         return xmap( action, self, *iters, **kargs )
@@ -44,51 +44,22 @@ class Proc:
         return self.action( *args, **self.kargs )
 
 
-class groupby:
-    def __init__( self, criteria = None, actions = None, else_action=None ):
-        
-        if criteria == None:
-            self.criteria_mode = 0
-        elif isinstance( criteria, list ):
-            self.criteria_mode = 1
-        elif hasattr( criteria, '__call__' ):
-            self.criteria_mode = 2
-        else:
-            raise( 'Argument criteria is not beside [None, list, callbak]' )
-        self.criteria = criteria
+class Actions:
+    def __init__( self, actions = None ):
         
         self.actions = self.set_actions( actions ) if actions else None
-        self.else_action = [Proc( else_action )]
-        self.key = None
 
     def set_actions( self, actions ):
         
-        if not isinstance( actions, dict ):
-            actions = {True: actions}
-        
-        for k in actions:
-            action = actions[k]
-            if not isinstance( action, list ):
-                action = [action]
-            actions[k] = [Proc( a ) for a in action]
+        if not isinstance( actions, list ):
+            actions = [actions]
+        actions[k] = [Proc( a ) for a in actions]
             
         return actions
-        
-    def reset( self ):
-        if self.criteria_mode == 1:
-            self._criteria_nxt_ = iter( self.criteria )
 
     def __call__( self, *args, **kargs ):
         
-        if self.criteria_mode == 1: #list
-            self.key = next( self._criteria_nxt_  )
-        elif self.criteria_mode == 2: #callable
-            self.key = self.criteria(*args, **kargs )
-        else:
-            self.key = True
-        actions = self.actions.get( self.key, self.else_action )
-        
-        rst = [action( *args, **kargs ) for action in actions]
+        rst = [action( *args, **kargs ) for action in self.actions]
         return rst[0] if len( rst )==1 else rst        
 
 
@@ -312,6 +283,9 @@ def apply( actions, args, **kargs ):
     Constraint-001: 当actions仅包含一个元素时，该action必须满足格式：(*args, **kargs)
     Constraint-002: 当actions包含多个元素时，非最后一个action元素必须满足格式：(action, *args, **kargs)
     """
+    if not isinstance( actions ):
+        actions = [actions]
+    
     action_num = len( actions )
 
     # 0阶处理：直接返回数据
@@ -336,8 +310,11 @@ def xapply( actions, *args, **kargs ):
     return apply( actions, args, **kargs )
     
 def wapply( *args, **kargs ):
-    action_num = kargs.get( 'anum', 0 )
-    del kargs['anum']
+    if 'anum' in kargs:
+        action_num = kargs.get( 'anum', 0 )
+        del kargs['anum']
+    else:
+        action_num = 0
     
     if action_num == 0:
         for i in range( len(args) ):
