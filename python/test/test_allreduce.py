@@ -6,6 +6,7 @@ print(sys.path)
 
 from comlib import xmap, xrange,xapply,mapa,xreduce
 import comlib
+import operator
 
 def add10(x): return x+10
 def add20(x): return x+20
@@ -47,6 +48,12 @@ class Test_xreduce:
 
     def test_multi_result(self):
         assert xreduce( [add_2, max_2], [1,5,3,2,4] ) == [15, 5]
+
+    def test_buildin_function(self):
+        assert xreduce( operator.add, [1,2,3,4,5] ) == 15
+
+    def test_aggregate_function(self):
+        assert xreduce( sum, [1,2,3,4,5] ) == 15
 
 
 

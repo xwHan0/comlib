@@ -7,7 +7,7 @@ from comlib import xmin
 
 class XIterator:
     def apply( self, action, *args, **kargs ):
-        return action( *args, self, **kargs )
+        return action( *args, self **kargs )
         
     def xmap( self, action, *iters, **kargs ):
         return xmap( action, self, *iters, **kargs )
@@ -44,22 +44,52 @@ class Proc:
         return self.action( *args, **self.kargs )
 
 
-class Actions:
-    def __init__( self, actions = None ):
+class groupby:
+    def __init__( self, criteria = None, actions = None, else_action=None ):
+        
+        if criteria == None:
+            self.criteria_mode = 0
+        elif isinstance( criteria, list ):
+            self.criteria_mode = 1
+        elif hasattr( criteria, '__call__' ):
+            self.criteria_mode = 2
+        else:
+            raise( 'Argument criteria is not beside [None, list, callbak]' )
+        self.criteria = criteria
         
         self.actions = self.set_actions( actions ) if actions else None
+        self.else_action = [Proc( else_action )]
+        self.key = None
 
     def set_actions( self, actions ):
         
-        if not isinstance( actions, list ):
-            actions = [actions]
-        actions = [Proc( a ) for a in actions]
+        if not isinstance( actions, dict ):
+            actions = {True: actions}
+        
+        for k in actions:
+            action = actions[k]
+            if not isinstance( action, list ):
+                action = [action]
+            actions[k] = [Proc( a ) for a in action]
             
         return actions
+        
+    def reset( self ):
+        if self.criteria_mode == 1:
+            self._criteria_nxt_ = iter( self.criteria )
 
     def __call__( self, *args, **kargs ):
         
-        return [action( *args, **kargs ) for action in self.actions]
+        if self.criteria_mode == 1: #list
+            self.key = next( self._criteria_nxt_  )
+        elif self.criteria_mode == 2: #callable
+            self.key = self.criteria(*args, **kargs )
+        else:
+            self.key = True
+        actions = self.actions.get( self.key, self.else_action )
+        
+        rst = [action( *args, **kargs ) for action in actions]
+        return rst[0] if len( rst )==1 else rst        
 
 
 class Action:
@@ -245,21 +275,22 @@ class xmap(XIterator):
 #############################################################################################################
 def xreduce( action, *iters, init=None, **kargs ):
     # 初始化变量
-    actions = Actions(action)
+    actions = gen_actions( action, ext_kargs = kargs )
     nxts = [iter(ite) for ite in iters]
-    rst_num = len( actions.actions )
+    rst_num = len( actions )
+    in_num = len( nxts )
     
     try:
         if init == None:
-            last = [next(n) for n in nxts]
-            if len( last ) == 1: last = last[0]
-            last = [last] * rst_num
+            last = [[next(n) for n in nxts]] * rst_num
+            if in_num == 1: last = [ele[0] for ele in last]
         else:
             last = [init] * rst_num
 
         while True:
             curr = [next(n) for n in nxts]
-            last = [actions.actions[i](last[i], *curr) for i in range( rst_num )]
+            if len( curr ) == 1: curr = curr[0]
+            last = [actions[i].run2(curr, last[i]) for i in range( rst_num )]
 
     except StopIteration:
         pass
@@ -281,9 +312,6 @@ def apply( actions, args, **kargs ):
     Constraint-001: 当actions仅包含一个元素时，该action必须满足格式：(*args, **kargs)
     Constraint-002: 当actions包含多个元素时，非最后一个action元素必须满足格式：(action, *args, **kargs)
     """
-    if not isinstance( actions, (tuple, list) ):
-        actions = [actions]
-    
     action_num = len( actions )
 
     # 0阶处理：直接返回数据
@@ -308,11 +336,8 @@ def xapply( actions, *args, **kargs ):
     return apply( actions, args, **kargs )
     
 def wapply( *args, **kargs ):
-    if 'anum' in kargs:
-        action_num = kargs.get( 'anum', 0 )
-        del kargs['anum']
-    else:
-        action_num = 0
+    action_num = kargs.get( 'anum', 0 )
+    del kargs['anum']
     
     if action_num == 0:
         for i in range( len(args) ):
