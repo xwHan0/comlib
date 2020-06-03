@@ -25,6 +25,8 @@ class TestMath(object):
     def test_lcm_common(self): assert xlcm( 2, 4, 8, 16 ) == 16
     def test_lcm_seq(self): assert xlcm(2, [3, 4], 5) == 60
 
+    def test_sumproduct(self): assert xsumproduct( [1,2,3], [4,5,6] ) == 32
+
 
 
 

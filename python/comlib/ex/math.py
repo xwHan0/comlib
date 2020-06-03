@@ -86,6 +86,17 @@ def xlcm(*args):
     return lcmv
     
 
+def xsumproduct(*iters):
+    """返回各个‘iters’迭代器对应位置元素相乘，然后在累加的结果"""
+    rst = 0
+    for eles in zip(*iters):
+        r = 1
+        for ele in eles:
+            r *= ele
+        rst += r
+    return rst
+
+
 def xmul(*args):
     rst = args[0]
     for v in args[1:]:
