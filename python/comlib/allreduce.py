@@ -16,9 +16,19 @@ class XIterator:
         return xreduce( action, self, *iters, init=init, **kargs )
 
     def flatten(self):
-        return [x for y in self for x in y]
+        return xiter( [x for y in self for x in y] )
         
     def to_list(self): return list(self)
+
+
+class xiter(XIterator):
+    def __init__(self, ite):
+        if hasattr(ite, '__next__'):
+            self.ite = ite
+        else:
+            self.ite = iter(ite)
+        
+    def __iter__(self): return self.ite
 
 
 #=================================================================================================================
@@ -213,7 +223,7 @@ def apply( actions, args, **kargs ):
     if action_num == 2: return actions[0]( actions[1], *args, **kargs )
 
     # 高于2阶函数，逐阶降阶处理
-    def _sub_(*s): return apply(actions[1:], s, **kargs)
+    def _sub_(*s, **kargs): return apply(actions[1:], s, **kargs)
     return actions[0]( _sub_, *args, **kargs )
 
 def xapply( actions, *args, **kargs ):
