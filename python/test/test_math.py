@@ -8,7 +8,7 @@ sys.path.append(str(q))
 # print(sys.path)
 
 
-from comlib.ex.math import *
+from comlib.ex.math import xgcd, xlcm, xsumproduct
 
 class TestMath(object):
     def test_gcd_null(self): assert xgcd() == 0

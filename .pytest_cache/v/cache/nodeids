@@ -1,3 +1,11 @@
 [
-  "python/test/test_math.py::TestMath::()::test_sumproduct"
+  "python/test/test_iterator.py::TestTree::()::test_tree_basic",
+  "python/test/test_iterator.py::TestTree::()::test_array_basic",
+  "python/test/test_iterator.py::TestTreeDirection::()::test_down_up",
+  "python/test/test_iterator.py::TestTreeDirection::()::test_down",
+  "python/test/test_iterator.py::TestTreeDirection::()::test_up",
+  "python/test/test_iterator.py::TestTreeResult::()::test_pre_status",
+  "python/test/test_iterator.py::TestTreeResult::()::test_post_status",
+  "python/test/test_iterator.py::TestTreeExtFlat::()::test_all_flat",
+  "python/test/test_iterator.py::TestIndex::()::test_index_basic"
 ]

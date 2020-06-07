@@ -4,7 +4,7 @@ sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 print(sys.path)
 
 
-from comlib import xmap, xrange,xapply,mapa,xreduce
+from comlib import xmap, xrange,xapply,mapa,xreduce,xflatten
 from comlib.allreduce import Action
 import comlib
 import operator
@@ -85,3 +85,23 @@ class Test_Action:
 class Test_XIterator:
     def test_map_apply(self):
         assert xmap(add10, [1,2,3,4]).apply( sum ) == 50
+
+
+class Test_flatten:
+    def test_basic(self):
+        assert xflatten([[1,2,3],[4,5,6]]).to_list() == [1,2,3,4,5,6]
+
+    def test_scalar_input(self):
+        assert xflatten(15).to_list() == [15]
+
+    def test_level_basic(self):
+        assert xflatten([[[1,2],[3,4]],[[5,6],[7,8]]], 2).to_list() == [1,2,3,4,5,6,7,8]
+
+    def test_level_more(self):
+        assert xflatten([[[1,2],[3,4]],[[5,6],[7,8]]], 1).to_list() == [[1,2],[3,4],[5,6],[7,8]]
+
+    def test_level_auto(self):
+        assert xflatten([[[1,2],[3,4]],[5,6,7,8]], 2).to_list() == [1,2,3,4,5,6,7,8]
+
+    def test_level_leaf(self):
+        assert xflatten([1,[2,[3,[4,[5,[6,7],8],[9,10]],[11]],[12]]],-1).to_list() == [1,2,3,4,5,6,7,8,9,10,11,12]

@@ -15,10 +15,14 @@ class XIterator:
     def reduce( self, action, *iters, init=None, **kargs ):
         return xreduce( action, self, *iters, init=init, **kargs )
 
-    def flatten(self):
-        return xiter( [x for y in self for x in y] )
+    def flatten(self, level=1):
+        return xflatten( self, level=level )
         
     def to_list(self): return list(self)
+
+    def __iter__(self): return self
+
+    def __next__(self): return self
 
 
 class xiter(XIterator):
@@ -167,6 +171,46 @@ class xmap(XIterator):
 
 def mapa(action, *iters, **kargs):
     return list(xmap( action, *iters, **kargs ))
+
+
+
+#############################################################################################################
+####  Flatten
+#############################################################################################################
+class xflatten(XIterator):
+    def __init__( self, iter, level = 1 ):
+        """打平迭代器'iter'的内容。
+    
+        Argument:
+        - iter: {iterator} ---- 需要被打平操作的迭代器
+        - level: {int} ---- 打平层次。-1表示一直打平到底; 0表示Copy
+        """
+        self.iter = iter if hasattr( iter, '__iter__' ) else [iter]
+        self.level = level
+
+    def __iter__( self ): 
+        self._nxt_ = iter( self.iter )
+        self._sub_ = None
+        return self
+
+    def __next__( self ):
+        if self._sub_ != None:
+            try:
+                return next( self._sub_ )
+            except StopIteration:
+                self._sub_ = None
+                pass
+
+        nxt = next( self._nxt_ )
+
+        # 迭代到目标层次，直接返回
+        if self.level == 0: return nxt
+
+        # 非迭代对象被直接返回
+        if not hasattr( nxt, '__iter__' ): return nxt
+
+        self._sub_ = iter( xflatten( nxt, self.level-1 ) )
+        return self.__next__()
 
 
 #############################################################################################################
