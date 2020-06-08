@@ -6,6 +6,7 @@ print(sys.path)
 
 from comlib import xmap, xrange,xapply,mapa,xreduce,xflatten
 from comlib.allreduce import Action
+from comlib.allreduce import conc, conj, comb,wapply
 import comlib
 import operator
 
@@ -34,6 +35,10 @@ class Test_xmap:
         # 支持多结果返回
         assert xmap([add10, add20], [1,2,3,4]).to_list() == [[11,21],[12,22],[13,23],[14,24]]
 
+    def test_ignore_iters(self):
+        """支持缺iters的偏函数返回"""
+        assert xmap( add10 )( [1,2,3,4] ).to_list() == [11,12,13,14]
+
 
 class Test_xrange:
     def test_basic(self):
@@ -58,13 +63,16 @@ class Test_xreduce:
 
 
 
-class Test_xapply:
+class Test_apply:
     def test_basic(self):
         # 基本操作
         assert xapply((xmap, add10), [1,2,3,4]).to_list() == [11,12,13,14]
 
     def test_3stage(self):
         assert xapply((mapa, mapa,add10), [[1,2,3],[10,20,30],[100,200,300]]) == [[11,12,13],[20,30,40],[110,210,310]]
+
+    # def test_map_reduce(self):
+    #     assert wapply( sum, xmap, add10, *[1,2,3] ) == 36
 
 
 class Test_Action:
@@ -105,3 +113,9 @@ class Test_flatten:
 
     def test_level_leaf(self):
         assert xflatten([1,[2,[3,[4,[5,[6,7],8],[9,10]],[11]],[12]]],-1).to_list() == [1,2,3,4,5,6,7,8,9,10,11,12]
+
+
+class Test_Function:
+    def test_conj_basic(self):
+        func = comb( mapa, Action(add10) )
+        assert func( [1,2,3] ) == [11,12,13]

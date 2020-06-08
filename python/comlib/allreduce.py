@@ -35,6 +35,35 @@ class xiter(XIterator):
     def __iter__(self): return self.ite
 
 
+#############################################################################################################
+####  Function operator
+#############################################################################################################
+class conc:
+    """Concurrent"""
+    def __init__( self, *actions ):
+        self.actions = actions
+
+    def __call__( self, *args, **kargs ):
+        return [action(*args, **kargs) for action in self.actions]
+
+class conj:
+    """Conjoin"""
+    def __init__( self, *actions ):
+        self.actions = actions
+
+    def __call__( self, *args, **kargs ):
+        nxt = conj( *self.actions[1:] )
+        return nxt( self.actions[0]( *args ) )
+
+class comb:
+    """Conbine"""
+    def __init__( self, *actions ):
+        self.actions = actions
+
+    def __call__( self, *args, **kargs ):
+        nxt = comb( *self.actions[1:] )
+        return self.actions[0]( nxt, *args )
+
 #=================================================================================================================
 #====  Action
 #=================================================================================================================
@@ -149,24 +178,24 @@ class xmap(XIterator):
         * 返回的是迭代器，需要使用list(return-value)来转化为链表。
         * next迭代返回一个列表结果；当列表中仅包含一个元素时，返回该元素
         """
-        # self.action = Group( action, **args )
         self.action = Actions( action, kargs=kargs )
         self.iters = iters
 
     def __iter__(self):
         self._nxt_ = [iter(n) for n in self.iters]
-        # self.action.reset()
         return self
 
     def __next__(self):
 
         nxt = [next(n) for n in self._nxt_]
 
-        # rst = self.action.run( nxt )
         rst = self.action( *nxt )
         if rst == None: return self.__next__()
         return rst if len(rst) > 1 else rst[0]
         
+    def __call__( self, *iters, **kargs ):
+        self.iters = iters
+        return self
 
 
 def mapa(action, *iters, **kargs):
