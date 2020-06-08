@@ -245,12 +245,17 @@ def xreduce( action, *iters, init=None, **kargs ):
 #############################################################################################################
 ####  Apply
 #############################################################################################################
-def apply( actions, args, **kargs ):
+def apply( actions, args=None, **kargs ):
     """
     高阶函数降级处理。
     Constraint-001: 当actions仅包含一个元素时，该action必须满足格式：(*args, **kargs)
     Constraint-002: 当actions包含多个元素时，非最后一个action元素必须满足格式：(action, *args, **kargs)
     """
+    if args == None:
+        def _action_( *args1 ):
+            return apply( actions, args1, **kargs )
+        return _action_
+    
     if not isinstance( actions, (tuple, list) ):
         actions = [actions]
     
@@ -271,10 +276,6 @@ def apply( actions, args, **kargs ):
     return actions[0]( _sub_, *args, **kargs )
 
 def xapply( actions, *args, **kargs ):
-
-    if not isinstance( actions, (list, tuple) ):
-        actions = [actions]
-
     return apply( actions, args, **kargs )
     
 def wapply( *args, **kargs ):
