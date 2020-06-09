@@ -52,6 +52,8 @@ class conj:
         self.actions = actions
 
     def __call__( self, *args, **kargs ):
+        if n==0: return None
+        if n==1: return self.actions[0]( *args )
         nxt = conj( *self.actions[1:] )
         return nxt( self.actions[0]( *args ) )
 
@@ -61,6 +63,9 @@ class comb:
         self.actions = actions
 
     def __call__( self, *args, **kargs ):
+        n = len( self.actions )
+        if n==0: return None
+        if n==1: return self.actions[0]( *args )
         nxt = comb( *self.actions[1:] )
         return self.actions[0]( nxt, *args )
 
@@ -86,6 +91,17 @@ class Action:
         
         return self.action( *args, **self.kargs )
 
+    def conc(self, *actions):
+        self.action = Action( conc(self.action, *actions ) )
+        return self
+        
+    def conj(self, *actions):
+        self.action = Action( conj(self.action, *actions ) )
+        return self
+        
+    def comb(self, *actions):
+        self.action = Action( comb(self.action, *actions ) )
+        return self
 
 class Actions:
     def __init__( self, actions = None, kargs={} ):
