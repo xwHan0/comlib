@@ -46,16 +46,19 @@ class conc:
     def __call__( self, *args, **kargs ):
         return [action(*args, **kargs) for action in self.actions]
 
+
 class conj:
     """Conjoin"""
     def __init__( self, *actions ):
         self.actions = actions
 
     def __call__( self, *args, **kargs ):
+        n = len( self.actions )
         if n==0: return None
         if n==1: return self.actions[0]( *args )
         nxt = conj( *self.actions[1:] )
         return nxt( self.actions[0]( *args ) )
+
 
 class comb:
     """Conbine"""
@@ -69,6 +72,24 @@ class comb:
         nxt = comb( *self.actions[1:] )
         return self.actions[0]( nxt, *args )
 
+
+class parity:
+    def __init__( self, action, num=None, profile=[], *args, **kargs ):
+        self.action = action
+        self.num = num
+        self.profile = profile
+        self.args = args
+        self.kargs = kargs
+
+    def __call__( self, *args, **kargs ):
+        if self.num != None:
+            args1 = ( args + self.args )[:self.num]
+        else:
+            args += self.args
+            args1 = [args[p] for p in self.profile]
+            
+        return self.action( *args1, **self.kargs )
+
 #=================================================================================================================
 #====  Action
 #=================================================================================================================
@@ -78,9 +99,14 @@ class Action:
     """
     def __init__( self, action, args_required_num=0, **kargs ):
 
-        self.action = action
-        self.kargs = kargs
-        self.args_required_num = args_required_num
+        if isinstance( action, Action ):
+            self.action = action.action
+            self.kargs = action.kargs
+            self.args_required_num = action.args_required_num
+        else:
+            self.action = action
+            self.kargs = kargs
+            self.args_required_num = args_required_num
         
     def __call__( self, *args, **kargs ):
         if not hasattr( self.action, '__call__' ):
@@ -102,6 +128,7 @@ class Action:
     def comb(self, *actions):
         self.action = Action( comb(self.action, *actions ) )
         return self
+
 
 class Actions:
     def __init__( self, actions = None, kargs={} ):
@@ -194,7 +221,7 @@ class xmap(XIterator):
         * 返回的是迭代器，需要使用list(return-value)来转化为链表。
         * next迭代返回一个列表结果；当列表中仅包含一个元素时，返回该元素
         """
-        self.action = Actions( action, kargs=kargs )
+        self.action = Action( action, **kargs )
         self.iters = iters
 
     def __iter__(self):
@@ -207,7 +234,8 @@ class xmap(XIterator):
 
         rst = self.action( *nxt )
         if rst == None: return self.__next__()
-        return rst if len(rst) > 1 else rst[0]
+        return rst
+        # return rst if len(rst) > 1 else rst[0]
         
     def __call__( self, *iters, **kargs ):
         self.iters = iters

@@ -21,9 +21,15 @@ class Test_xmap:
     def test_basic(self):
         # 基本操作
         assert xmap(add10, [1,2,3,4]).to_list() == [11,12,13,14]
+
+    def test_mapa(self):
         assert mapa(add10, [1,2,3,4]) == [11,12,13,14]
+    
+    def test_2_iter(self):
         # 支持多迭代器输入
         assert xmap(add_2, [1,2,3,4],[10,20,30,40]).to_list() == [11,22,33,44]
+
+    def test_multi_iter(self):
         # 支持无限迭代器输入
         assert xmap(add_more, [1,2,3,4],[10,20,30,40],[100,200,300,400],[1000,2000,3000,4000]).to_list() == [1111,2222,3333,4444]
 
@@ -31,9 +37,9 @@ class Test_xmap:
         # 支持关键字参数
         assert xmap(add_4, [1,2,3,4],[10,20,30,40],c=200, d=2000).to_list() == [2211,2222,2233,2244]
 
-    def test_multi_result(self):
-        # 支持多结果返回
-        assert xmap([add10, add20], [1,2,3,4]).to_list() == [[11,21],[12,22],[13,23],[14,24]]
+    # def test_multi_result(self):
+    #     # 支持多结果返回
+    #     assert xmap([add10, add20], [1,2,3,4]).to_list() == [[11,21],[12,22],[13,23],[14,24]]
 
     def test_ignore_iters(self):
         """支持缺iters的偏函数返回"""
@@ -116,6 +122,15 @@ class Test_flatten:
 
 
 class Test_Function:
-    def test_conj_basic(self):
+    def test_comb_basic(self):
         func = comb( mapa, Action(add10) )
         assert func( [1,2,3] ) == [11,12,13]
+
+    def test_conc_basic(self):
+        # 支持多结果返回
+        assert xmap(conc(add10, add20), [1,2,3,4]).to_list() == [[11,21],[12,22],[13,23],[14,24]]
+
+    def test_conc_basic(self):
+        assert mapa( conj(add10, add20), [1,2,3,4] ) == [31,32,33,34]
+
+
