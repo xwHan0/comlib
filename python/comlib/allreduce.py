@@ -38,7 +38,11 @@ class xiter(XIterator):
 #############################################################################################################
 ####  Function operator
 #############################################################################################################
-class conc:
+class Func:
+    pass
+
+
+class conc(Func):
     """Concurrent"""
     def __init__( self, *actions ):
         self.actions = actions
@@ -47,7 +51,7 @@ class conc:
         return [action(*args, **kargs) for action in self.actions]
 
 
-class conj:
+class conj(Func):
     """Conjoin"""
     def __init__( self, *actions ):
         self.actions = actions
@@ -60,7 +64,7 @@ class conj:
         return nxt( self.actions[0]( *args ) )
 
 
-class comb:
+class comb(Func):
     """Conbine"""
     def __init__( self, *actions ):
         self.actions = actions
@@ -73,7 +77,7 @@ class comb:
         return self.actions[0]( nxt, *args )
 
 
-class parity:
+class parity(Func):
     def __init__( self, action, num=None, profile=[], *args, **kargs ):
         self.action = action
         self.num = num
