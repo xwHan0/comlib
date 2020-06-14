@@ -4,6 +4,7 @@
 from types import FunctionType
 from comlib import xmin
     
+import sys
 
 class XIterator:
     def apply( self, action, *args, **kargs ):
@@ -373,3 +374,81 @@ def wapply( *args, **kargs ):
         args = args[action_num:]
         
     return apply( actions, args, **kargs )
+
+
+#############################################################################################################
+####  Find
+#############################################################################################################
+class _criteria_val_:
+    def __init__( self, val ):
+        self.val = val
+
+    def __call__( self, *nxt, **kargs ):
+        return nxt[0] == self.val
+
+
+class _find_(XIterator):
+    def __init__(self, criteria, *iters, result_sel=[], find_num=None, **kargs):
+        self.criteria = Action( criteria, **kargs )
+        self.iters = iters
+        self.result_sel = result_sel
+        self.find_cnt = 0
+        self.find_num = find_num
+
+    def __iter__(self):
+        self._nxt_ = [iter(n) for n in self.iters]
+        self.find_cnt = 0
+        return self
+
+    def __next__(self):
+
+        if self.find_cnt >= self.find_num:
+            raise StopIteration()
+
+        nxt = [next(n) for n in self._nxt_]
+
+        rst = self.criteria( *nxt )
+        if rst == False: rst = self.__next__()
+        rst = [rst[pos] for pos in self.result_sel]
+        return rst if len(rst)>1 else rst[0]
+        
+    def __call__( self, *iters, **kargs ):
+        self.iters = iters
+        return self
+
+
+
+def find( criteria, *itera, result_sel=1, find_num=None, default=None, **kargs ):
+    """
+    """
+
+    if not hasattr( criteria, '__call__' ):
+        criteria = _criteria_val_( criteria )
+
+    if isinstance( result_sel, int ):
+        result_sel = [result_sel]
+
+    if find_num == 1:  # 返回itera的某个列表对应位置的元素
+
+        its = [iter(n) for n in itera]
+        try:
+            while True:
+                nxt = [next(i) for i in its]
+                if criteria( *nxt, **kargs ): # 找到元素
+                    rst = [nxt[pos] for pos in result_sel]
+                    return rst if len(rst)>1 else rst[0] # 返回对应元素
+        except StopIteration:   # 找不到返回
+            return default
+
+    if find_num == None:
+        find_num = sys.maxsize
+
+    rst = []
+    its = [iter(n) for n in itera]
+    try:
+        ret _find_( criteria, *itera, result_sel=result_sel=, find_num=find_num=, **kargs )
+    except StopIteration:   # 找不到返回
+        return rst
+
+    return default
+
