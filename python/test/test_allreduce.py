@@ -5,7 +5,7 @@ print(sys.path)
 
 
 from comlib import xmap, xrange,xapply,mapa,xreduce,xflatten,find
-from comlib.allreduce import Action
+from comlib.allreduce import Action, parity
 from comlib.allreduce import conc, conj, comb,wapply
 import comlib
 import operator
@@ -89,11 +89,13 @@ class Test_Action:
 
     def test_Action(self):
         """支持自定义Action"""
-        assert mapa(Action(add_4,c=200, d=2000), [1,2,3,4],[10,20,30,40]) == [2211,2222,2233,2244]
+        # assert mapa(Action(add_4,c=200, d=2000), [1,2,3,4],[10,20,30,40]) == [2211,2222,2233,2244]
+        assert mapa(parity(add_4,c=200, d=2000), [1,2,3,4],[10,20,30,40]) == [2211,2222,2233,2244]
 
     def test_action_first(self):
         """主动指明的Action参数会覆盖函数指定的kargs参数"""
-        assert mapa(Action(add_4, c=200, d=2000), [1,2,3,4],[10,20,30,40],c=2, d=3) == [2211,2222,2233,2244]
+        assert mapa(parity(add_4, c=200, d=2000), [1,2,3,4],[10,20,30,40],c=2, d=3) == [2211,2222,2233,2244]
+        # assert mapa(Action(add_4, c=200, d=2000), [1,2,3,4],[10,20,30,40],c=2, d=3) == [2211,2222,2233,2244]
 
 
 class Test_XIterator:
@@ -123,7 +125,8 @@ class Test_flatten:
 
 class Test_Function:
     def test_comb_basic(self):
-        func = comb( mapa, Action(add10) )
+        # func = comb( mapa, Action(add10) )
+        func = comb( mapa, parity(add10) )
         assert func( [1,2,3] ) == [11,12,13]
 
     def test_conc_basic(self):

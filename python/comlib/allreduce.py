@@ -40,7 +40,9 @@ class xiter(XIterator):
 ####  Function operator
 #############################################################################################################
 class Func:
-    pass
+    def conc( self, *actions ): return conc( self, *actions )
+    def conj( self, *actions ): return conj( self, *actions )
+    def comb( self, *actions ): return comb( self, *actions )
 
 
 class conc(Func):
@@ -145,22 +147,22 @@ class Action:
         return self
 
 
-class Actions:
-    def __init__( self, actions = None, kargs={} ):
+# class Actions:
+#     def __init__( self, actions = None, kargs={} ):
         
-        self.actions = self.set_actions( actions, kargs=kargs ) if actions else None
+#         self.actions = self.set_actions( actions, kargs=kargs ) if actions else None
 
-    def set_actions( self, actions, kargs = {} ):
+#     def set_actions( self, actions, kargs = {} ):
         
-        if not isinstance( actions, list ):
-            actions = [actions]
-        actions = [a if isinstance(a, Action) else Action( a, **kargs ) for a in actions]
+#         if not isinstance( actions, list ):
+#             actions = [actions]
+#         actions = [a if isinstance(a, Action) else Action( a, **kargs ) for a in actions]
             
-        return actions
+#         return actions
 
-    def __call__( self, *args, **kargs ):
+#     def __call__( self, *args, **kargs ):
         
-        return [action( *args, **kargs ) for action in self.actions]
+#         return [action( *args, **kargs ) for action in self.actions]
 
 
 #######################################################################################################
@@ -238,7 +240,8 @@ class xmap(XIterator):
         * 返回的是迭代器，需要使用list(return-value)来转化为链表。
         * next迭代返回一个列表结果；当列表中仅包含一个元素时，返回该元素
         """
-        self.action = Action( action, **kargs )
+        self.action = parity( action, **kargs )
+        # self.action = Action( action, **kargs )
         self.iters = iters
 
     def __iter__(self):
@@ -308,7 +311,11 @@ class xflatten(XIterator):
 #############################################################################################################
 def xreduce( action, *iters, init=None, **kargs ):
     # 初始化变量
-    actions = Actions(action)
+    # actions = Actions(action)
+    if isinstance( action, list ):
+        actions = conc( *action )
+    else:
+        actions = conc( action )
     nxts = [iter(ite) for ite in iters]
     rst_num = len( actions.actions )
     
@@ -439,8 +446,8 @@ def find( criteria, *itera, result_sel=0, num=None, default=None, **kargs ):
 
     if not hasattr( criteria, '__call__' ):
         criteria = _criteria_val_( criteria )
-    else:
-        criteria = parity( criteria, num=None, profile=[], **kargs )
+    # else:
+        # criteria = parity( criteria, num=None, profile=[], **kargs )
 
     if isinstance( result_sel, int ):
         result_sel = [result_sel]
@@ -461,4 +468,7 @@ def find( criteria, *itera, result_sel=0, num=None, default=None, **kargs ):
         num = sys.maxsize
 
     return _find_( criteria, *itera, result_sel=result_sel, find_num=num, **kargs )
+
+def finda( criteria, *itera, result_sel=0, num=None, default=None, **kargs ):
+    return list( find( criteria, *itera, result_sel=0, num=None, default=None, **kargs ) )
 

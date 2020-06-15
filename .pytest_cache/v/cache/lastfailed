@@ -1,1 +1,4 @@
-{}
+{
+  "python/test/test_allreduce.py::Test_Action::()::test_Action": true,
+  "python/test/test_allreduce.py::Test_Action::()::test_action_first": true
+}
