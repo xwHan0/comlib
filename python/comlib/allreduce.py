@@ -97,7 +97,7 @@ class parity(Func):
     def __call__( self, *args, **kargs ):
         if self.num != None:
             args1 = ( args + self.args )[:self.num]
-        elif len( profile ) > 0:
+        elif len( self.profile ) > 0:
             args += self.args
             args1 = [args[p] for p in self.profile]
         else:
@@ -184,10 +184,12 @@ class xrange(XIterator):
         return self
         
     def __next__(self):
-        if self.end == None: return self._nxt_ + self.step
+        # if self.end == None: return self._nxt_ + self.step
         
         rst = self._nxt_
-        if self.mode == 'unlimmitted':
+        if self.end == None:
+            pass
+        elif self.mode == 'unlimmitted':
             if self.end > self.begin:
                 if self._nxt_ >= self.end: raise StopIteration()
             else:
@@ -418,8 +420,11 @@ class _find_(XIterator):
         nxt = [next(n) for n in self._nxt_]
 
         rst = self.criteria( *nxt )
-        if rst == False: rst = self.__next__()
-        rst = [rst[pos] for pos in self.result_sel]
+        if rst == False: 
+            return self.__next__()
+            
+        self.find_cnt += 1
+        rst = [nxt[pos] for pos in self.result_sel]
         return rst if len(rst)>1 else rst[0]
         
     def __call__( self, *iters, **kargs ):
@@ -428,7 +433,7 @@ class _find_(XIterator):
 
 
 
-def find( criteria, *itera, result_sel=1, find_num=None, default=None, **kargs ):
+def find( criteria, *itera, result_sel=0, num=None, default=None, **kargs ):
     """
     """
 
@@ -440,7 +445,7 @@ def find( criteria, *itera, result_sel=1, find_num=None, default=None, **kargs )
     if isinstance( result_sel, int ):
         result_sel = [result_sel]
 
-    if find_num == 1:  # 返回itera的某个列表对应位置的元素
+    if num == 1:  # 返回itera的某个列表对应位置的元素
 
         its = [iter(n) for n in itera]
         try:
@@ -452,8 +457,8 @@ def find( criteria, *itera, result_sel=1, find_num=None, default=None, **kargs )
         except StopIteration:   # 找不到返回
             return default
 
-    if find_num == None:
-        find_num = sys.maxsize
+    if num == None:
+        num = sys.maxsize
 
-    return _find_( criteria, *itera, result_sel=result_sel, find_num=find_num, **kargs )
+    return _find_( criteria, *itera, result_sel=result_sel, find_num=num, **kargs )
 

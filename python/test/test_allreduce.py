@@ -4,7 +4,7 @@ sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 print(sys.path)
 
 
-from comlib import xmap, xrange,xapply,mapa,xreduce,xflatten
+from comlib import xmap, xrange,xapply,mapa,xreduce,xflatten,find
 from comlib.allreduce import Action
 from comlib.allreduce import conc, conj, comb,wapply
 import comlib
@@ -130,7 +130,16 @@ class Test_Function:
         # 支持多结果返回
         assert xmap(conc(add10, add20), [1,2,3,4]).to_list() == [[11,21],[12,22],[13,23],[14,24]]
 
-    def test_conc_basic(self):
+    def test_conc_basic2(self):
         assert mapa( conj(add10, add20), [1,2,3,4] ) == [31,32,33,34]
 
 
+class Test_find:
+    def test_find_value_index(self):
+        assert find( 3, [1,2,3,4,5], xrange(), num=1, result_sel=1 ) == 2
+
+    def test_criteria(self):
+        assert find( lambda x: x>2, [1,2,3,4,5], num=1 ) == 3
+
+    def test_more(self):
+        assert find( lambda x: x>2, [1,2,3,4,5] ).to_list() == [3,4,5]
