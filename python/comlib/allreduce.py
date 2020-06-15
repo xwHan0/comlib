@@ -80,18 +80,28 @@ class comb(Func):
 
 class parity(Func):
     def __init__( self, action, num=None, profile=[], *args, **kargs ):
-        self.action = action
-        self.num = num
-        self.profile = profile
-        self.args = args
-        self.kargs = kargs
+        
+        if isinstance( action, parity ):
+            self.action = action.action
+            self.num = action.num
+            self.profile = action.pofile
+            self.args = action.args
+            self.kargs = action.kargs
+        else:
+            self.action = action
+            self.num = num
+            self.profile = profile
+            self.args = args
+            self.kargs = kargs
 
     def __call__( self, *args, **kargs ):
         if self.num != None:
             args1 = ( args + self.args )[:self.num]
-        else:
+        elif len( profile ) > 0:
             args += self.args
             args1 = [args[p] for p in self.profile]
+        else:
+            args1 = args
             
         return self.action( *args1, **self.kargs )
 
@@ -388,8 +398,8 @@ class _criteria_val_:
 
 
 class _find_(XIterator):
-    def __init__(self, criteria, *iters, result_sel=[], find_num=None, **kargs):
-        self.criteria = Action( criteria, **kargs )
+    def __init__(self, criteria, *iters, result_sel=[], find_num=None ):
+        self.criteria = criteria
         self.iters = iters
         self.result_sel = result_sel
         self.find_cnt = 0
@@ -424,6 +434,8 @@ def find( criteria, *itera, result_sel=1, find_num=None, default=None, **kargs )
 
     if not hasattr( criteria, '__call__' ):
         criteria = _criteria_val_( criteria )
+    else:
+        criteria = parity( criteria, num=None, profile=[], **kargs )
 
     if isinstance( result_sel, int ):
         result_sel = [result_sel]
@@ -443,12 +455,5 @@ def find( criteria, *itera, result_sel=1, find_num=None, default=None, **kargs )
     if find_num == None:
         find_num = sys.maxsize
 
-    rst = []
-    its = [iter(n) for n in itera]
-    try:
-        ret _find_( criteria, *itera, result_sel=result_sel=, find_num=find_num=, **kargs )
-    except StopIteration:   # 找不到返回
-        return rst
-
-    return default
+    return _find_( criteria, *itera, result_sel=result_sel, find_num=find_num, **kargs )
 

@@ -16,5 +16,5 @@ from comlib.mapreduce.qmar import Qmar
 from comlib.ex.math import xmin,xmax,xceil
 
 from comlib.allreduce import xmap,xrange,xflatten
-from comlib.allreduce import xapply, mapa, xreduce, wapply
+from comlib.allreduce import xapply, mapa, xreduce, wapply, find
 
