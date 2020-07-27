@@ -1,4 +1,32 @@
 
+
+class Render:
+    def __init__(self, template):
+        self.cnxt = []
+        with open(template, "r", encoding="utf-8") as f:
+            for line in f:
+                self.cnxt.append(line)
+
+    def render_block( self, content={} ):
+        cnxt = []
+        for line in self.cnxt:
+            line1 = line.strip()
+            if content.has_key(line1):
+                if isinstance( content[line1], list ):
+                    cnxt += content[line1]
+                else:
+                    cnxt.append( content[line1] )
+            else:
+                cnxt.append( line )
+
+        self.cnxt = cnxt
+
+    def render_to_file(self, file):
+        with open(file,"w",encoding="utf-8") as f:
+            cnxt = [line + "\n" for line in self.cnxt]
+            f.writelines(cnxt)
+
+
 def render(file, template, content={}):
     """
     按照模板生成内容
