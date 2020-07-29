@@ -11,11 +11,11 @@ class Render:
         cnxt = []
         for line in self.cnxt:
             line1 = line.strip()
-            if content.has_key(line1):
+            if line1 in content:
                 if isinstance( content[line1], list ):
-                    cnxt += content[line1]
+                    cnxt += [l+'\n' for l in content[line1]]
                 else:
-                    cnxt.append( content[line1] )
+                    cnxt.append( content[line1] + '\n' )
             else:
                 cnxt.append( line )
 
@@ -23,8 +23,7 @@ class Render:
 
     def render_to_file(self, file):
         with open(file,"w",encoding="utf-8") as f:
-            cnxt = [line + "\n" for line in self.cnxt]
-            f.writelines(cnxt)
+            f.writelines(self.cnxt)
 
 
 def render(file, template, content={}):
@@ -56,13 +55,12 @@ def render(file, template, content={}):
         f.write(file_data)
 
 
-# def rect(width, height, text='', matrix=[1,0,0,1,0,0], id='', fill="#ffffff", stroke="#000000" stroke-width=1):
-#     rst = []
-#     rst.append( '<g id="{}" transform="matrix({},{},{},{},{},{})">'.format(id, *matrix) )
-#     rst.append('    <rect x="0" y="0" width="{}" height="{}" fill="{}" stroke="{}" stroke-width="{}"/>'.format(
-#         width, height, fill, stroke, stroke-width))
-#     rst.append('    <text x="0" y="0">{}</text>'.format(text))
-#     rst.append('</g>')
+def rect(width, height, text='', cls='', matrix=[1,0,0,1,0,0], id=''):
+     rst = []
+     rst.append( '<g id="{}" transform="matrix({},{},{},{},{},{})" class="{}">'.format(id, *matrix, cls) )
+     rst.append('    <rect x="0" y="0" width="{}" height="{}"/>'.format(width, height))
+     rst.append('    <text x="{}" y="{}">{}</text>'.format(width/2, height/2, text))
+     rst.append('</g>')
 
-#     return []
+     return rst
 
