@@ -1,6 +1,13 @@
 import comlib.ex.__private__ as lib
 import math
 
+def add(a=0, b=0, *args):
+    rst = a + b
+    for v in args:
+        rst += v
+    return rst
+
+
 def xceil(a, b=1):
     if a % b == 0: return a
     return int( math.ceil( a / b ) * b )
