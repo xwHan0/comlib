@@ -15,6 +15,11 @@ from comlib.mapreduce.qmar import Qmar
 
 from comlib.ex.math import xmin,xmax,xceil
 
-from comlib.allreduce import xmap,xrange,xflatten
-from comlib.allreduce import xapply, mapa, xreduce, wapply, find
+from comlib.allreduce import xrange as range
+from comlib.allreduce import xmap as map
+from comlib.allreduce import xreduce as reduce 
+from comlib.allreduce import xapply as apply
+from comlib.allreduce import xflatten as flatten
+
+from comlib.allreduce import mapa, wapply, find
 
