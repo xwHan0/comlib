@@ -11,7 +11,7 @@ def index(data, names=None, mode='auto'):
         if isinstance(data, list):
             if isinstance(data[0], list):
                 return pd.MultiIndex.from_arrays(data, names=names)
-            elif isinstance(data[0], tuple)
+            elif isinstance(data[0], tuple):
                 return pd.MultiIndex.from_tuples(data, names=names)
             else:
                 return pd.Index(data)
@@ -28,3 +28,26 @@ def index(data, names=None, mode='auto'):
             return pd.MultiIndex.from_arrays(ar, names=names)
         
     return None
+
+
+
+class JoinIndex:
+    pass
+
+
+def join(left, right, left_on=None, right_on=None, how='inner', indicator=False):
+
+    if left_on == JoinIndex:
+        left_on = None
+        left_index = True
+    else:
+        left_index = False
+
+    if right_on == JoinIndex:
+        right_on = None
+        right_index = True
+    else:
+        right_index = False
+
+    return pd.merge( left=left, right=right, left_on=left_on, right_on=right_on,
+        left_index=left_index, right_index=right_index, how=how, indicator=indicator )
