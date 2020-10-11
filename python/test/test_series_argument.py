@@ -47,3 +47,11 @@ class TestSeriesArgument:
             SeriesMixElement,10,
             SeriesMixIter, [SeriesMixElement,11,SeriesMixIter,[SeriesMixIter,[12,13],SeriesMixElement,14],SeriesMixElement,15]
         ]) == [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+
+    def test_auto_recur(self):
+        """基本的Auto测试"""
+        assert series_argument_proc([
+            SeriesAuto,
+            1,2,
+            [[3,4],5],[6,[7,[[8,9],10]]],11
+        ]) == [1,2,3,4,5,6,7,8,9,10,11]
