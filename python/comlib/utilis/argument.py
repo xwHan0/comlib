@@ -60,7 +60,7 @@ def __inner_series_argument_proc_without_judge__(cs, auto_level=sys.maxsize, sta
 
         if is_auto: # 自动推导
             if isinstance( e, list ) and auto_level > 0:
-                rst += __inner_series_argument_proc_without_judge__( e, auto_level=auto_level-1 )
+                rst += __inner_series_argument_proc_without_judge__( e, auto_level=auto_level-1, is_auto=is_auto )
             else:
                 rst.append( e )
 
