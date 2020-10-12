@@ -41,29 +41,29 @@ class Node:
     def __iter__(self):
         return iter( self.childNodes )
 
-    def map(self, prev, post=None, pprev=None, parent=None, lvls=[]):
+    def iter(self, prev, post=None, data={}, lvls=[]):
         """遍历整个树
         Arguments:
-        * prev: {(node,lvls,pprev)=>object} ---- Prev过程处理函数
-        * post: {(node,lvls,prev_rst,children_rst)=>object | None} ---- Post过程处理函数
+        * prev: {(node,lvls,data)=>object} ---- Prev过程处理函数
+        * post: {(node,lvls,data)=>object | None} ---- Post过程处理函数
             * None: 不进行Post处理，Prev处理结果作为最终结果
             * Function: 参考`prev`
-        * pprev: 父节点Prev过程处理结果
-        * parent: 父节点
+        * data: {dict} ---- 传递参数
         * lvls: {list} ---- 位置层次序号
         """
 
         # prev处理
-        rst = prev( self, lvls=lvls, pprev=pprev )
+        data = prev( self, lvls=lvls, data=data )
 
         # 子节点处理
-        children_return = [child.map( prev, post, rst, self, lvls+[i] ) for i,child in enumerate(self.childNodes)]
+        for i,child in enumerate(self.childNodes):
+            data = child.iter( prev, post, data, lvls+[i] )
             
         # post处理
         if post:
-            rst = post( self, lvls=lvls, prev_rst=rst, children_rst=children_return )
+            data = post( self, lvls=lvls, data=data )
         
-        return rst
+        return data
                 
 
 
