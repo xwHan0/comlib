@@ -25,11 +25,13 @@
 
 import {datetime} from './datetime'
 import {iterator} from './iterator'
+import {dom} from './dom'
 
 var comlib = {}
 
 comlib.datetime = datetime
 comlib.iterator = iterator
+comlib.dom = dom
 
 comlib.test = function(){
     return "xwHan,hello!"

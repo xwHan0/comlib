@@ -22,5 +22,12 @@
   "python/test/test_math.py::TestMath::()::test_lcm_three",
   "python/test/test_math.py::TestMath::()::test_lcm_common",
   "python/test/test_math.py::TestMath::()::test_lcm_seq",
-  "python/test/test_math.py::TestMath::()::test_sumproduct"
+  "python/test/test_math.py::TestMath::()::test_sumproduct",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_bypass",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_element",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_iter",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_mix_basic",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_auto_basic",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_recur_basic",
+  "python/test/test_series_argument.py::TestSeriesArgument::()::test_auto_recur"
 ]
