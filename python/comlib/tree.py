@@ -76,7 +76,7 @@ class Node:
 
         Arguments:
         * prev: {(node,udata,lvls)=>udata, Node} ---- Prev过程处理函数
-        * post: {(node,nnode,lvls)=>List<Node>|Node} ---- Post过程处理函数
+        * post: {(node,udata,lvls)=>udata, List<Node>|Node} ---- Post过程处理函数
             * None: 不进行Post处理，Prev处理结果作为最终结果
             * Function: 参考`prev`
         * udata: {dict} ---- 自顶向下传递的参数
@@ -105,7 +105,7 @@ class Node:
 
         # post处理
         if post:
-            new_node = post( self, nnode=new_node, lvls=lvls )
+            udata, new_node = post( nnode=new_node, udata=udata, lvls=lvls )
 
         return udata, new_node
                 
