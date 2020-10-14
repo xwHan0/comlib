@@ -121,27 +121,31 @@ class Node:
         * nodes: {List<Node>} ---- 新的节点
         """
 
-        # prev处理
-        udata, new_node = prev( self, udata=udata, lvls=lvls )
+        def _map_( node, prev, post, udata, lvls ):
 
-        # 子节点处理
-        new_children = []
-        for i,child in enumerate(self.childNodes):
-            udata, childs = child.map( prev, post, udata=udata, lvls=lvls+[i] )
-            if isinstance(childs, list):
-                for c in childs:
-                    new_children.append( c )
-            else:
-                new_children.append(childs)
-            
-        # 追加子节点
-        new_node.childNodes = new_children
+            # prev处理
+            udata, new_node = prev( node, udata, lvls )
 
-        # post处理
-        if post:
-            udata, new_node = post( nnode=new_node, udata=udata, lvls=lvls )
+            # 子节点处理
+            new_children = []
+            for i,child in enumerate(node.childNodes):
+                udata, childs = _map_( child, prev, post, udata, lvls+[i] )
+                if isinstance(childs, list):
+                    for c in childs:
+                        new_children.append( c )
+                else:
+                    new_children.append(childs)
+                
+            # 追加子节点
+            new_node.childNodes = new_children
 
-        return udata, new_node
+            # post处理
+            if post:
+                udata, new_node = post( new_node, udata, lvls )
+
+            return udata, new_node
+
+        return _map_( self, prev, post, udata, lvls )[1]
                 
 
 
