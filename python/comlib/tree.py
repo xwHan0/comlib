@@ -47,6 +47,40 @@ class Node:
     def __iter__(self):
         return iter( self.childNodes )
 
+    def show(self, keys=[], recur=True, lvl=[] ):
+        """
+        以表格方式打印显示节点属性值
+
+        Argument:
+        * keys: {list} ---- 打印的属性关键字
+        * recur: {bool} ---- 是否打印子节点
+
+        Return：
+        返回打印字符串
+        """
+
+        rst = ''
+
+        # 打印表头
+        if lvl == []:
+            rst += '   lvl  |'
+            for key in keys:
+                rst += ' %8s |' % (key)
+            rst += '\n'
+
+        # 打印内容
+        rst += '%8s|' % (str(lvl))
+        for key in keys:
+            rst += ' %8s |' % (self.props[key])
+        rst += '\n'
+
+        # 打印子节点
+        if recur:
+            for i, child in enumerate(self.childNodes):
+                rst += child.show( keys=keys, recur=recur, lvl=lvl+[i] )
+
+        return rst
+
     def iter(self, prev, post=None, data={}, lvls=[]):
         """遍历整个树
         Arguments:
@@ -75,8 +109,8 @@ class Node:
         """遍历整个树
 
         Arguments:
-        * prev: {(node,udata,lvls)=>udata, Node} ---- Prev过程处理函数
-        * post: {(node,udata,lvls)=>udata, List<Node>|Node} ---- Post过程处理函数
+        * prev: {(node,udata,lvls)=>udata, Node} ---- 父-子过程处理
+        * post: {(node,udata,lvls)=>udata, List<Node>|Node} ---- 兄弟之间或者子-父
             * None: 不进行Post处理，Prev处理结果作为最终结果
             * Function: 参考`prev`
         * udata: {dict} ---- 自顶向下传递的参数
@@ -95,7 +129,7 @@ class Node:
         for i,child in enumerate(self.childNodes):
             udata, childs = child.map( prev, post, udata=udata, lvls=lvls+[i] )
             if isinstance(childs, list):
-                for c in child_nodes:
+                for c in childs:
                     new_children.append( c )
             else:
                 new_children.append(childs)
