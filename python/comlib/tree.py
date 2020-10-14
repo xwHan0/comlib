@@ -5,10 +5,6 @@ from comlib.utilis.argument import series_argument_proc
 class ErrorReturnType(Exception): pass
 
 
-class NodeMapReturn:
-    def __init__(self, *nodes):
-        self.nodes = nodes
-
 
 
 class Node:
@@ -79,8 +75,8 @@ class Node:
         """遍历整个树
 
         Arguments:
-        * prev: {(node,udata,lvls)=>udata, List<Node>} ---- Prev过程处理函数
-        * post: {(node,nnode,lvls)=>List<Node>} ---- Post过程处理函数
+        * prev: {(node,udata,lvls)=>udata, Node} ---- Prev过程处理函数
+        * post: {(node,nnode,lvls)=>List<Node>|Node} ---- Post过程处理函数
             * None: 不进行Post处理，Prev处理结果作为最终结果
             * Function: 参考`prev`
         * udata: {dict} ---- 自顶向下传递的参数
@@ -92,24 +88,26 @@ class Node:
         """
 
         # prev处理
-        udata, new_nodes = prev( self, udata=udata, lvls=lvls )
+        udata, new_node = prev( self, udata=udata, lvls=lvls )
 
         # 子节点处理
         new_children = []
         for i,child in enumerate(self.childNodes):
-            udata, child_nodes = child.map( prev, post, udata=udata, lvls=lvls+[i] )
-            for c in child_nodes:
-                new_children.append( c )
+            udata, childs = child.map( prev, post, udata=udata, lvls=lvls+[i] )
+            if isinstance(childs, list):
+                for c in child_nodes:
+                    new_children.append( c )
+            else:
+                new_children.append(childs)
             
         # 追加子节点
-        for c in new_nodes:
-            c.childNodes = new_children
+        new_node.childNodes = new_children
 
         # post处理
         if post:
-            new_nodes = post( self, nnode=new_nodes, lvls=lvls )
+            new_node = post( self, nnode=new_node, lvls=lvls )
 
-        return udata, new_nodes
+        return udata, new_node
                 
 
 
