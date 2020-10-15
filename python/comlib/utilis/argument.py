@@ -92,77 +92,83 @@ def series_argument_proc( cs, a=None, b=None ):
     return __inner_series_argument_proc_with_judge__(cs_inner)
 
 
-#### 处理函数
-class SeriesArgumentIter:
-    def __init__(self, cs, auto_level=999999999):
-        self.cs = cs
-        self.ite0 = None # 高层迭代器
-        self.ite1 = None # 底层迭代器
-        self.status = 0  # 当前迭代元素类型。0: Element; 1: Iter; 
-        self.is_auto = False # 是否自动推断
-        self.auto_level = auto_level # 自动推断层次
 
+#### 迭代异常
+class ChildStopIteration(StopIteration): pass
+
+####=======================================================================
+#### 定义内部迭代类
+####=======================================================================
+class __flatten__:
+
+    def __init__(self, cs, typ=0):
+        self.ite = iter(cs)
+        self.typ = typ  # 0: SeriesElement; 1: SeriesIter;
+        self.child_ite = None
+        self.is_auto = False
+    
     def __iter__(self):
-        if isinstance( self.cs[0], SeriesArgument ):
-
-            self.ite0 = iter( self.cs ) # 获取迭代器
-            option = next( self.ite0 ) # 获取第一个元素，作为选项参数
-
-            if isinstance( option, __SeriesElement__ ):
-                return self.ite0 # 返回迭代器
-            elif isinstance( option, __SeriesIter__ ):
-                self.status = 1
-                self.ite1 = iter( SeriesArgumentIter(next( self.ite0 )) )
-            elif isinstance( option, __SeriesAuto__ ):
-                self.is_auto = True
-                if isinstance( self.cs[1], list ):
-                    self.status = 1
-            else:
-                raise NotSupportOption( 'Do not support this option: %s' % (option.__class__.__name__) )
-        else:
-            return iter( self.cs )  # 默认按照SeriesElement选择
-
         return self
 
     def __next__(self):
 
-        if self.status == 0: # Element
-
-            rst = next( self.ite0 )
-            if isinstance( rst, SeriesArgument ):
-                if isinstance( rst, __SeriesIter__ ):
-                    self.status = 1
-                    self.is_auto = False
-                    self.ite1 = iter( SeriesArgumentIter( next( self.ite0 ) ) )
-                    rst = self.__next__()
-                elif isinstance( rst, __SeriesElement__ ):
-                    self.is_auto = False
-                    rst = self.__next__()
-                elif isinstance( rst, __SeriesAuto__ ):
-                    self.is_auto = True
-                else:
-                    raise NotSupportOption( 'Do not support this option: {} and value: {}'.format(rst.__class__.__name__, rst) )
-            elif self.is_auto and isinstance( rst, list ):
-                self.status = 1
-                rst = self.__next__()
-
-        elif self.status == 1: # Iter
-
+        ### 子迭代没有完成，可以继续子迭代
+        if self.child_ite != None:
             try:
-                rst = next( self.ite1 )
-            except StopIteration:
-                nxt0 = next( self.ite0 )
-                if isinstance( nxt0, SeriesArgument ):
-                    if isinstance( nxt0, __SeriesElement__ ):
-                        self.status = 0
-                        rst = self.__next__()
-                    elif isinstance( nxt0, __SeriesIter__ ):
-                        self.ite1 = iter( SeriesArgumentIter( nxt0 ) )
-                        rst = self.__next__()
-                    else:
-                        raise NotSupportOption( 'Do not support this option: {} and value: {}'.format(nxt0.__class__.__name__, nxt0) )
-                else:
-                    self.ite1 = iter( SeriesArgumentIter( nxt0 ) )
-                    rst = self.__next__()
+                return next( self.child_ite )  # 子迭代还没有迭代完 => 继续子迭代
+            except ChildStopIteration:  # 子迭代已经迭代完
+                self.child_ite = None
+                return self.__next__()
 
-        return rst
+        ### 子迭代完成后
+        try:
+            ele = next(self.ite)  # 获取下一个元素
+
+            if isinstance( ele, SeriesArgument ):
+
+                if isinstance( ele, __SeriesElement__ ):
+                    self.typ, self.is_auto = 0, False
+
+                elif isinstance( ele, __SeriesIter__ ):
+                    self.typ, self.is_auto = 1, False
+                    self.child_ite = __flatten__( next(self.ite) )  # 记录子迭代器
+
+                elif isinstance( ele, __SeriesAuto__ ):
+                    self.is_auto = True
+
+                return self.__next__()  # 跳过该命令，直接获取下一个元素
+
+            elif self.is_auto:
+                if isinstance( ele, list ):
+                    self.child_ite = __flatten__(ele)  # 获取下一个子迭代
+                    return self.__next__()
+                else:
+                    return ele
+            elif self.typ == 0:
+                return ele  # 获取元素类型 => 直接返回当前元素
+            else:
+                self.child_ite = __flatten__(ele)  # 获取下一个子迭代
+                return self.__next__()
+                       
+        except StopIteration: # 主迭代完成。抛出完成标识
+            raise ChildStopIteration()
+
+
+#### 处理函数
+class flatten:
+    """元素打平迭代器"""
+
+    def __init__(self, cs:'被打平的元素'):
+        """返回打平迭代器"""
+        self.ite = __flatten__( cs )
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return next( self.ite )
+        except ChildStopIteration:
+            raise StopIteration
+
+    
