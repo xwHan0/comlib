@@ -101,8 +101,9 @@ class ChildStopIteration(StopIteration): pass
 ####=======================================================================
 class __flatten__:
 
-    def __init__(self, cs, typ=0):
+    def __init__(self, cs, level, typ=0):
         self.ite = iter(cs)
+        self.level = level
         self.typ = typ  # 0: SeriesElement; 1: SeriesIter;
         self.child_ite = None
         self.is_auto = False
@@ -126,12 +127,16 @@ class __flatten__:
 
             if isinstance( ele, SeriesArgument ):
 
-                if isinstance( ele, __SeriesElement__ ):
+                if isinstance( ele, __SeriesElement__ ) or self.level <= 0:
                     self.typ, self.is_auto = 0, False
 
                 elif isinstance( ele, __SeriesIter__ ):
-                    self.typ, self.is_auto = 1, False
-                    self.child_ite = __flatten__( next(self.ite) )  # 记录子迭代器
+                    nxt = next(self.ite)
+                    if hasattr( nxt, '__iter__' ):
+                        self.typ, self.is_auto = 1, False
+                        self.child_ite = __flatten__( nxt, self.level-1 )  # 记录子迭代器。这里不需要再try，因为娶不到的话，直接就是Stop
+                    else:
+                        self.typ, self.is_auto, self.child_ite = 0, False, None
 
                 elif isinstance( ele, __SeriesAuto__ ):
                     self.is_auto = True
@@ -139,16 +144,18 @@ class __flatten__:
                 return self.__next__()  # 跳过该命令，直接获取下一个元素
 
             elif self.is_auto:
-                if isinstance( ele, list ):
-                    self.child_ite = __flatten__(ele)  # 获取下一个子迭代
+                if isinstance( ele, list ) and self.level > 0:
+                    self.child_ite = __flatten__(ele, self.level-1)  # 获取下一个子迭代
                     return self.__next__()
                 else:
                     return ele
             elif self.typ == 0:
                 return ele  # 获取元素类型 => 直接返回当前元素
-            else:
-                self.child_ite = __flatten__(ele)  # 获取下一个子迭代
+            elif hasattr( ele, '__iter__' ):
+                self.child_ite = __flatten__(ele, self.level-1)  # 获取下一个子迭代
                 return self.__next__()
+            else: # typ=1，但ele不可迭代
+                return ele
                        
         except StopIteration: # 主迭代完成。抛出完成标识
             raise ChildStopIteration()
@@ -158,9 +165,9 @@ class __flatten__:
 class flatten:
     """元素打平迭代器"""
 
-    def __init__(self, cs:'被打平的元素'):
+    def __init__(self, cs:'被打平的元素', level:'打拼层次'=sys.maxsize):
         """返回打平迭代器"""
-        self.ite = __flatten__( cs )
+        self.ite = __flatten__( cs, level )
 
     def __iter__(self):
         return self

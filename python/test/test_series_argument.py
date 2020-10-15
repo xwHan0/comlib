@@ -3,8 +3,8 @@ sys.path.append( (os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 
 print(sys.path)
 
-from comlib.utilis.argument import SeriesElement, SeriesIter, SeriesMixElement, SeriesMixIter, SeriesAuto
-from comlib.utilis.argument import series_argument_proc, flatten
+from comlib.iterator.flatten import SeriesElement, SeriesIter, SeriesMixElement, SeriesMixIter, SeriesAuto
+from comlib.iterator.flatten import series_argument_proc, flatten
 
 class TestSeriesArgument:
 
