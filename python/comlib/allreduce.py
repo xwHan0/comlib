@@ -6,6 +6,29 @@ from comlib import xmin
     
 import sys
 
+
+#############################################################################################################
+####  repeat
+#############################################################################################################
+def repeat( 
+    ele_or_fun : '填充元素或者生成函数。函数格式: (idx)=>ele' , 
+    *ns : '填充矩阵尺寸列表'
+    ):
+    """返回按照尺寸`ns`和元素ele填充的列表矩阵"""
+
+    def _repeat_( ele_or_fun, ns, lvl ):
+
+        if len( ns ) == 1:
+            if isinstance(ele_or_fun, FunctionType):
+                return [ele_or_fun(lvl+[i]) for i in range(ns[0])]
+            else:
+                return [ele_or_fun for _ in range(ns[0])]
+        else:
+            return [repeat(ele_or_fun, ns[1:], lvl+[i]) for i in range(ns[0])]
+
+    return _repeat_( ele_or_fun, ns, [] )
+
+
 class XIterator:
     def apply( self, action, *args, **kargs ):
         return action( *args, self, **kargs )
@@ -165,48 +188,6 @@ class Action:
 #         return [action( *args, **kargs ) for action in self.actions]
 
 
-#######################################################################################################
-####  Range
-#######################################################################################################
-
-class xrange(XIterator):
-    def __init__(self, begin=0, end=None, step=1, mode='unlimmitted'):
-        self.begin, self.end, self.step = begin, end, step
-        
-        self.mode = 'unlimmitted' if end==None else mode
-        
-        if self.mode == 'roundrobin':
-            if self.step > 0 and begin > end:
-                self.begin, self.end = end, begin
-            elif self.step < 0 and begin < end:
-                self.begin, self.end = end, begin
-        
-    def __iter__(self):
-        self._nxt_ = self.begin
-        return self
-        
-    def __next__(self):
-        # if self.end == None: return self._nxt_ + self.step
-        
-        rst = self._nxt_
-        if self.end == None:
-            pass
-        elif self.mode == 'unlimmitted':
-            if self.end > self.begin:
-                if self._nxt_ >= self.end: raise StopIteration()
-            else:
-                if self._nxt_ <= self.end: raise StopIteration()
-        elif self.mode == 'roundrobin':
-            if self.step > 0:
-                if self._nxt_ >= self.end: self._nxt_ = self.begin
-            else:
-                if self._nxt_ <= self.end: self._nxt_ = self.begin
-        
-        self._nxt_ += self.step
-        
-        return rst
-
-
 
 
 
@@ -265,45 +246,6 @@ class xmap(XIterator):
 def mapa(action, *iters, **kargs):
     return list(xmap( action, *iters, **kargs ))
 
-
-
-#############################################################################################################
-####  Flatten
-#############################################################################################################
-class xflatten(XIterator):
-    def __init__( self, iter, level = 1 ):
-        """打平迭代器'iter'的内容。
-    
-        Argument:
-        - iter: {iterator} ---- 需要被打平操作的迭代器
-        - level: {int} ---- 打平层次。-1表示一直打平到底; 0表示Copy
-        """
-        self.iter = iter if hasattr( iter, '__iter__' ) else [iter]
-        self.level = level
-
-    def __iter__( self ): 
-        self._nxt_ = iter( self.iter )
-        self._sub_ = None
-        return self
-
-    def __next__( self ):
-        if self._sub_ != None:
-            try:
-                return next( self._sub_ )
-            except StopIteration:
-                self._sub_ = None
-                pass
-
-        nxt = next( self._nxt_ )
-
-        # 迭代到目标层次，直接返回
-        if self.level == 0: return nxt
-
-        # 非迭代对象被直接返回
-        if not hasattr( nxt, '__iter__' ): return nxt
-
-        self._sub_ = iter( xflatten( nxt, self.level-1 ) )
-        return self.__next__()
 
 
 #############################################################################################################

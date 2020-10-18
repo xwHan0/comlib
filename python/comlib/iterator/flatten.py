@@ -1,5 +1,7 @@
 import sys
 
+from comlib.iterator.iter import XIterator
+
 ######################################################################################
 # 序列输入参数处理
 ######################################################################################
@@ -99,7 +101,7 @@ class ChildStopIteration(StopIteration): pass
 ####=======================================================================
 #### 定义内部迭代类
 ####=======================================================================
-class __flatten__:
+class __flatten__(XIterator):
 
     def __init__(self, cs, level, typ=0):
         self.ite = iter(cs)
@@ -166,7 +168,18 @@ class flatten:
     """元素打平迭代器"""
 
     def __init__(self, cs:'被打平的元素', level:'打拼层次'=sys.maxsize):
-        """返回打平迭代器"""
+        """返回打平迭代器
+        其作用类似于: 
+        * concate: 连接各个元素和迭代器到一个新的迭代器
+        * flatten: 把每个子迭代器元素展开到一层
+
+        cs元素可以包含如下的Option设置参数：
+        * SeriesElement:
+        * SeriesIter:
+        * SeriesAuto:
+
+        Reference: flatten.md
+        """
         self.ite = __flatten__( cs, level )
 
     def __iter__(self):
@@ -178,4 +191,3 @@ class flatten:
         except ChildStopIteration:
             raise StopIteration
 
-    
