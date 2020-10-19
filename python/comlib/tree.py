@@ -10,9 +10,32 @@ class ErrorReturnType(Exception): pass
 class Node:
     """树节点定义"""
     def __init__(self, **props):
-        self.props = props
-        self.childNodes = []
-        self.parents = []
+        self.props = props              # 节点属性字典
+        self.childNodes = []            # 子节点列表
+        self.parents = None             # 父节点列表
+        self.brother = None             # 前述哥哥指针
+        self.lvl = []                   # 层次位置信息
+
+    def build(self, lvl=[]):
+        """编译树节点，填充其它信息"""
+
+        def _compile_( node, parent, brother, lvl ):
+
+            ## 填充当前节点
+            node.parent = parent    # 编译父节点
+            node.brother = brother
+            node.lvl = lvl
+
+            ## 调度子节点
+            brother = None
+            for i, child in enumerate(node.childNodes):
+                _compile_( child, node, brother, node.lvl+[i] )
+                brother = child
+
+        _compile_( self, None, None, lvl )
+
+        return self
+
 
     def getAttribute(self, key, default=None): return self.props.get([key], default)
     def setAttribute(self, key, value): self.props[key] = value
@@ -81,10 +104,14 @@ class Node:
 
         return rst
 
-    def iter(self, prev, post=None, data={}, lvls=[]):
+    def iter(self, 
+        prev : '{(node,data,lvls)=>data} -- 从父节点遍历到当前节点(lvls[-1]==0)，或者从前一个兄弟节点遍历到当前节点(lvls[-1]>0)时调用', 
+        post : '{(node,data,lvls)=>data} -- 子节点都处理完成，准备返回父节点时调用' =None,
+        data={},
+        lvls=[]
+        ):
         """遍历整个树
         Arguments:
-        * prev: {(node,lvls,data)=>object} ---- Prev过程处理函数
         * post: {(node,lvls,data)=>object | None} ---- Post过程处理函数
             * None: 不进行Post处理，Prev处理结果作为最终结果
             * Function: 参考`prev`
@@ -105,31 +132,31 @@ class Node:
         
         return data
 
-    def map(self, prev, post=None, udata={}, lvls=[]):
-        """遍历整个树
+    def map(self, prev, post=None):
+        """按深度遍历整个树，然后返回新的树Root节点
 
         Arguments:
-        * prev: {(node,udata,lvls)=>udata, Node} ---- 父-子过程处理
-        * post: {(node,udata,lvls)=>udata, List<Node>|Node} ---- 兄弟之间或者子-父
-            * None: 不进行Post处理，Prev处理结果作为最终结果
-            * Function: 参考`prev`
-        * udata: {dict} ---- 自顶向下传递的参数
-        * lvls: {list} ---- 位置层次序号
+        * prev: {(node)=>Node} -- 子节点迭代前回调函数。从父节点遍历到当前节点(lvls[-1]==0)，或者从前一个兄弟节点遍历到当前节点(lvls[-1]>0)时调用
+            * node: {Node} -- 当前遍历节点
+            * Return: 返回新节点
+        * post: {(node)=>List<Node>|Node} -- 子节点迭代后回调函数。子节点都处理完成，准备返回父节点时调用
+            * post=None: 不进行Post处理，Prev处理结果作为最终结果
+            * node: {Node} -- 当前节点生成的新节点
+            * Return: 返回新节点或者新节点列表
 
         Return:
-        * udata: {dict} ---- 自顶向下传递的参数
-        * nodes: {List<Node>} ---- 新的节点
+        新树节点
         """
 
-        def _map_( node, prev, post, udata, lvls ):
+        def _map_( node, prev, post ):
 
             # prev处理
-            udata, new_node = prev( node, udata, lvls )
+            new_node = prev( node )
 
             # 子节点处理
             new_children = []
-            for i,child in enumerate(node.childNodes):
-                udata, childs = _map_( child, prev, post, udata, lvls+[i] )
+            for child in node.childNodes:
+                childs = _map_( child, prev, post  )
                 if isinstance(childs, list):
                     for c in childs:
                         new_children.append( c )
@@ -141,11 +168,9 @@ class Node:
 
             # post处理
             if post:
-                udata, new_node = post( new_node, udata, lvls )
+                new_node = post( new_node )
 
-            return udata, new_node
+            return new_node
 
-        return _map_( self, prev, post, udata, lvls )[1]
+        return _map_( self, prev, post )
                 
-
-
