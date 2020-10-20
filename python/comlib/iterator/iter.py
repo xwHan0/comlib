@@ -1,6 +1,4 @@
 
-from comlib.iterator.flatten import flatten
-from comlib.iterator.range import range
 
 class XIterator:
     # def apply( self, action, *args, **kargs ):

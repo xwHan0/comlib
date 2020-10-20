@@ -101,7 +101,7 @@ class ChildStopIteration(StopIteration): pass
 ####=======================================================================
 #### 定义内部迭代类
 ####=======================================================================
-class __flatten__(XIterator):
+class __flatten__:
 
     def __init__(self, cs, level, typ=0):
         self.ite = iter(cs)
@@ -164,7 +164,7 @@ class __flatten__(XIterator):
 
 
 #### 处理函数
-class flatten:
+class flatten(XIterator):
     """元素打平迭代器"""
 
     def __init__(self, cs:'被打平的元素', level:'打拼层次'=sys.maxsize):

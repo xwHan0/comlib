@@ -13,24 +13,27 @@ class Node:
         self.props = props              # 节点属性字典
         self.childNodes = []            # 子节点列表
         self.parents = None             # 父节点列表
-        self.brother = None             # 前述哥哥指针
+        self.last = None             # 前述哥哥指针
+        self.next = None             # 前述哥哥指针
         self.lvl = []                   # 层次位置信息
 
     def build(self, lvl=[]):
         """编译树节点，填充其它信息"""
 
-        def _compile_( node, parent, brother, lvl ):
+        def _compile_( node, parent, last, lvl ):
 
             ## 填充当前节点
             node.parent = parent    # 编译父节点
-            node.brother = brother
+            node.last = last
+            if last:
+                last.next = node
             node.lvl = lvl
 
             ## 调度子节点
-            brother = None
+            last = None
             for i, child in enumerate(node.childNodes):
-                _compile_( child, node, brother, node.lvl+[i] )
-                brother = child
+                _compile_( child, node, last, node.lvl+[i] )
+                last = child
 
         _compile_( self, None, None, lvl )
 
@@ -132,7 +135,7 @@ class Node:
         
         return data
 
-    def map(self, prev, post=None):
+    def mapr(self, prev, post=None, init=Node()):
         """按深度遍历整个树，然后返回新的树Root节点
 
         Arguments:
@@ -148,17 +151,19 @@ class Node:
         新树节点
         """
 
-        def _append_node_(node,last,parent,lvl):
+        def _append_node_(node,last,parent,ofst):
             
             node.parent = parent
             parent.childNodes.append(node)
+            node.lvl = parent.lvl + [ofst]
+
             if last != None:
                 last.next = node
                 node.last = last
 
             return tuple(
-                node,
-                lvl = lvl[:-1] + [lvl[-1]+1]
+                node,  # new last
+                ofst+1 # new ofst
             )
 
         def _map_( node, prev, post, ref_node ):
@@ -167,17 +172,17 @@ class Node:
             new_node = prev( node, ref_node )
 
             # 子节点处理
-            last, lvl = None, node.lvl + [0]
-            for i,child in enumerate(node.childNodes):
-                ref_node = Node()
-                ref_node.parent, ref_node.last, ref_node.lvl = node, last, lvl
+            last, ofst = None, 0
+            for child in node.childNodes:
+                ref_node = Node() # 定义临时变量
+                ref_node.parent, ref_node.last, ref_node.lvl = new_node, last, new_node+[ofst]
                 ret = _map_( child, prev, post, ref_node  )
                 
                 if isinstance(ret, list):
                     for c in ret:
-                        last,lvl = _append_node_(node,last,node,lvl)
+                        last,lvl = _append_node_(c,last,new_node,ofst)
                 else:
-                    last,lvl = _append_node_(node,last,node,lvl)
+                    last,lvl = _append_node_(ret,last,new_node,ofst)
                 
 
             # post处理
@@ -186,5 +191,5 @@ class Node:
 
             return new_node
 
-        return _map_( self, prev, post, Node() )
+        return _map_( self, prev, post, init )
                 

@@ -268,4 +268,8 @@ class tree:
 
         return IterTreeResult(self.stack)
 
-        
+from comlib.iterator.iter import XIterator
+
+from comlib.iterator.range import range
+from comlib.iterator.flatten import flatten
+
