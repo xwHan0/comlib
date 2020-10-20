@@ -148,23 +148,37 @@ class Node:
         新树节点
         """
 
-        def _map_( node, prev, post ):
+        def _append_node_(node,last,parent,lvl):
+            
+            node.parent = parent
+            parent.childNodes.append(node)
+            if last != None:
+                last.next = node
+                node.last = last
+
+            return tuple(
+                node,
+                lvl = lvl[:-1] + [lvl[-1]+1]
+            )
+
+        def _map_( node, prev, post, ref_node ):
 
             # prev处理
-            new_node = prev( node )
+            new_node = prev( node, ref_node )
 
             # 子节点处理
-            new_children = []
-            for child in node.childNodes:
-                childs = _map_( child, prev, post  )
-                if isinstance(childs, list):
-                    for c in childs:
-                        new_children.append( c )
-                else:
-                    new_children.append(childs)
+            last, lvl = None, node.lvl + [0]
+            for i,child in enumerate(node.childNodes):
+                ref_node = Node()
+                ref_node.parent, ref_node.last, ref_node.lvl = node, last, lvl
+                ret = _map_( child, prev, post, ref_node  )
                 
-            # 追加子节点
-            new_node.childNodes = new_children
+                if isinstance(ret, list):
+                    for c in ret:
+                        last,lvl = _append_node_(node,last,node,lvl)
+                else:
+                    last,lvl = _append_node_(node,last,node,lvl)
+                
 
             # post处理
             if post:
@@ -172,5 +186,5 @@ class Node:
 
             return new_node
 
-        return _map_( self, prev, post )
+        return _map_( self, prev, post, Node() )
                 
