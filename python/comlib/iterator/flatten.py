@@ -8,6 +8,7 @@ from comlib.iterator.iter import XIterator
 
 #### 定义类型选择类型
 class SeriesArgument: pass
+class __SeriesNone__(SeriesArgument): pass
 class __SeriesElement__(SeriesArgument): pass
 class __SeriesIter__(SeriesArgument): pass
 class __SeriesMixElement__(SeriesArgument): pass
@@ -18,7 +19,13 @@ class __SeriesAuto__(SeriesArgument):
     def __init__(self, auto_level=sys.maxsize):
         self.auto_level=sys.maxsize
 
+
+class SeriesList(SeriesArgument):
+    def __init__(self, *eles):
+        self.eles = eles
+
 #### 实例化
+SeriesNone = __SeriesNone__()
 SeriesElement = __SeriesElement__()
 SeriesIter = __SeriesIter__()
 SeriesAuto = __SeriesAuto__()
@@ -142,6 +149,11 @@ class __flatten__:
 
                 elif isinstance( ele, __SeriesAuto__ ):
                     self.is_auto = True
+                elif isinstance( ele, SeriesList ):
+                    self.typ, self.is_auto = 1, False
+                    self.child_ite = __flatten__( ele.eles, self.level-1 )  # 记录子迭代器。这里不需要再try，因为娶不到的话，直接就是Stop
+
+                #else: 默认跳过无效命令或者SeriesNone命令
 
                 return self.__next__()  # 跳过该命令，直接获取下一个元素
 

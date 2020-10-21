@@ -21,13 +21,3 @@ class XIterator:
 
 
 
-#############################################################################
-####  迭代器返回值定义
-class Rtn: pass
-
-class _RtnNone_(Rtn): pass
-RtnNone = _RtnNone_()
-
-class RtnList(Rtn):
-    def __init__(self, *rtn):
-        self.rtn = rtn
