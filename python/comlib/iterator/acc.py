@@ -3,7 +3,7 @@ from comlib.iterator.iter import XIterator
 
 class acc(XIterator):
 
-    def __init__(self, action, iter, init=None):
+    def __init__(self, action, iter=None, init=None):
         """
         * action: {(init,ele)=>ele} -- 迭代函数
         * iter: {iterator} -- 迭代对象
@@ -24,4 +24,10 @@ class acc(XIterator):
 
         self.init = ret
         return ret
+
+    def __call__(self, iter, init=None):
+        self.iter = iter
+        if init:
+            self.init = init
+        return self
     
