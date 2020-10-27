@@ -1,3 +1,4 @@
 {
-  "python/test/test_series_argument.py": true
+  "python/test/test_flatten.py": true,
+  "python/test/test_iterator.py": true
 }
