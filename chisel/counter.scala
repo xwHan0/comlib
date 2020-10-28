@@ -62,8 +62,9 @@ object Count {
 
 object Counter {
     def apply( inc:Bool, ival:UInt, dec:Bool, dval:UInt, init:UInt, min:Option[UInt], max:Option[UInt] ): UInt = {
-        val count = RegInit( UInt(), init )
-        count := Count( inc, ival, dec, dval, count, min, max )
+        val cnt = RegInit( UInt(init.getWidth.W), init )
+        cnt := Count( inc, ival, dec, dval, cnt, min, max )
+        cnt
     }
 }
 
@@ -78,7 +79,8 @@ object ReadClearCount {
 
 object ReadClearCounter {
     def apply( inc:Bool, ival:UInt, clear:Bool, init:UInt, min:Option[UInt], max:Option[UInt] ): UInt = {
-        val count = RegInit( UInt(), init )
-        count := ReadClearCount( inc, ival, clear, count, min, max )
+        val cnt = RegInit( UInt(init.getWidth.W), init )
+        cnt := ReadClearCount( inc, ival, clear, cnt, min, max )
+        cnt
     }
 }
