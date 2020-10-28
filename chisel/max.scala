@@ -10,13 +10,13 @@ object Max2 {
         val (b_val, b_idx) = b
 
         val ret_value = 
-            if(reg)
+            if(locked)
                 Reg(UInt(a_val.getWidth.W))
             else
                 Wire(UInt(a_val.getWidth.W))
 
         val ret_idx = 
-            if(reg)
+            if(locked)
                 Reg(UInt(a_idx.getWidth.W))
             else
                 Wire(UInt(a_idx.getWidth.W))
