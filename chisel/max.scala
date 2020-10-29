@@ -1,4 +1,4 @@
-package comlib.chisel.componment
+package comlib.chisel.component
 
 import chisel3._
 

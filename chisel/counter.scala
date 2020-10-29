@@ -1,53 +1,80 @@
-package comlib.chisel.componment
+package comlib.chisel.component
 
 import chisel3._
 
 object Count {
 
-    def apply( inc:Bool, ival:UInt, dec:Bool, dval:UInt, value:UInt, min:Option[UInt], max:Option[UInt] ): UInt = {
-        
-        def overflow( value:UInt, ival:UInt, max:Option[UInt] ): UInt = {
-            val ret = Wire(UInt(value.getWidth.W))
-            max match{
-                case Some(m) =>
-                    when( value >= m - ival ){
-                        ret := m
-                    }.otherwise{
-                        ret := value + ival
-                    }
-                case None =>
-                    ret := value + ival
-            }
-            ret
-        } 
+    /* Counter计算过程函数
+     @params inc: Increase enable flag
+     @params ival: Increase value
+     @params dec: Decrease enable flag
+     @params dval: Decrease value
+     @params value: Counter current value
+     @params min: Counter minimal value threshold
+     @params max: Counter max value threshold
 
-        def underflow( value:UInt, dval:UInt, min:Option[UInt] ):UInt = {
-            val ret = Wire(UInt(value.getWidth.W))
-            min match{
-                case Some(m) =>
-                    when( value <= m + dval ){
-                        ret := m
-                    }.otherwise{
-                        ret := value - dval
-                    }
-                case None =>
-                    ret := value - dval
-            }
-            ret
-        }
+     @return: (new-count-value, overflow-flag, under-flow-flag)
+     */
+    def apply[T<:UInt]( inc:Bool, ival:T, dec:Bool, dval:T, value:T, min:T, max:T ): (T,Bool,Bool) = {
         
-        val ret = Wire(UInt(value.getWidth.W))
+        val ret = Wire(chiselTypeOf(value))
+        val of = Wire(Bool())
+        val uf = Wire(Bool())
+
+        of := false.B
+        uf := false.B
 
         when( inc && dec ){
             when( ival >= dval ){
-                ret := overflow( value, ival-dval, max )
+                when( value > max - (ival - dval) ){
+                    ret := max
+                    of := true.B
+                }.otherwise{
+                    ret := value + (ival - dval)
+                }
             }.otherwise{
-                ret := underflow( value, dval-ival, min )
+                when( value < min + (dval-ival) ){
+                    ret := min
+                    uf := true.B
+                }.otherwise{
+                    ret := value - (dval-ival)
+                }
             }
         }.elsewhen( inc && !dec ){
-            ret := overflow( value, ival, max )
+            when( value > max - ival ){
+                ret := max
+                of := true.B
+            }.otherwise{
+                ret := value + ival
+            }
         }.elsewhen( !inc && dec ){
-            ret := underflow( value, dval, min )
+            when( value < min + dval ){
+                ret := min
+                uf := true.B
+            }.otherwise{
+                ret := value - dval
+            }
+        }.otherwise{
+            val ret = value
+        }
+
+        (ret, of, uf)
+    }
+
+    def apply[T<:UInt]( inc:Bool, ival:T, dec:Bool, dval:T, value:T ): T = {
+        
+        val ret = Wire(chiselTypeOf(value))
+
+        when( inc && dec ){
+            when( ival >= dval ){
+                ret := value + (ival - dval)
+            }.otherwise{
+                ret := value - (dval - ival)
+            }
+        }.elsewhen( inc && !dec ){
+            ret := value + ival
+        }.elsewhen( !inc && dec ){
+            ret := value - dval
         }.otherwise{
             ret := value
         }
@@ -55,32 +82,41 @@ object Count {
         ret
     }
 
-    def apply( inc:Bool, ival:UInt, dec:Bool, dval:UInt, value:UInt ): UInt
-        = apply( inc, ival, dec, dval, value, None, None )
-
 }
 
 object Counter {
-    def apply( inc:Bool, ival:UInt, dec:Bool, dval:UInt, init:UInt, min:Option[UInt], max:Option[UInt] ): UInt = {
-        val cnt = RegInit( UInt(init.getWidth.W), init )
-        cnt := Count( inc, ival, dec, dval, cnt, min, max )
+    def apply[T<:UInt]( inc:Bool, ival:T, dec:Bool, dval:T, init:T, min:T, max:T ): (T,Bool,Bool) = {
+        val cnt = RegInit( init )
+        (cnt, of, uf) := Count( inc, ival, dec, dval, cnt, min, max )
+        (cnt, of, uf)
+    }
+
+    def apply[T<:UInt]( inc:Bool, ival:T, dec:Bool, dval:T, init:T ): T = {
+        val cnt = RegInit( init )
+        cnt := Count( inc, ival, dec, dval, cnt )
         cnt
     }
 }
 
 object ReadClearCount {
 
-    def apply( inc:Bool, ival:UInt, clear:Bool, value:UInt, min:Option[UInt], max:Option[UInt] ):UInt
+    def apply[T<:UInt]( inc:Bool, ival:T, clear:Bool, value:T, min:T, max:T ):(T,Bool,Bool)
         = Count( inc, ival, clear, value, value, min, max )
 
-    def apply( inc:Bool, ival:UInt, clear:Bool, value:UInt ):UInt
-        = apply( inc, ival, clear, value, None, None )
+    def apply[T<:UInt]( inc:Bool, ival:T, clear:Bool, value:T ):T
+        = Count( inc, ival, clear, value, value )
 }
 
 object ReadClearCounter {
-    def apply( inc:Bool, ival:UInt, clear:Bool, init:UInt, min:Option[UInt], max:Option[UInt] ): UInt = {
-        val cnt = RegInit( UInt(init.getWidth.W), init )
-        cnt := ReadClearCount( inc, ival, clear, cnt, min, max )
+    def apply[T<:UInt]( inc:Bool, ival:T, clear:Bool, init:T, min:T, max:T ): (T,Bool,Bool) = {
+        val cnt = RegInit( init )
+        (cnt, of, uf) := ReadClearCount( inc, ival, clear, cnt, min, max )
+        (cnt, of, ul)
+    }
+
+    def apply[T<:UInt]( inc:Bool, ival:T, clear:Bool, init:T ): T = {
+        val cnt = RegInit( init )
+        cnt := ReadClearCount( inc, ival, clear, cnt )
         cnt
     }
 }
